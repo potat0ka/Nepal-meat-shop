@@ -11,7 +11,6 @@ from models import (User, Product, Category, Order, OrderItem, CartItem, Review,
 from forms import (LoginForm, RegisterForm, ProductForm, CartForm, CheckoutForm, ReviewForm,
                   OrderStatusForm, CategoryForm, OrderFilterForm, UpdateCartForm, RemoveCartForm)
 from utils import save_uploaded_file, generate_order_number
-from payment_utils import process_payment, get_payment_instructions
 
 def register_routes(app):
     """Register all application routes."""

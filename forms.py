@@ -161,18 +161,15 @@ class OrderFilterForm(FlaskForm):
         ('cancelled', 'Cancelled')
     ])
     submit = SubmitField('Filter')
-```# Improved CartForm validation with custom validation for product_id.
-from flask_wtf import FlaskForm
-from flask_wtf.file import FileField, FileAllowed
-from wtforms import StringField, TextAreaField, FloatField, IntegerField, SelectField, BooleanField, PasswordField, SubmitField, HiddenField
-from wtforms.validators import DataRequired, Email, Length, NumberRange, Optional, EqualTo, ValidationError
-import re
 
-class LoginForm(FlaskForm):
-    """User login form."""
-    email = StringField('ईमेल / Email', validators=[DataRequired(), Email()])
-    password = PasswordField('पासवर्ड / Password', validators=[DataRequired()])
-    submit = SubmitField('लगइन / Login')
+class UpdateCartForm(FlaskForm):
+    """Update cart item quantity form."""
+    quantity = FloatField('Quantity (kg)', validators=[DataRequired(), NumberRange(min=0.1, max=50)])
+    submit = SubmitField('Update')
+
+class RemoveCartForm(FlaskForm):
+    """Remove cart item form."""
+    submit = SubmitField('Remove')
 
 class RegisterForm(FlaskForm):
     """User registration form."""
