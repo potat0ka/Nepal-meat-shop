@@ -214,31 +214,40 @@ def register_routes(app):
             flash('कृपया पहिले लगइन गर्नुहोस् / Please login first', 'warning')
             return redirect(url_for('login'))
 
+        # Debug: Print form data
+        print(f"Form data received: {dict(request.form)}")
+        
         # Get form data directly from request
         product_id_str = request.form.get('product_id', '').strip()
         quantity_str = request.form.get('quantity', '').strip()
 
+        print(f"Product ID: '{product_id_str}', Quantity: '{quantity_str}'")
+
         # Basic validation
         if not product_id_str:
+            message = 'उत्पादन चयन आवश्यक छ / Product selection is required'
             if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return jsonify({'success': False, 'message': 'Product selection is required'}), 400
-            flash('❌ Product selection is required', 'error')
-            return redirect(url_for('product_list'))
+                return jsonify({'success': False, 'message': message}), 400
+            flash(f'❌ {message}', 'error')
+            return redirect(request.referrer or url_for('product_list'))
 
         if not quantity_str:
+            message = 'मात्रा आवश्यक छ / Quantity is required'
             if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return jsonify({'success': False, 'message': 'Quantity is required'}), 400
-            flash('❌ Quantity is required', 'error')
-            return redirect(url_for('product_list'))
+                return jsonify({'success': False, 'message': message}), 400
+            flash(f'❌ {message}', 'error')
+            return redirect(request.referrer or url_for('product_list'))
 
         try:
             product_id = int(product_id_str)
             quantity = float(quantity_str)
-        except (ValueError, TypeError):
+        except (ValueError, TypeError) as e:
+            message = 'गलत डेटा / Invalid data provided'
+            print(f"Conversion error: {e}")
             if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return jsonify({'success': False, 'message': 'Invalid data provided'}), 400
-            flash('❌ गलत डेटा / Invalid data provided', 'error')
-            return redirect(url_for('product_list'))
+                return jsonify({'success': False, 'message': message}), 400
+            flash(f'❌ {message}', 'error')
+            return redirect(request.referrer or url_for('product_list'))
 
         # Get product details
         product = Product.query.get_or_404(product_id)
