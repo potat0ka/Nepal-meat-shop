@@ -113,15 +113,6 @@
                          class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
                     {% else %}
                     <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                        {% if product.preparation_type == 'processed' %}
-                        <i class="fas fa-sausage fa-3x text-muted"></i>
-                        {% elif 'ground' in product.name.lower() or 'पिसेको' in product.name %}
-                        <i class="fas fa-mortar-pestle fa-3x text-muted"></i>
-                        {% elif product.meat_type == 'pork' %}
-                        <i class="fas fa-pig fa-3x text-muted"></i>
-                        {% elif product.meat_type == 'buffalo' %}
-                        <i class="fas fa-cow fa-3x text-muted"></i>
-                        {% else %}
                         <i class="fas fa-drumstick-bite fa-3x text-muted"></i>
                     </div>
                     {% endif %}
