@@ -68,18 +68,21 @@ class ProductForm(FlaskForm):
 
 class CartForm(FlaskForm):
     """Form for adding items to cart."""
-    product_id = HiddenField('Product ID', validators=[DataRequired()])
-    quantity = FloatField('Quantity (kg)', validators=[DataRequired(), NumberRange(min=0.1, max=100, message='Quantity must be between 0.1 and 100 kg')])
+    product_id = HiddenField('Product ID', validators=[DataRequired(message='Product selection is required')])
+    quantity = FloatField('Quantity (kg)', validators=[
+        DataRequired(message='Quantity is required'), 
+        NumberRange(min=2.0, max=100, message='Quantity must be between 2.0 and 100 kg')
+    ])
     submit = SubmitField('Add to Cart')
 
     def validate_quantity(self, field):
         """Custom validation for quantity field."""
         try:
             value = float(field.data)
+            if value < 2.0:
+                raise ValidationError('Minimum quantity is 2.0 kg')
             if value <= 0:
                 raise ValidationError('Quantity must be greater than 0')
-            if value < 0.1:
-                raise ValidationError('Minimum quantity is 0.1 kg')
         except (ValueError, TypeError):
             raise ValidationError('Please enter a valid number')
 
@@ -102,9 +105,11 @@ class CheckoutForm(FlaskForm):
                                 validators=[DataRequired(), Length(min=10, max=15)])
     payment_method = SelectField('भुक्तानी विधि / Payment Method', choices=[
         ('cod', 'Cash on Delivery / घरमा पैसा तिर्नुहोस्'),
-        ('esewa', 'eSewa'),
-        ('khalti', 'Khalti'),
-        ('bank', 'Bank Transfer')
+        ('esewa', 'eSewa Digital Wallet'),
+        ('khalti', 'Khalti Digital Wallet'),
+        ('phonepay', 'PhonePay'),
+        ('mobile_banking', 'Mobile Banking'),
+        ('bank_transfer', 'Bank Transfer')
     ], validators=[DataRequired()])
     special_instructions = TextAreaField('विशेष निर्देशन / Special Instructions', 
                                        validators=[Optional(), Length(max=500)])

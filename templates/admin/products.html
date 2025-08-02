@@ -117,20 +117,23 @@
                                     </a>
 
                                     <a href="{{ url_for('admin_edit_product', product_id=product.id) }}" 
-                                       class="btn btn-outline-primary btn-sm" title="Edit Product">
+                                       class="btn btn-outline-primary btn-sm"
+                                       title="Edit Product">
                                         <i class="fas fa-edit"></i>
                                     </a>
 
-                                    <button class="btn btn-outline-danger btn-sm" 
-                                            title="Delete Product"
-                                            onclick="deleteProduct({{ product.id }}, '{{ product.name }}')">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                                    <form method="POST" action="{{ url_for('admin_toggle_featured', product_id=product.id) }}" 
+                                          style="display: inline;">
+                                        <button type="submit" class="btn btn-outline-warning btn-sm" 
+                                                title="{% if product.is_featured %}Remove from Featured{% else %}Add to Featured{% endif %}">
+                                            <i class="fas fa-star{% if not product.is_featured %}-o{% endif %}"></i>
+                                        </button>
+                                    </form>
 
-                                    <button class="btn btn-outline-{{ 'warning' if product.is_featured else 'success' }} btn-sm" 
-                                            title="{{ 'Remove from Featured' if product.is_featured else 'Add to Featured' }}"
-                                            onclick="toggleFeatured({{ product.id }}, {{ product.is_featured|lower }})">
-                                        <i class="fas fa-star{{ '' if product.is_featured else '-o' }}"></i>
+                                    <button type="button" class="btn btn-outline-danger btn-sm"
+                                            onclick="deleteProduct({{ product.id }}, '{{ product.name }}')"
+                                            title="Delete Product">
+                                        <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
                             </td>

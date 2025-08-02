@@ -1,0 +1,201 @@
+
+{% extends "base.html" %}
+
+{% block title %}Invoice #{{ invoice.invoice_number }} - Nepal Meat Shop{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Invoice Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="text-primary">
+                        <i class="fas fa-file-invoice me-2"></i>
+                        Invoice / बिल
+                    </h2>
+                    <p class="text-muted mb-0">Invoice Number: {{ invoice.invoice_number }}</p>
+                </div>
+                <div class="text-end">
+                    <button onclick="window.print()" class="btn btn-primary me-2">
+                        <i class="fas fa-print me-1"></i>Print Invoice
+                    </button>
+                    <a href="{{ url_for('order_detail', order_id=order.id) }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Order
+                    </a>
+                </div>
+            </div>
+
+            <!-- Invoice Content -->
+            <div class="card invoice-card">
+                <div class="card-body">
+                    <!-- Company Info -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h3 class="text-primary">🍖 Nepal Meat Shop</h3>
+                            <p class="mb-1">Fresh Meat Delivered to Your Door</p>
+                            <p class="mb-1">Kathmandu, Nepal</p>
+                            <p class="mb-1">Phone: +977-1-4567890</p>
+                            <p class="mb-0">Email: info@nepalmeatshop.com</p>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <h5>Invoice Details</h5>
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <td class="text-muted">Invoice #:</td>
+                                    <td><strong>{{ invoice.invoice_number }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Order #:</td>
+                                    <td><strong>{{ order.order_number }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Date:</td>
+                                    <td>{{ invoice.invoice_date.strftime('%B %d, %Y') }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Status:</td>
+                                    <td>
+                                        {% if invoice.is_paid %}
+                                        <span class="badge bg-success">Paid</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Customer Info -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Bill To:</h6>
+                            <h5>{{ order.customer.full_name }}</h5>
+                            <p class="mb-1">{{ order.customer.email }}</p>
+                            <p class="mb-1">{{ order.customer.phone }}</p>
+                            <p class="mb-0">{{ order.delivery_address }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Payment Method:</h6>
+                            <p class="mb-1">
+                                {% if order.payment_method == 'cod' %}
+                                Cash on Delivery
+                                {% elif order.payment_method == 'esewa' %}
+                                eSewa Digital Wallet
+                                {% elif order.payment_method == 'khalti' %}
+                                Khalti Digital Wallet
+                                {% elif order.payment_method == 'phonepay' %}
+                                PhonePay
+                                {% elif order.payment_method == 'mobile_banking' %}
+                                Mobile Banking
+                                {% elif order.payment_method == 'bank_transfer' %}
+                                Bank Transfer
+                                {% else %}
+                                {{ order.payment_method.title() }}
+                                {% endif %}
+                            </p>
+                            {% if order.transaction_id %}
+                            <p class="mb-0"><small class="text-muted">Transaction ID: {{ order.transaction_id }}</small></p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Order Items -->
+                    <div class="table-responsive mb-4">
+                        <table class="table table-striped">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Item / वस्तु</th>
+                                    <th>Quantity / मात्रा</th>
+                                    <th>Price / मूल्य</th>
+                                    <th class="text-end">Total / जम्मा</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order.order_items %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ item.product.name }}</strong>
+                                        <br><small class="text-muted">{{ item.product.name_nepali }}</small>
+                                    </td>
+                                    <td>{{ "%.1f"|format(item.quantity_kg) }} kg</td>
+                                    <td>रू {{ "%.0f"|format(item.price_per_kg) }}/kg</td>
+                                    <td class="text-end">रू {{ "%.0f"|format(item.total_price) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Invoice Totals -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            {% if order.special_instructions %}
+                            <h6 class="text-muted">Special Instructions:</h6>
+                            <p>{{ order.special_instructions }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-sm">
+                                <tr>
+                                    <td class="text-muted">Subtotal:</td>
+                                    <td class="text-end">रू {{ "%.0f"|format(invoice.subtotal) }}</td>
+                                </tr>
+                                {% if invoice.tax_amount > 0 %}
+                                <tr>
+                                    <td class="text-muted">Tax:</td>
+                                    <td class="text-end">रू {{ "%.0f"|format(invoice.tax_amount) }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if invoice.delivery_charge > 0 %}
+                                <tr>
+                                    <td class="text-muted">Delivery Charge:</td>
+                                    <td class="text-end">रू {{ "%.0f"|format(invoice.delivery_charge) }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td class="text-muted">Delivery Charge:</td>
+                                    <td class="text-end text-success">FREE</td>
+                                </tr>
+                                {% endif %}
+                                <tr class="table-dark">
+                                    <td><strong>Total Amount:</strong></td>
+                                    <td class="text-end"><strong>रू {{ "%.0f"|format(invoice.total_amount) }}</strong></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="text-center mt-4 pt-4 border-top">
+                        <p class="text-muted mb-1">Thank you for choosing Nepal Meat Shop!</p>
+                        <p class="text-muted mb-0"><small>Fresh meat, delivered fresh to your doorstep.</small></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .navbar, .btn, .no-print {
+        display: none !important;
+    }
+    
+    .invoice-card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    body {
+        font-size: 12px;
+    }
+    
+    .table {
+        font-size: 11px;
+    }
+}
+</style>
+{% endblock %}

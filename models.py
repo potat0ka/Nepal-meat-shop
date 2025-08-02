@@ -103,6 +103,7 @@ class Order(db.Model):
     status = db.Column(db.String(50), default='pending')  # pending, confirmed, processing, delivered, cancelled
     payment_method = db.Column(db.String(50), nullable=False)  # cod, esewa, khalti, etc.
     payment_status = db.Column(db.String(50), default='pending')  # pending, paid, failed
+    transaction_id = db.Column(db.String(100))  # Payment gateway transaction ID
     delivery_address = db.Column(db.Text, nullable=False)
     delivery_phone = db.Column(db.String(20), nullable=False)
     delivery_date = db.Column(db.DateTime)

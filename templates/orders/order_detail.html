@@ -17,7 +17,7 @@
                 </span>
             </div>
         </div>
-        
+
         <div class="row">
             <!-- Order Items -->
             <div class="col-md-8">
@@ -41,7 +41,7 @@
                                 </div>
                                 {% endif %}
                             </div>
-                            
+
                             <div class="col-md-6">
                                 <h6 class="mb-1">{{ item.product.name }}</h6>
                                 <p class="mb-1 small text-muted">{{ item.product.name_nepali }}</p>
@@ -50,19 +50,19 @@
                                     <span class="badge bg-info">{{ item.product.category.name }}</span>
                                 </div>
                             </div>
-                            
+
                             <div class="col-md-2 text-center">
                                 <p class="mb-0">{{ item.quantity_kg }}kg</p>
                                 <small class="text-muted">Quantity</small>
                             </div>
-                            
+
                             <div class="col-md-2 text-end">
                                 <p class="mb-0 fw-bold">रू {{ "%.0f"|format(item.total_price) }}</p>
                                 <small class="text-muted">रू {{ "%.0f"|format(item.price_per_kg) }}/kg</small>
                             </div>
                         </div>
                         {% endfor %}
-                        
+
                         <!-- Order Total -->
                         <div class="row mt-4">
                             <div class="col-md-8 offset-md-4">
@@ -85,7 +85,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Order Information -->
             <div class="col-md-4">
                 <!-- Order Status -->
@@ -121,7 +121,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Delivery Information -->
                 <div class="card mb-3">
                     <div class="card-header">
@@ -147,7 +147,7 @@
                         {% endif %}
                     </div>
                 </div>
-                
+
                 <!-- Payment Information -->
                 <div class="card mb-3">
                     <div class="card-header">
@@ -177,7 +177,7 @@
                         </p>
                     </div>
                 </div>
-                
+
                 <!-- Special Instructions -->
                 {% if order.special_instructions %}
                 <div class="card">
@@ -194,23 +194,27 @@
                 {% endif %}
             </div>
         </div>
-        
+
         <!-- Action Buttons -->
         <div class="row mt-4">
             <div class="col-12">
                 <div class="d-flex gap-2">
-                    <a href="{{ url_for('order_list') }}" class="btn btn-outline-secondary">
+                    <a href="{{ url_for('order_list') }}" class="btn btn-outline-secondary me-2">
                         <i class="fas fa-arrow-left me-2"></i>
                         Back to Orders
                     </a>
-                    
+                    <a href="{{ url_for('generate_invoice', order_id=order.id) }}" class="btn btn-primary">
+                        <i class="fas fa-file-invoice me-2"></i>
+                        Download Invoice
+                    </a>
+
                     {% if order.status == 'pending' %}
                     <button class="btn btn-outline-danger" onclick="cancelOrder({{ order.id }})">
                         <i class="fas fa-times me-2"></i>
                         Cancel Order
                     </button>
                     {% endif %}
-                    
+
                     <button class="btn btn-outline-primary" onclick="window.print()">
                         <i class="fas fa-print me-2"></i>
                         Print Order

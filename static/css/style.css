@@ -1,18 +1,78 @@
-/* Nepal Meat Shop - Custom Stylesheet */
+/* Custom styles for Nepal Meat Shop */
 
 :root {
     --primary-color: #dc3545;
     --secondary-color: #6c757d;
     --success-color: #198754;
-    --info-color: #0dcaf0;
     --warning-color: #ffc107;
     --danger-color: #dc3545;
+    --info-color: #0dcaf0;
     --light-color: #f8f9fa;
     --dark-color: #212529;
     --nepal-red: #dc143c;
     --nepal-blue: #003893;
     --meat-brown: #8b4513;
     --fresh-green: #228b22;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+    .navbar-brand {
+        font-size: 1.1rem;
+    }
+
+    .hero-section h1 {
+        font-size: 1.8rem;
+    }
+
+    .hero-section p {
+        font-size: 0.9rem;
+    }
+
+    .card-title {
+        font-size: 1rem;
+    }
+
+    .btn-lg {
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+    }
+
+    .category-icon {
+        font-size: 2rem !important;
+    }
+
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+
+    .container-fluid {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+}
+
+@media (max-width: 576px) {
+    .hero-section h1 {
+        font-size: 1.5rem;
+    }
+
+    .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    .card-body {
+        padding: 1rem 0.75rem;
+    }
+
+    .category-icon i {
+        font-size: 2rem !important;
+    }
 }
 
 /* Global Styles */
@@ -111,17 +171,25 @@ body {
 /* Category Cards */
 .category-card {
     transition: all 0.3s ease;
-    cursor: pointer;
+    border: none;
+    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
 }
 
 .category-card:hover {
-    transform: translateY(-3px);
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--danger-color) 100%) !important;
-    color: white !important;
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
 }
 
-.category-card:hover * {
-    color: white !important;
+.category-icon {
+    transition: transform 0.3s ease;
+}
+
+.category-card:hover .category-icon {
+    transform: scale(1.1);
+}
+
+.category-card:hover .category-icon i {
+    color: var(--primary-color) !important;
 }
 
 /* Badges */
@@ -355,12 +423,12 @@ body {
         transform: scale(0.95);
         box-shadow: 0 0 0 0 rgba(34, 139, 34, 0.7);
     }
-    
+
     70% {
         transform: scale(1);
         box-shadow: 0 0 0 10px rgba(34, 139, 34, 0);
     }
-    
+
     100% {
         transform: scale(0.95);
         box-shadow: 0 0 0 0 rgba(34, 139, 34, 0);
@@ -470,20 +538,20 @@ footer a:hover {
     .hero-section {
         padding: 2rem 0;
     }
-    
+
     .hero-section h1 {
         font-size: 2rem;
     }
-    
+
     .card {
         margin-bottom: 1rem;
     }
-    
+
     .btn {
         width: 100%;
         margin-bottom: 0.5rem;
     }
-    
+
     .table-responsive {
         font-size: 0.875rem;
     }
@@ -493,11 +561,11 @@ footer a:hover {
     .navbar-brand {
         font-size: 1.2rem;
     }
-    
+
     .hero-section h1 {
         font-size: 1.75rem;
     }
-    
+
     .price-display {
         font-size: 1.25rem;
     }
@@ -511,12 +579,12 @@ footer a:hover {
     .alert {
         display: none !important;
     }
-    
+
     .card {
         border: 1px solid #dee2e6 !important;
         box-shadow: none !important;
     }
-    
+
     body {
         background: white !important;
     }

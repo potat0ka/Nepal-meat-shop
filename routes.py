@@ -11,6 +11,7 @@ from models import (User, Product, Category, Order, OrderItem, CartItem, Review,
 from forms import (LoginForm, RegisterForm, ProductForm, CartForm, CheckoutForm, ReviewForm,
                   OrderStatusForm, CategoryForm, OrderFilterForm, UpdateCartForm, RemoveCartForm)
 from utils import save_uploaded_file, generate_order_number
+from payment_utils import process_payment, get_payment_instructions
 
 def register_routes(app):
     """Register all application routes."""
@@ -174,9 +175,10 @@ def register_routes(app):
             # Get product details
             product = Product.query.get_or_404(product_id)
 
-            # Validate minimum order quantity
-            if quantity < product.min_order_kg:
-                flash(f'❌ न्यूनतम अर्डर {product.min_order_kg} केजी हुनुपर्छ / Minimum order is {product.min_order_kg} kg', 'error')
+            # Validate minimum order quantity (set to 2kg)
+            min_order = 2.0
+            if quantity < min_order:
+                flash(f'❌ न्यूनतम अर्डर {min_order} केजी हुनुपर्छ / Minimum order is {min_order} kg', 'error')
                 return redirect(url_for('product_detail', product_id=product_id))
 
             # Validate stock availability
@@ -323,13 +325,27 @@ def register_routes(app):
     @app.route('/checkout', methods=['GET', 'POST'])
     @login_required
     def checkout():
-        """Checkout process."""
+        """Checkout process with payment integration."""
         cart = session.get('cart', {})
         if not cart:
             flash('❌ कार्ट खाली छ / Cart is empty', 'warning')
             return redirect(url_for('cart'))
 
         form = CheckoutForm()
+        
+        # Calculate cart total for display
+        cart_total = 0
+        cart_items = []
+        for product_id_str, item in cart.items():
+            product = Product.query.get(int(product_id_str))
+            if product and product.is_active:
+                item_total = item['quantity'] * product.price
+                cart_items.append({
+                    'product': product,
+                    'quantity': item['quantity'],
+                    'total': item_total
+                })
+                cart_total += item_total
         
         if form.validate_on_submit():
             # Create order
@@ -352,7 +368,7 @@ def register_routes(app):
                     # Check stock availability
                     if item['quantity'] > product.stock_kg:
                         flash(f'❌ {product.name} स्टकमा छैन / {product.name} out of stock', 'error')
-                        return render_template('orders/checkout.html', form=form)
+                        return render_template('orders/checkout.html', form=form, cart_items=cart_items, cart_total=cart_total)
 
                     # Create order item
                     order_item = OrderItem(
@@ -364,24 +380,44 @@ def register_routes(app):
                     order_items.append(order_item)
                     total_amount += order_item.total_price
 
-                    # Update stock
-                    product.stock_kg -= item['quantity']
-
             order.total_amount = total_amount
             order.order_items = order_items
 
-            # Save order
-            db.session.add(order)
-            db.session.commit()
+            # Process payment
+            payment_result = process_payment(
+                payment_method=form.payment_method.data,
+                amount=total_amount,
+                order_number=order.order_number
+            )
 
-            # Clear cart
-            session.pop('cart', None)
-            session.modified = True
+            if payment_result['success']:
+                # Payment successful or COD
+                order.payment_status = payment_result['payment_status']
+                if payment_result.get('transaction_id'):
+                    order.transaction_id = payment_result['transaction_id']
+                
+                # Update stock only after successful payment
+                for product_id_str, item in cart.items():
+                    product = Product.query.get(int(product_id_str))
+                    if product and product.is_active:
+                        product.stock_kg -= item['quantity']
 
-            flash(f'✅ अर्डर सफल भयो / Order placed successfully! Order #: {order.order_number}', 'success')
-            return redirect(url_for('order_detail', order_id=order.id))
+                # Save order
+                db.session.add(order)
+                db.session.commit()
 
-        return render_template('orders/checkout.html', form=form)
+                # Clear cart
+                session.pop('cart', None)
+                session.modified = True
+
+                flash(f'✅ {payment_result["message"]}', 'success')
+                return redirect(url_for('order_detail', order_id=order.id))
+            else:
+                # Payment failed
+                flash(f'❌ {payment_result["message"]}', 'error')
+                return render_template('orders/checkout.html', form=form, cart_items=cart_items, cart_total=cart_total)
+
+        return render_template('orders/checkout.html', form=form, cart_items=cart_items, cart_total=cart_total)
 
     @app.route('/orders')
     @login_required
@@ -403,12 +439,113 @@ def register_routes(app):
 
         return render_template('orders/order_detail.html', order=order)
 
+    @app.route('/invoice/<int:order_id>')
+    @login_required
+    def generate_invoice(order_id):
+        """Generate invoice for an order."""
+        order = Order.query.get_or_404(order_id)
+        
+        # Check if user owns this order or is admin
+        if order.user_id != current_user.id and not current_user.is_admin:
+            flash('❌ अनधिकृत पहुँच / Unauthorized access', 'error')
+            return redirect(url_for('order_list'))
+
+        # Check if invoice already exists
+        invoice = Invoice.query.filter_by(order_id=order.id).first()
+        
+        if not invoice:
+            # Create new invoice
+            invoice = Invoice(
+                order_id=order.id,
+                subtotal=order.total_amount,
+                tax_amount=0,  # No tax for now
+                delivery_charge=0,  # Free delivery for now
+                total_amount=order.total_amount,
+                is_paid=(order.payment_status == 'paid')
+            )
+            invoice.generate_invoice_number()
+            db.session.add(invoice)
+            db.session.commit()
+
+        return render_template('orders/invoice.html', order=order, invoice=invoice)
+
     # User profile routes
     @app.route('/profile')
     @login_required
     def profile():
         """User profile page."""
         return render_template('user/profile.html')
+
+    @app.route('/update_profile', methods=['POST'])
+    @login_required
+    def update_profile():
+        """Update user profile information."""
+        try:
+            # Get form data
+            full_name = request.form.get('full_name', '').strip()
+            phone = request.form.get('phone', '').strip()
+            address = request.form.get('address', '').strip()
+            
+            # Validate required fields
+            if not full_name or len(full_name) < 2:
+                flash('❌ पूरा नाम आवश्यक छ / Full name is required (min 2 characters)', 'error')
+                return redirect(url_for('profile'))
+            
+            if not phone or len(phone) < 10:
+                flash('❌ वैध फोन नम्बर आवश्यक छ / Valid phone number is required (min 10 digits)', 'error')
+                return redirect(url_for('profile'))
+            
+            # Update user information
+            current_user.full_name = full_name
+            current_user.phone = phone
+            current_user.address = address if address else None
+            
+            # Save to database
+            db.session.commit()
+            
+            flash('✅ प्रोफाइल अपडेट भयो / Profile updated successfully!', 'success')
+            return redirect(url_for('profile'))
+            
+        except Exception as e:
+            flash('❌ प्रोफाइल अपडेट गर्न सकिएन / Failed to update profile', 'error')
+            db.session.rollback()
+            return redirect(url_for('profile'))
+
+    @app.route('/change_password', methods=['POST'])
+    @login_required
+    def change_password():
+        """Change user password."""
+        try:
+            current_password = request.form.get('current_password', '')
+            new_password = request.form.get('new_password', '')
+            confirm_password = request.form.get('confirm_password', '')
+            
+            # Validate current password
+            if not current_user.check_password(current_password):
+                flash('❌ हालको पासवर्ड गलत छ / Current password is incorrect', 'error')
+                return redirect(url_for('profile'))
+            
+            # Validate new password
+            if len(new_password) < 6:
+                flash('❌ नयाँ पासवर्ड कम्तिमा ६ अक्षरको हुनुपर्छ / New password must be at least 6 characters', 'error')
+                return redirect(url_for('profile'))
+            
+            # Validate password confirmation
+            if new_password != confirm_password:
+                flash('❌ नयाँ पासवर्डहरू मेल खाँदैनन् / New passwords do not match', 'error')
+                return redirect(url_for('profile'))
+            
+            # Update password
+            current_user.set_password(new_password)
+            db.session.commit()
+            
+            flash('✅ पासवर्ड परिवर्तन भयो / Password changed successfully!', 'success')
+            return redirect(url_for('profile'))
+            
+        except Exception as e:
+            flash('❌ पासवर्ड परिवर्तन गर्न सकिएन / Failed to change password', 'error')
+            db.session.rollback()
+            return redirect(url_for('profile'))
 
     # Admin routes
     @app.route('/admin')
