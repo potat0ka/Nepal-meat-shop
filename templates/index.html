@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Nepal Meat Shop - Fresh Meat Delivery in Kathmandu{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section bg-primary text-white text-center py-5 mb-5 rounded">
+    <div class="container">
+        <h1 class="display-4 fw-bold mb-3">
+            🍖 Nepal Meat Shop
+        </h1>
+        <h2 class="h4 mb-3">नेपाल मीट शप</h2>
+        <p class="lead mb-4">Fresh Pork & Buffalo Meat Delivery in Kathmandu Valley</p>
+        <p class="mb-4">काठमाडौं उपत्यकामा ताजा सुंगुर र भैंसीको मासु डेलिभरी</p>
+        <a href="{{ url_for('product_list') }}" class="btn btn-light btn-lg">
+            <i class="fas fa-shopping-cart me-2"></i>Shop Now / अहिले किन्नुहोस्
+        </a>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="row mb-5">
+    <div class="col-md-4 text-center mb-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <i class="fas fa-leaf text-success fa-3x mb-3"></i>
+                <h5 class="card-title">Fresh Daily</h5>
+                <p class="card-text">दैनिक ताजा</p>
+                <p class="card-text small">Cut fresh daily with quality assurance</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 text-center mb-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <i class="fas fa-truck text-primary fa-3x mb-3"></i>
+                <h5 class="card-title">Fast Delivery</h5>
+                <p class="card-text">छिटो डेलिभरी</p>
+                <p class="card-text small">Same day delivery within Kathmandu Valley</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 text-center mb-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <i class="fas fa-shield-alt text-warning fa-3x mb-3"></i>
+                <h5 class="card-title">Quality Assured</h5>
+                <p class="card-text">गुणस्तर आश्वासन</p>
+                <p class="card-text small">Hygienic processing and safe handling</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Featured Products -->
+{% if featured_products %}
+<section class="mb-5">
+    <h2 class="h3 mb-4">
+        <i class="fas fa-star text-warning me-2"></i>
+        Featured Products / विशेष उत्पादनहरू
+    </h2>
+    <div class="row">
+        {% for product in featured_products %}
+        <div class="col-md-4 col-lg-3 mb-4">
+            <div class="card h-100 shadow-sm product-card">
+                {% if product.image_url %}
+                <img src="{{ url_for('uploaded_file', filename=product.image_url) }}" 
+                     class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+                {% else %}
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                    <i class="fas fa-drumstick-bite fa-3x text-muted"></i>
+                </div>
+                {% endif %}
+                
+                <div class="card-body">
+                    <h6 class="card-title">{{ product.name }}</h6>
+                    <p class="card-text small text-muted">{{ product.name_nepali }}</p>
+                    <p class="card-text">
+                        <span class="h5 text-primary">रू {{ "%.0f"|format(product.price) }}</span>
+                        <small class="text-muted">/kg</small>
+                    </p>
+                    <div class="mb-2">
+                        <span class="badge bg-info">{{ product.get_freshness_label() }}</span>
+                        {% if product.stock_kg > 0 %}
+                        <span class="badge bg-success">In Stock</span>
+                        {% else %}
+                        <span class="badge bg-danger">Out of Stock</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="card-footer bg-transparent">
+                    <a href="{{ url_for('product_detail', product_id=product.id) }}" 
+                       class="btn btn-primary btn-sm w-100">
+                        <i class="fas fa-eye me-1"></i>View Details
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Categories -->
+{% if categories %}
+<section class="mb-5">
+    <h2 class="h3 mb-4">
+        <i class="fas fa-list me-2"></i>
+        Shop by Category / श्रेणी अनुसार किन्नुहोस्
+    </h2>
+    <div class="row">
+        {% for category in categories %}
+        <div class="col-md-6 col-lg-3 mb-3">
+            <a href="{{ url_for('product_list', category=category.id) }}" class="text-decoration-none">
+                <div class="card bg-light border-0 shadow-sm category-card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-meat text-primary fa-2x mb-3"></i>
+                        <h6 class="card-title">{{ category.name }}</h6>
+                        <p class="card-text small text-muted">{{ category.name_nepali }}</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Recent Products -->
+{% if recent_products %}
+<section class="mb-5">
+    <h2 class="h3 mb-4">
+        <i class="fas fa-clock me-2"></i>
+        Recently Added / भर्खरै थपिएको
+    </h2>
+    <div class="row">
+        {% for product in recent_products %}
+        <div class="col-md-4 col-lg-3 mb-4">
+            <div class="card h-100 shadow-sm product-card">
+                {% if product.image_url %}
+                <img src="{{ url_for('uploaded_file', filename=product.image_url) }}" 
+                     class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+                {% else %}
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                    <i class="fas fa-drumstick-bite fa-3x text-muted"></i>
+                </div>
+                {% endif %}
+                
+                <div class="card-body">
+                    <h6 class="card-title">{{ product.name }}</h6>
+                    <p class="card-text small text-muted">{{ product.name_nepali }}</p>
+                    <p class="card-text">
+                        <span class="h5 text-primary">रू {{ "%.0f"|format(product.price) }}</span>
+                        <small class="text-muted">/kg</small>
+                    </p>
+                    <div class="mb-2">
+                        <span class="badge bg-info">{{ product.get_freshness_label() }}</span>
+                        <span class="badge bg-secondary">{{ product.meat_type.title() }}</span>
+                    </div>
+                </div>
+                
+                <div class="card-footer bg-transparent">
+                    <a href="{{ url_for('product_detail', product_id=product.id) }}" 
+                       class="btn btn-outline-primary btn-sm w-100">
+                        <i class="fas fa-eye me-1"></i>View Details
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Call to Action -->
+<section class="bg-light rounded p-4 text-center">
+    <h3 class="h4 mb-3">Ready to Order Fresh Meat?</h3>
+    <p class="mb-3">ताजा मासु अर्डर गर्न तयार हुनुहुन्छ?</p>
+    {% if not current_user.is_authenticated %}
+    <a href="{{ url_for('register') }}" class="btn btn-primary me-2">
+        <i class="fas fa-user-plus me-1"></i>Register Now
+    </a>
+    <a href="{{ url_for('login') }}" class="btn btn-outline-primary">
+        <i class="fas fa-sign-in-alt me-1"></i>Login
+    </a>
+    {% else %}
+    <a href="{{ url_for('product_list') }}" class="btn btn-primary">
+        <i class="fas fa-shopping-cart me-1"></i>Start Shopping
+    </a>
+    {% endif %}
+</section>
+{% endblock %}

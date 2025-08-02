@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Nepal Meat Shop{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white text-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-sign-in-alt me-2"></i>
+                    Login / लगइन
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.email.label(class="form-label") }}
+                        {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
+                        {% if form.email.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.email.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.password.label(class="form-label") }}
+                        {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else "")) }}
+                        {% if form.password.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.password.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center">
+                <p class="mb-0">
+                    Don't have an account? / खाता छैन?
+                    <a href="{{ url_for('register') }}" class="text-decoration-none">
+                        Register here / यहाँ दर्ता गर्नुहोस्
+                    </a>
+                </p>
+            </div>
+        </div>
+        
+        <!-- Demo Credentials -->
+        <div class="alert alert-info mt-3">
+            <h6><i class="fas fa-info-circle me-2"></i>Demo Credentials</h6>
+            <p class="mb-1"><strong>Admin:</strong> admin@meatshop.np / admin123</p>
+            <p class="mb-0"><small>Use these credentials to test the admin features</small></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

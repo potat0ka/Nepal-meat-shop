@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+
+{% block title %}Order Management - Nepal Meat Shop{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="fas fa-shopping-cart me-2"></i>
+                Order Management
+            </h2>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-primary" onclick="refreshOrders()">
+                    <i class="fas fa-sync-alt me-2"></i>
+                    Refresh
+                </button>
+                <button type="button" class="btn btn-outline-success" onclick="exportOrders()">
+                    <i class="fas fa-download me-2"></i>
+                    Export
+                </button>
+            </div>
+        </div>
+        
+        <!-- Filter Controls -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row align-items-end">
+                    <div class="col-md-3">
+                        <label for="statusFilter" class="form-label">Status Filter</label>
+                        <select class="form-select" id="statusFilter" onchange="filterOrders()">
+                            <option value="">All Orders</option>
+                            <option value="pending">Pending</option>
+                            <option value="confirmed">Confirmed</option>
+                            <option value="processing">Processing</option>
+                            <option value="out_for_delivery">Out for Delivery</option>
+                            <option value="delivered">Delivered</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="dateFilter" class="form-label">Date Filter</label>
+                        <select class="form-select" id="dateFilter" onchange="filterOrders()">
+                            <option value="">All Dates</option>
+                            <option value="today">Today</option>
+                            <option value="yesterday">Yesterday</option>
+                            <option value="week">This Week</option>
+                            <option value="month">This Month</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="searchOrders" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="searchOrders" 
+                               placeholder="Search by order number, customer name..." onkeyup="filterOrders()">
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                            <i class="fas fa-times me-2"></i>
+                            Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% if orders %}
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Orders ({{ orders|length }})</h6>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="ordersTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Order #</th>
+                            <th>Customer</th>
+                            <th>Items</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Payment</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr data-status="{{ order.status }}" data-date="{{ order.created_at.isoformat() }}">
+                            <td>
+                                <strong>#{{ order.order_number }}</strong>
+                                {% if order.special_instructions %}
+                                <br>
+                                <small class="text-info">
+                                    <i class="fas fa-comment" title="Has special instructions"></i>
+                                </small>
+                                {% endif %}
+                            </td>
+                            
+                            <td>
+                                <div>
+                                    <strong>{{ order.customer.full_name }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ order.customer.email }}</small>
+                                    <br>
+                                    <small class="text-muted">
+                                        <i class="fas fa-phone me-1"></i>{{ order.delivery_phone }}
+                                    </small>
+                                </div>
+                            </td>
+                            
+                            <td>
+                                <span class="badge bg-info">{{ order.order_items|length }} items</span>
+                                <br>
+                                <small class="text-muted">
+                                    {% for item in order.order_items[:2] %}
+                                    {{ item.product.name }}{% if not loop.last %}, {% endif %}
+                                    {% endfor %}
+                                    {% if order.order_items|length > 2 %}...{% endif %}
+                                </small>
+                            </td>
+                            
+                            <td>
+                                <strong class="text-primary">रू {{ "%.0f"|format(order.total_amount) }}</strong>
+                                <br>
+                                <small class="text-muted">{{ order.payment_method.upper() }}</small>
+                            </td>
+                            
+                            <td>
+                                <select class="form-select form-select-sm status-select" 
+                                        data-order-id="{{ order.id }}" 
+                                        onchange="updateOrderStatus(this)">
+                                    <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
+                                    <option value="confirmed" {% if order.status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                                    <option value="processing" {% if order.status == 'processing' %}selected{% endif %}>Processing</option>
+                                    <option value="out_for_delivery" {% if order.status == 'out_for_delivery' %}selected{% endif %}>Out for Delivery</option>
+                                    <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Delivered</option>
+                                    <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                </select>
+                            </td>
+                            
+                            <td>
+                                <span class="badge bg-{{ 'success' if order.payment_status == 'paid' else ('warning' if order.payment_status == 'pending' else 'danger') }}">
+                                    {{ order.payment_status.title() }}
+                                </span>
+                            </td>
+                            
+                            <td>
+                                <div>
+                                    {{ order.created_at.strftime('%b %d') }}
+                                    <br>
+                                    <small class="text-muted">{{ order.created_at.strftime('%I:%M %p') }}</small>
+                                </div>
+                            </td>
+                            
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('order_detail', order_id=order.id) }}" 
+                                       class="btn btn-outline-primary btn-sm" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    <button class="btn btn-outline-info btn-sm" 
+                                            title="Print Order" onclick="printOrder({{ order.id }})">
+                                        <i class="fas fa-print"></i>
+                                    </button>
+                                    
+                                    {% if order.status not in ['delivered', 'cancelled'] %}
+                                    <button class="btn btn-outline-success btn-sm" 
+                                            title="Send Notification" onclick="sendNotification({{ order.id }})">
+                                        <i class="fas fa-bell"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-shopping-cart fa-5x text-muted mb-4"></i>
+            <h4>No orders found</h4>
+            <p class="text-muted">Orders will appear here when customers place them</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function updateOrderStatus(selectElement) {
+    const orderId = selectElement.dataset.orderId;
+    const newStatus = selectElement.value;
+    const oldStatus = selectElement.dataset.oldStatus || 'pending';
+    
+    if (confirm(`Update order status to "${newStatus}"?`)) {
+        // Implement status update API call
+        console.log(`Updating order ${orderId} from ${oldStatus} to ${newStatus}`);
+        
+        // Store old status for potential rollback
+        selectElement.dataset.oldStatus = newStatus;
+        
+        // Update row styling based on status
+        const row = selectElement.closest('tr');
+        row.setAttribute('data-status', newStatus);
+        
+        // Show success message
+        showToast('Order status updated successfully!', 'success');
+    } else {
+        // Revert selection
+        selectElement.value = oldStatus;
+    }
+}
+
+function filterOrders() {
+    const statusFilter = document.getElementById('statusFilter').value;
+    const dateFilter = document.getElementById('dateFilter').value;
+    const searchTerm = document.getElementById('searchOrders').value.toLowerCase();
+    const rows = document.querySelectorAll('#ordersTable tbody tr');
+    
+    rows.forEach(row => {
+        let showRow = true;
+        
+        // Status filter
+        if (statusFilter && row.dataset.status !== statusFilter) {
+            showRow = false;
+        }
+        
+        // Search filter
+        if (searchTerm) {
+            const orderNumber = row.cells[0].textContent.toLowerCase();
+            const customerName = row.cells[1].textContent.toLowerCase();
+            
+            if (!orderNumber.includes(searchTerm) && !customerName.includes(searchTerm)) {
+                showRow = false;
+            }
+        }
+        
+        // Date filter (simplified - would need more complex logic for real implementation)
+        if (dateFilter) {
+            const orderDate = new Date(row.dataset.date);
+            const today = new Date();
+            
+            switch(dateFilter) {
+                case 'today':
+                    if (orderDate.toDateString() !== today.toDateString()) {
+                        showRow = false;
+                    }
+                    break;
+                // Add other date filter logic here
+            }
+        }
+        
+        row.style.display = showRow ? '' : 'none';
+    });
+}
+
+function clearFilters() {
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('dateFilter').value = '';
+    document.getElementById('searchOrders').value = '';
+    filterOrders();
+}
+
+function refreshOrders() {
+    location.reload();
+}
+
+function exportOrders() {
+    alert('Export functionality would be implemented here');
+}
+
+function printOrder(orderId) {
+    // Open order detail page in new window for printing
+    window.open(`/order/${orderId}`, '_blank');
+}
+
+function sendNotification(orderId) {
+    if (confirm('Send status update notification to customer?')) {
+        alert(`Notification sending for order ${orderId} would be implemented here`);
+        showToast('Notification sent!', 'success');
+    }
+}
+
+function showToast(message, type = 'info') {
+    // Simple toast notification (would use a proper toast library in production)
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    toast.style.top = '20px';
+    toast.style.right = '20px';
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 5000);
+}
+</script>
+{% endblock %}

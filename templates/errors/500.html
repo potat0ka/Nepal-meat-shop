@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Server Error - Nepal Meat Shop{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <i class="fas fa-exclamation-triangle fa-5x text-warning mb-4"></i>
+            <h1 class="display-1 fw-bold text-danger">500</h1>
+            <h2 class="mb-4">Internal Server Error</h2>
+            <h3 class="mb-4">सर्भर त्रुटि</h3>
+            
+            <p class="lead mb-4">
+                Something went wrong on our end. We're working to fix this issue.
+            </p>
+            <p class="text-muted mb-4">
+                हाम्रो तर्फबाट केही गलत भयो। हामी यो समस्या समाधान गर्न काम गरिरहेका छौं।
+            </p>
+            
+            <div class="alert alert-info" role="alert">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>What happened?</strong> Our server encountered an unexpected error while processing your request.
+            </div>
+            
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <button class="btn btn-primary" onclick="location.reload()">
+                    <i class="fas fa-sync-alt me-2"></i>
+                    Try Again
+                </button>
+                
+                <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-home me-2"></i>
+                    Go Home
+                </a>
+                
+                <button class="btn btn-outline-secondary" onclick="history.back()">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Go Back
+                </button>
+            </div>
+            
+            <!-- Contact Information -->
+            <div class="mt-5">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-headset me-2"></i>
+                            Need Help?
+                        </h5>
+                        <p class="card-text">
+                            If this problem persists, please contact our support team.
+                        </p>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-2">
+                                    <i class="fas fa-phone me-2 text-primary"></i>
+                                    <strong>Phone:</strong> +977-9841234567
+                                </p>
+                                <p class="mb-0">
+                                    <i class="fas fa-envelope me-2 text-primary"></i>
+                                    <strong>Email:</strong> support@nepalmeatshop.np
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-2">
+                                    <i class="fas fa-clock me-2 text-success"></i>
+                                    <strong>Hours:</strong> 6 AM - 8 PM
+                                </p>
+                                <p class="mb-0">
+                                    <i class="fas fa-calendar me-2 text-success"></i>
+                                    <strong>Days:</strong> Every day
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Error Details (for debugging - remove in production) -->
+            {% if config.DEBUG %}
+            <div class="mt-4">
+                <details>
+                    <summary class="btn btn-outline-secondary btn-sm">Show Technical Details</summary>
+                    <div class="mt-3 p-3 bg-light rounded text-start">
+                        <h6>Error Information:</h6>
+                        <p><strong>Error Type:</strong> Internal Server Error</p>
+                        <p><strong>Timestamp:</strong> {{ moment().format('YYYY-MM-DD HH:mm:ss') if moment else 'N/A' }}</p>
+                        <p><strong>Request Method:</strong> {{ request.method if request else 'N/A' }}</p>
+                        <p><strong>Request URL:</strong> {{ request.url if request else 'N/A' }}</p>
+                    </div>
+                </details>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-refresh page after 30 seconds
+setTimeout(function() {
+    if (confirm('Would you like to try refreshing the page?')) {
+        location.reload();
+    }
+}, 30000);
+</script>
+{% endblock %}

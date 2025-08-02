@@ -1,0 +1,2 @@
+# Keep this directory in version control
+# This file ensures the uploads directory is created when the repository is cloned

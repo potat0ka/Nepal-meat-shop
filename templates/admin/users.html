@@ -1,0 +1,344 @@
+{% extends "base.html" %}
+
+{% block title %}User Management - Nepal Meat Shop{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="fas fa-users me-2"></i>
+                User Management
+            </h2>
+            <div>
+                <button class="btn btn-outline-primary" onclick="exportUsers()">
+                    <i class="fas fa-download me-2"></i>
+                    Export Users
+                </button>
+            </div>
+        </div>
+        
+        <!-- User Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h4>{{ users|selectattr('is_active')|list|length }}</h4>
+                        <small>Active Users</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h4>{{ users|selectattr('is_admin')|list|length }}</h4>
+                        <small>Administrators</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <h4>{{ users|rejectattr('is_admin')|list|length }}</h4>
+                        <small>Customers</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <h4>{{ users|rejectattr('is_active')|list|length }}</h4>
+                        <small>Inactive Users</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Search and Filter -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row align-items-end">
+                    <div class="col-md-4">
+                        <label for="userSearch" class="form-label">Search Users</label>
+                        <input type="text" class="form-control" id="userSearch" 
+                               placeholder="Search by name, email, or username..." onkeyup="filterUsers()">
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="roleFilter" class="form-label">Role Filter</label>
+                        <select class="form-select" id="roleFilter" onchange="filterUsers()">
+                            <option value="">All Roles</option>
+                            <option value="admin">Administrators</option>
+                            <option value="customer">Customers</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="statusFilter" class="form-label">Status Filter</label>
+                        <select class="form-select" id="statusFilter" onchange="filterUsers()">
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <button class="btn btn-outline-secondary w-100" onclick="clearUserFilters()">
+                            <i class="fas fa-times me-2"></i>
+                            Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% if users %}
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Users ({{ users|length }})</h6>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="usersTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>User</th>
+                            <th>Contact Info</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Joined</th>
+                            <th>Orders</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr data-role="{{ 'admin' if user.is_admin else 'customer' }}" 
+                            data-status="{{ 'active' if user.is_active else 'inactive' }}">
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar me-3">
+                                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                             style="width: 40px; height: 40px;">
+                                            {{ user.full_name[0].upper() }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <strong>{{ user.full_name }}</strong>
+                                        <br>
+                                        <small class="text-muted">@{{ user.username }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            
+                            <td>
+                                <div>
+                                    <i class="fas fa-envelope me-2"></i>{{ user.email }}
+                                    <br>
+                                    <i class="fas fa-phone me-2"></i>{{ user.phone }}
+                                    {% if user.address %}
+                                    <br>
+                                    <i class="fas fa-map-marker-alt me-2"></i>
+                                    <small class="text-muted">{{ user.address[:30] }}...</small>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            
+                            <td>
+                                {% if user.is_admin %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-crown me-1"></i>Administrator
+                                </span>
+                                {% else %}
+                                <span class="badge bg-info">
+                                    <i class="fas fa-user me-1"></i>Customer
+                                </span>
+                                {% endif %}
+                            </td>
+                            
+                            <td>
+                                <span class="badge bg-{{ 'success' if user.is_active else 'secondary' }}">
+                                    {{ 'Active' if user.is_active else 'Inactive' }}
+                                </span>
+                            </td>
+                            
+                            <td>
+                                <div>
+                                    {{ user.created_at.strftime('%b %d, %Y') }}
+                                    <br>
+                                    <small class="text-muted">{{ user.created_at.strftime('%I:%M %p') }}</small>
+                                </div>
+                            </td>
+                            
+                            <td>
+                                <span class="badge bg-primary">{{ user.orders|length }}</span>
+                                {% if user.orders %}
+                                <br>
+                                <small class="text-muted">
+                                    Last: {{ user.orders|sort(attribute='created_at', reverse=true)|first.created_at.strftime('%b %d') }}
+                                </small>
+                                {% endif %}
+                            </td>
+                            
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <button class="btn btn-outline-primary btn-sm" 
+                                            title="View Profile" onclick="viewUser({{ user.id }})">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    
+                                    {% if user.orders %}
+                                    <button class="btn btn-outline-info btn-sm" 
+                                            title="View Orders" onclick="viewUserOrders({{ user.id }})">
+                                        <i class="fas fa-shopping-cart"></i>
+                                    </button>
+                                    {% endif %}
+                                    
+                                    {% if not user.is_admin or user.id != current_user.id %}
+                                    <button class="btn btn-outline-{{ 'secondary' if user.is_active else 'success' }} btn-sm" 
+                                            title="{{ 'Deactivate' if user.is_active else 'Activate' }} User"
+                                            onclick="toggleUser({{ user.id }}, {{ user.is_active|lower }})">
+                                        <i class="fas fa-{{ 'pause' if user.is_active else 'play' }}"></i>
+                                    </button>
+                                    {% endif %}
+                                    
+                                    <button class="btn btn-outline-warning btn-sm" 
+                                            title="Send Email" onclick="emailUser('{{ user.email }}')">
+                                        <i class="fas fa-envelope"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-users fa-5x text-muted mb-4"></i>
+            <h4>No users found</h4>
+            <p class="text-muted">Users will appear here when they register</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- User Details Modal -->
+<div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user me-2"></i>
+                    User Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="userModalContent">
+                <!-- User details will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function filterUsers() {
+    const searchTerm = document.getElementById('userSearch').value.toLowerCase();
+    const roleFilter = document.getElementById('roleFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    const rows = document.querySelectorAll('#usersTable tbody tr');
+    
+    rows.forEach(row => {
+        let showRow = true;
+        
+        // Search filter
+        if (searchTerm) {
+            const userName = row.cells[0].textContent.toLowerCase();
+            const userEmail = row.cells[1].textContent.toLowerCase();
+            
+            if (!userName.includes(searchTerm) && !userEmail.includes(searchTerm)) {
+                showRow = false;
+            }
+        }
+        
+        // Role filter
+        if (roleFilter && row.dataset.role !== roleFilter) {
+            showRow = false;
+        }
+        
+        // Status filter
+        if (statusFilter && row.dataset.status !== statusFilter) {
+            showRow = false;
+        }
+        
+        row.style.display = showRow ? '' : 'none';
+    });
+}
+
+function clearUserFilters() {
+    document.getElementById('userSearch').value = '';
+    document.getElementById('roleFilter').value = '';
+    document.getElementById('statusFilter').value = '';
+    filterUsers();
+}
+
+function viewUser(userId) {
+    // Load user details in modal
+    document.getElementById('userModalContent').innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('userModal'));
+    modal.show();
+    
+    // Simulate loading user details
+    setTimeout(() => {
+        document.getElementById('userModalContent').innerHTML = `
+            <p>User details for user ID ${userId} would be loaded here.</p>
+            <p>This would include full profile information, order history, and other relevant data.</p>
+        `;
+    }, 1000);
+}
+
+function viewUserOrders(userId) {
+    // Redirect to orders page filtered by user
+    window.location.href = `/admin/orders?user=${userId}`;
+}
+
+function toggleUser(userId, isActive) {
+    const action = isActive ? 'deactivate' : 'activate';
+    if (confirm(`Are you sure you want to ${action} this user?`)) {
+        alert(`User ${action} functionality would be implemented here`);
+        
+        // Update the UI to reflect the change
+        const row = document.querySelector(`tr[data-user-id="${userId}"]`);
+        if (row) {
+            row.dataset.status = isActive ? 'inactive' : 'active';
+            location.reload(); // Refresh to show updated status
+        }
+    }
+}
+
+function emailUser(userEmail) {
+    // Open email client or show email compose modal
+    window.location.href = `mailto:${userEmail}`;
+}
+
+function exportUsers() {
+    alert('User export functionality would be implemented here');
+}
+
+// Enable search on Enter key
+document.getElementById('userSearch').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        filterUsers();
+    }
+});
+</script>
+{% endblock %}

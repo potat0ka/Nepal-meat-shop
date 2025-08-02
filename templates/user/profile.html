@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile - Nepal Meat Shop{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <!-- Profile Card -->
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="avatar mb-3">
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto" 
+                         style="width: 80px; height: 80px; font-size: 2rem;">
+                        {{ current_user.full_name[0].upper() }}
+                    </div>
+                </div>
+                
+                <h5 class="card-title">{{ current_user.full_name }}</h5>
+                <p class="text-muted">@{{ current_user.username }}</p>
+                
+                {% if current_user.is_admin %}
+                <span class="badge bg-success mb-3">
+                    <i class="fas fa-crown me-1"></i>Administrator
+                </span>
+                {% else %}
+                <span class="badge bg-info mb-3">
+                    <i class="fas fa-user me-1"></i>Customer
+                </span>
+                {% endif %}
+                
+                <div class="text-muted small">
+                    <i class="fas fa-calendar-alt me-2"></i>
+                    Member since {{ current_user.created_at.strftime('%B %Y') }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Stats -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Quick Stats
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-primary">{{ current_user.orders|length }}</h4>
+                        <small class="text-muted">Total Orders</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-success">{{ current_user.reviews|length }}</h4>
+                        <small class="text-muted">Reviews Given</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <!-- Profile Information -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="fas fa-user-edit me-2"></i>
+                    Profile Information
+                </h6>
+                <button class="btn btn-outline-primary btn-sm" onclick="editProfile()">
+                    <i class="fas fa-edit me-1"></i>
+                    Edit Profile
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted">Full Name</label>
+                        <p class="mb-0">{{ current_user.full_name }}</p>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted">Username</label>
+                        <p class="mb-0">{{ current_user.username }}</p>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted">Email Address</label>
+                        <p class="mb-0">{{ current_user.email }}</p>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted">Phone Number</label>
+                        <p class="mb-0">{{ current_user.phone }}</p>
+                    </div>
+                    
+                    <div class="col-12 mb-3">
+                        <label class="form-label text-muted">Address</label>
+                        <p class="mb-0">
+                            {% if current_user.address %}
+                                {{ current_user.address }}
+                            {% else %}
+                                <em class="text-muted">No address provided</em>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Orders -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="fas fa-box me-2"></i>
+                    Recent Orders
+                </h6>
+                <a href="{{ url_for('order_list') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-eye me-1"></i>
+                    View All Orders
+                </a>
+            </div>
+            <div class="card-body">
+                {% if current_user.orders %}
+                {% for order in current_user.orders|sort(attribute='created_at', reverse=true)[:3] %}
+                <div class="d-flex justify-content-between align-items-center {% if not loop.last %}border-bottom pb-3 mb-3{% endif %}">
+                    <div>
+                        <h6 class="mb-1">Order #{{ order.order_number }}</h6>
+                        <p class="mb-1 small text-muted">
+                            {{ order.created_at.strftime('%B %d, %Y') }} • 
+                            {{ order.order_items|length }} items
+                        </p>
+                        <span class="badge bg-{{ 'success' if order.status == 'delivered' else ('primary' if order.status == 'processing' else 'warning') }}">
+                            {{ order.get_status_nepali() }}
+                        </span>
+                    </div>
+                    <div class="text-end">
+                        <p class="mb-1 fw-bold">रू {{ "%.0f"|format(order.total_amount) }}</p>
+                        <a href="{{ url_for('order_detail', order_id=order.id) }}" class="btn btn-outline-primary btn-sm">
+                            View Details
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No orders yet</p>
+                    <a href="{{ url_for('product_list') }}" class="btn btn-primary">
+                        Start Shopping
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Account Settings -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-cog me-2"></i>
+                    Account Settings
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex justify-content-between align-items-center p-3 border rounded">
+                            <div>
+                                <h6 class="mb-1">Change Password</h6>
+                                <small class="text-muted">Update your account password</small>
+                            </div>
+                            <button class="btn btn-outline-warning btn-sm" onclick="changePassword()">
+                                <i class="fas fa-key"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex justify-content-between align-items-center p-3 border rounded">
+                            <div>
+                                <h6 class="mb-1">Email Notifications</h6>
+                                <small class="text-muted">Manage email preferences</small>
+                            </div>
+                            <button class="btn btn-outline-info btn-sm" onclick="manageNotifications()">
+                                <i class="fas fa-bell"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex justify-content-between align-items-center p-3 border rounded">
+                            <div>
+                                <h6 class="mb-1">Download Data</h6>
+                                <small class="text-muted">Export your account data</small>
+                            </div>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="downloadData()">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex justify-content-between align-items-center p-3 border rounded">
+                            <div>
+                                <h6 class="mb-1">Delete Account</h6>
+                                <small class="text-muted">Permanently delete account</small>
+                            </div>
+                            <button class="btn btn-outline-danger btn-sm" onclick="deleteAccount()">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal fade" id="editProfileModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-edit me-2"></i>
+                    Edit Profile
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editProfileForm">
+                    <div class="mb-3">
+                        <label for="editFullName" class="form-label">Full Name</label>
+                        <input type="text" class="form-control" id="editFullName" value="{{ current_user.full_name }}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editPhone" class="form-label">Phone Number</label>
+                        <input type="text" class="form-control" id="editPhone" value="{{ current_user.phone }}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editAddress" class="form-label">Address</label>
+                        <textarea class="form-control" id="editAddress" rows="3">{{ current_user.address or '' }}</textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-key me-2"></i>
+                    Change Password
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="changePasswordForm">
+                    <div class="mb-3">
+                        <label for="currentPassword" class="form-label">Current Password</label>
+                        <input type="password" class="form-control" id="currentPassword" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label">New Password</label>
+                        <input type="password" class="form-control" id="newPassword" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                        <input type="password" class="form-control" id="confirmPassword" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="savePassword()">Change Password</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function editProfile() {
+    const modal = new bootstrap.Modal(document.getElementById('editProfileModal'));
+    modal.show();
+}
+
+function saveProfile() {
+    // Implement profile update functionality
+    alert('Profile update functionality would be implemented here');
+    bootstrap.Modal.getInstance(document.getElementById('editProfileModal')).hide();
+}
+
+function changePassword() {
+    const modal = new bootstrap.Modal(document.getElementById('changePasswordModal'));
+    modal.show();
+}
+
+function savePassword() {
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    if (newPassword !== confirmPassword) {
+        alert('New passwords do not match!');
+        return;
+    }
+    
+    if (newPassword.length < 6) {
+        alert('Password must be at least 6 characters long!');
+        return;
+    }
+    
+    // Implement password change functionality
+    alert('Password change functionality would be implemented here');
+    bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide();
+    
+    // Clear form
+    document.getElementById('changePasswordForm').reset();
+}
+
+function manageNotifications() {
+    alert('Email notification management would be implemented here');
+}
+
+function downloadData() {
+    if (confirm('Download your account data? This may take a few moments.')) {
+        alert('Data download functionality would be implemented here');
+    }
+}
+
+function deleteAccount() {
+    if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+        if (confirm('This will permanently delete all your data. Are you absolutely sure?')) {
+            alert('Account deletion functionality would be implemented here');
+        }
+    }
+}
+</script>
+{% endblock %}

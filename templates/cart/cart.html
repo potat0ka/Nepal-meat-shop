@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Shopping Cart - Nepal Meat Shop{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">
+            <i class="fas fa-shopping-cart me-2"></i>
+            Shopping Cart / किनमेल कार्ट
+        </h2>
+        
+        {% if cart_items %}
+        <div class="row">
+            <div class="col-md-8">
+                <!-- Cart Items -->
+                {% for item in cart_items %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-2">
+                                {% if item.product.image_url %}
+                                <img src="{{ url_for('uploaded_file', filename=item.product.image_url) }}" 
+                                     class="img-fluid rounded" alt="{{ item.product.name }}">
+                                {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 80px;">
+                                    <i class="fas fa-drumstick-bite fa-2x text-muted"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <h6 class="mb-1">{{ item.product.name }}</h6>
+                                <p class="mb-1 small text-muted">{{ item.product.name_nepali }}</p>
+                                <div class="mb-1">
+                                    <span class="badge bg-info">{{ item.product.get_freshness_label() }}</span>
+                                    <span class="badge bg-secondary">{{ item.product.meat_type.title() }}</span>
+                                </div>
+                                <p class="mb-0 small">
+                                    <span class="text-primary fw-bold">रू {{ "%.0f"|format(item.product.price) }}</span> /kg
+                                </p>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <form method="POST" action="{{ url_for('update_cart') }}" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <input type="hidden" name="product_id" value="{{ item.product.id }}">
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" name="quantity" class="form-control" 
+                                               value="{{ item.quantity }}" min="{{ item.product.min_order_kg }}" 
+                                               max="{{ item.product.stock_kg }}" step="0.1">
+                                        <span class="input-group-text">kg</span>
+                                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-sync-alt"></i>
+                                        </button>
+                                    </div>
+                                </form>
+                                <small class="text-muted d-block mt-1">
+                                    Min: {{ item.product.min_order_kg }}kg | Max: {{ item.product.stock_kg }}kg
+                                </small>
+                            </div>
+                            
+                            <div class="col-md-2 text-end">
+                                <p class="mb-2 fw-bold">रू {{ "%.0f"|format(item.total) }}</p>
+                                <form method="POST" action="{{ url_for('remove_from_cart') }}" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <input type="hidden" name="product_id" value="{{ item.product.id }}">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" 
+                                            onclick="return confirm('Remove this item from cart?')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                            
+                            <div class="col-md-1">
+                                {% if item.product.stock_kg < item.quantity %}
+                                <div class="alert alert-warning alert-sm p-2 mb-0">
+                                    <small><i class="fas fa-exclamation-triangle"></i> Low stock!</small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Cart Summary -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-calculator me-2"></i>
+                            Order Summary / अर्डर सारांश
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <span class="fw-bold">रू {{ "%.0f"|format(total) }}</span>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Delivery Charge:</span>
+                            <span>
+                                {% if total >= 2000 %}
+                                <span class="text-success">FREE</span>
+                                {% elif total >= 1000 %}
+                                रू 25
+                                {% else %}
+                                रू 50
+                                {% endif %}
+                            </span>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="d-flex justify-content-between mb-3">
+                            <span class="fw-bold">Total:</span>
+                            <span class="fw-bold text-primary h5">
+                                रू {{ "%.0f"|format(total + (0 if total >= 2000 else (25 if total >= 1000 else 50))) }}
+                            </span>
+                        </div>
+                        
+                        {% if total < 2000 %}
+                        <div class="alert alert-info p-2 mb-3">
+                            <small>
+                                <i class="fas fa-truck me-1"></i>
+                                Add रू {{ "%.0f"|format(2000 - total) }} more for FREE delivery!
+                            </small>
+                        </div>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('checkout') }}" class="btn btn-primary w-100 mb-2">
+                            <i class="fas fa-credit-card me-2"></i>
+                            Proceed to Checkout
+                        </a>
+                        
+                        <a href="{{ url_for('product_list') }}" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Continue Shopping
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Delivery Info -->
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Delivery Information
+                        </h6>
+                        <ul class="list-unstyled mb-0 small">
+                            <li><i class="fas fa-check text-success me-2"></i>Same day delivery available</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Free delivery on orders above रू 2000</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Fresh meat guarantee</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% else %}
+        <!-- Empty Cart -->
+        <div class="text-center py-5">
+            <i class="fas fa-shopping-cart fa-5x text-muted mb-4"></i>
+            <h4>Your cart is empty</h4>
+            <p class="text-muted mb-4">तपाईंको कार्ट खाली छ</p>
+            <a href="{{ url_for('product_list') }}" class="btn btn-primary">
+                <i class="fas fa-shopping-bag me-2"></i>
+                Start Shopping
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

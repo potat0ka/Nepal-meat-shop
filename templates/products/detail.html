@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }} - Nepal Meat Shop{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <!-- Product Image -->
+        {% if product.image_url %}
+        <img src="{{ url_for('uploaded_file', filename=product.image_url) }}" 
+             class="img-fluid rounded shadow" alt="{{ product.name }}">
+        {% else %}
+        <div class="bg-light rounded shadow d-flex align-items-center justify-content-center" style="height: 400px;">
+            <i class="fas fa-drumstick-bite fa-5x text-muted"></i>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-6">
+        <!-- Product Details -->
+        <h1 class="h3">{{ product.name }}</h1>
+        <h2 class="h5 text-muted mb-3">{{ product.name_nepali }}</h2>
+        
+        <div class="mb-3">
+            <span class="h2 text-primary">रू {{ "%.0f"|format(product.price) }}</span>
+            <span class="text-muted">/kg</span>
+        </div>
+        
+        <!-- Badges -->
+        <div class="mb-3">
+            <span class="badge bg-info me-2">{{ product.get_freshness_label() }}</span>
+            <span class="badge bg-secondary me-2">{{ product.meat_type.title() }}</span>
+            <span class="badge bg-primary me-2">{{ product.category.name }}</span>
+            {% if product.stock_kg > 0 %}
+            <span class="badge bg-success">In Stock</span>
+            {% else %}
+            <span class="badge bg-danger">Out of Stock</span>
+            {% endif %}
+        </div>
+        
+        <!-- Stock and Order Info -->
+        {% if product.stock_kg > 0 %}
+        <div class="mb-3">
+            <p class="mb-1">
+                <i class="fas fa-box me-2"></i>
+                <strong>Stock:</strong> {{ "%.1f"|format(product.stock_kg) }} kg available
+            </p>
+            <p class="mb-1">
+                <i class="fas fa-shopping-basket me-2"></i>
+                <strong>Minimum Order:</strong> {{ "%.1f"|format(product.min_order_kg) }} kg
+            </p>
+            <p class="mb-0">
+                <i class="fas fa-clock me-2"></i>
+                <strong>Freshness:</strong> {{ product.freshness_hours }} hours since processing
+            </p>
+        </div>
+        {% endif %}
+        
+        <!-- Add to Cart Form -->
+        {% if current_user.is_authenticated and product.stock_kg > 0 %}
+        <form method="POST" action="{{ url_for('add_to_cart') }}" class="mb-4">
+            {{ form.hidden_tag() }}
+            {{ form.product_id(value=product.id) }}
+            
+            <div class="row align-items-end">
+                <div class="col-6">
+                    {{ form.quantity.label(class="form-label") }}
+                    {{ form.quantity(class="form-control", min=product.min_order_kg, max=product.stock_kg, step="0.1", value=product.min_order_kg) }}
+                </div>
+                <div class="col-6">
+                    {{ form.submit(class="btn btn-primary w-100") }}
+                </div>
+            </div>
+            
+            <div class="form-text">
+                Available: {{ "%.1f"|format(product.stock_kg) }} kg | 
+                Min: {{ "%.1f"|format(product.min_order_kg) }} kg
+            </div>
+        </form>
+        {% elif not current_user.is_authenticated %}
+        <div class="alert alert-warning">
+            <i class="fas fa-sign-in-alt me-2"></i>
+            Please <a href="{{ url_for('login') }}">login</a> to add items to cart.
+        </div>
+        {% else %}
+        <div class="alert alert-danger">
+            <i class="fas fa-times-circle me-2"></i>
+            This product is currently out of stock.
+        </div>
+        {% endif %}
+        
+        <!-- Product Description -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">Description / विवरण</h6>
+            </div>
+            <div class="card-body">
+                <p>{{ product.description }}</p>
+            </div>
+        </div>
+        
+        <!-- Cooking Tips -->
+        {% if product.cooking_tips %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-utensils me-2"></i>
+                    Cooking Tips / खाना पकाउने सुझाव
+                </h6>
+            </div>
+            <div class="card-body">
+                <p>{{ product.cooking_tips }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Reviews Section -->
+<div class="row mt-5">
+    <div class="col-12">
+        <h4>
+            <i class="fas fa-star me-2"></i>
+            Customer Reviews / ग्राहक समीक्षा
+        </h4>
+        
+        {% if product.get_average_rating() > 0 %}
+        <div class="mb-3">
+            <span class="h5">
+                {% for i in range(1, 6) %}
+                    {% if i <= product.get_average_rating() %}
+                    <i class="fas fa-star text-warning"></i>
+                    {% else %}
+                    <i class="far fa-star text-warning"></i>
+                    {% endif %}
+                {% endfor %}
+            </span>
+            <span class="ms-2">{{ "%.1f"|format(product.get_average_rating()) }} out of 5</span>
+            <span class="text-muted">({{ reviews|length }} reviews)</span>
+        </div>
+        {% endif %}
+        
+        <!-- Add Review Form (for logged in users who have ordered this product) -->
+        {% if current_user.is_authenticated %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">Write a Review</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('product_detail', product_id=product.id) }}">
+                    {{ review_form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ review_form.rating.label(class="form-label") }}
+                        {{ review_form.rating(class="form-select") }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ review_form.comment.label(class="form-label") }}
+                        {{ review_form.comment(class="form-control", rows="3") }}
+                    </div>
+                    
+                    {{ review_form.submit(class="btn btn-primary") }}
+                </form>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Reviews List -->
+        {% if reviews %}
+        {% for review in reviews %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="mb-1">{{ review.user.full_name }}</h6>
+                        <div class="mb-2">
+                            {% for i in range(1, 6) %}
+                                {% if i <= review.rating %}
+                                <i class="fas fa-star text-warning"></i>
+                                {% else %}
+                                <i class="far fa-star text-warning"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% if review.comment %}
+                        <p class="mb-0">{{ review.comment }}</p>
+                        {% endif %}
+                    </div>
+                    <small class="text-muted">{{ review.created_at.strftime('%B %d, %Y') }}</small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-comment-slash fa-2x text-muted mb-3"></i>
+            <p class="text-muted">No reviews yet. Be the first to review this product!</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Related Products -->
+{% if related_products %}
+<div class="row mt-5">
+    <div class="col-12">
+        <h4 class="mb-4">
+            <i class="fas fa-tags me-2"></i>
+            Related Products / सम्बन्धित उत्पादनहरू
+        </h4>
+        
+        <div class="row">
+            {% for related_product in related_products %}
+            <div class="col-md-3 mb-4">
+                <div class="card h-100 shadow-sm">
+                    {% if related_product.image_url %}
+                    <img src="{{ url_for('uploaded_file', filename=related_product.image_url) }}" 
+                         class="card-img-top" alt="{{ related_product.name }}" style="height: 150px; object-fit: cover;">
+                    {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 150px;">
+                        <i class="fas fa-drumstick-bite fa-2x text-muted"></i>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="card-body">
+                        <h6 class="card-title">{{ related_product.name }}</h6>
+                        <p class="card-text small text-muted">{{ related_product.name_nepali }}</p>
+                        <p class="card-text">
+                            <span class="h6 text-primary">रू {{ "%.0f"|format(related_product.price) }}</span>
+                            <small class="text-muted">/kg</small>
+                        </p>
+                    </div>
+                    
+                    <div class="card-footer bg-transparent">
+                        <a href="{{ url_for('product_detail', product_id=related_product.id) }}" 
+                           class="btn btn-outline-primary btn-sm w-100">
+                            View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

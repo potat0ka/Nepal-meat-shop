@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout - Nepal Meat Shop{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-credit-card me-2"></i>
+                    Checkout / चेकआउट
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Delivery Information -->
+                    <h6 class="mb-3">
+                        <i class="fas fa-truck me-2"></i>
+                        Delivery Information / डेलिभरी जानकारी
+                    </h6>
+                    
+                    <div class="mb-3">
+                        {{ form.delivery_address.label(class="form-label") }}
+                        {{ form.delivery_address(class="form-control" + (" is-invalid" if form.delivery_address.errors else "")) }}
+                        {% if form.delivery_address.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.delivery_address.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            Please provide complete address with landmarks
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.delivery_phone.label(class="form-label") }}
+                        {{ form.delivery_phone(class="form-control" + (" is-invalid" if form.delivery_phone.errors else "")) }}
+                        {% if form.delivery_phone.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.delivery_phone.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            Contact number for delivery coordination
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Method -->
+                    <h6 class="mb-3 mt-4">
+                        <i class="fas fa-credit-card me-2"></i>
+                        Payment Method / भुक्तानी विधि
+                    </h6>
+                    
+                    <div class="mb-3">
+                        {% for choice in form.payment_method.choices %}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="payment_method" 
+                                   value="{{ choice[0] }}" id="payment_{{ choice[0] }}"
+                                   {% if form.payment_method.data == choice[0] %}checked{% endif %}>
+                            <label class="form-check-label" for="payment_{{ choice[0] }}">
+                                {% if choice[0] == 'cod' %}
+                                <i class="fas fa-money-bill-wave me-2"></i>
+                                {% elif choice[0] == 'esewa' %}
+                                <i class="fas fa-mobile-alt me-2"></i>
+                                {% elif choice[0] == 'khalti' %}
+                                <i class="fas fa-mobile-alt me-2"></i>
+                                {% elif choice[0] == 'bank' %}
+                                <i class="fas fa-university me-2"></i>
+                                {% endif %}
+                                {{ choice[1] }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                        {% if form.payment_method.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.payment_method.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Special Instructions -->
+                    <h6 class="mb-3 mt-4">
+                        <i class="fas fa-comment me-2"></i>
+                        Special Instructions / विशेष निर्देशन
+                    </h6>
+                    
+                    <div class="mb-4">
+                        {{ form.special_instructions(class="form-control", rows="3", placeholder="Any special instructions for cutting, packaging, or delivery...") }}
+                        {% if form.special_instructions.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.special_instructions.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('cart') }}" class="btn btn-outline-secondary me-md-2">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Back to Cart
+                        </a>
+                        {{ form.submit(class="btn btn-primary btn-lg") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Order Summary -->
+    <div class="col-md-4">
+        <div class="card sticky-top">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-receipt me-2"></i>
+                    Order Summary
+                </h6>
+            </div>
+            <div class="card-body">
+                <!-- Cart items will be populated from session -->
+                {% if session.cart %}
+                {% for product_id, item in session.cart.items() %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <h6 class="mb-0 small">{{ item.name }}</h6>
+                        <small class="text-muted">{{ item.quantity }}kg × रू {{ "%.0f"|format(item.price) }}</small>
+                    </div>
+                    <span class="fw-bold">रू {{ "%.0f"|format(item.quantity * item.price) }}</span>
+                </div>
+                {% endfor %}
+                
+                <hr>
+                
+                {% set subtotal = session.cart.values() | map('list') | sum %}
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Subtotal:</span>
+                    <span>रू {{ "%.0f"|format(subtotal) }}</span>
+                </div>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Delivery:</span>
+                    <span>
+                        {% if subtotal >= 2000 %}
+                        FREE
+                        {% elif subtotal >= 1000 %}
+                        रू 25
+                        {% else %}
+                        रू 50
+                        {% endif %}
+                    </span>
+                </div>
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between">
+                    <span class="fw-bold">Total:</span>
+                    <span class="fw-bold text-primary h5">
+                        रू {{ "%.0f"|format(subtotal + (0 if subtotal >= 2000 else (25 if subtotal >= 1000 else 50))) }}
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Delivery Information -->
+        <div class="card mt-3">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="fas fa-truck me-2"></i>
+                    Delivery Info
+                </h6>
+                <ul class="list-unstyled mb-0 small">
+                    <li class="mb-1">
+                        <i class="fas fa-clock me-2"></i>
+                        Same day delivery available
+                    </li>
+                    <li class="mb-1">
+                        <i class="fas fa-map-marker-alt me-2"></i>
+                        Kathmandu Valley coverage
+                    </li>
+                    <li class="mb-0">
+                        <i class="fas fa-phone me-2"></i>
+                        Call confirmation before delivery
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
