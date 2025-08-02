@@ -435,6 +435,72 @@ body {
     }
 }
 
+/* Quantity Controls */
+.quantity-control {
+    max-width: 300px;
+}
+
+.quantity-control .btn {
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: all 0.3s ease;
+}
+
+.quantity-control .btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.quantity-control input[type="number"] {
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    transition: border-color 0.3s ease;
+}
+
+.quantity-control input[type="number"]:focus {
+    border-color: #e74c3c;
+    box-shadow: 0 0 0 0.2rem rgba(231, 76, 60, 0.25);
+}
+
+/* Hide number input spinners */
+.quantity-control input[type="number"]::-webkit-outer-spin-button,
+.quantity-control input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.quantity-control input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+/* Cart Form Enhancements */
+.cart-form {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.cart-form .btn-lg {
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.cart-form .btn-lg:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+}
+
 /* Footer */
 footer {
     background: linear-gradient(135deg, var(--dark-color) 0%, #2c3034 100%);

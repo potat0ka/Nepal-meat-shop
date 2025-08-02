@@ -45,13 +45,11 @@ class ProductForm(FlaskForm):
     submit = SubmitField('Save Product')
 
 class CartForm(FlaskForm):
-    """Simple cart form without CSRF."""
-    product_id = HiddenField('Product ID')
-    quantity = FloatField('Quantity (kg)', validators=[NumberRange(min=0.1)], default=2.0)
-
-    # Remove CSRF protection for this form to avoid validation issues
-    class Meta:
-        csrf = False
+    """Simple cart form for adding products to cart."""
+    product_id = HiddenField('Product ID', validators=[DataRequired()])
+    quantity = FloatField('Quantity (kg)', 
+                         validators=[DataRequired(), NumberRange(min=2.0, message="Minimum order is 2 kg")], 
+                         default=2.0)
 
 class UpdateCartForm(FlaskForm):
     """Update cart item form."""

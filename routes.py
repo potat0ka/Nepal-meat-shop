@@ -217,21 +217,23 @@ def register_routes(app):
         product_id_str = request.form.get('product_id', '').strip()
         quantity_str = request.form.get('quantity', '').strip()
         
+        print(f"Debug - Product ID: {product_id_str}, Quantity: {quantity_str}")  # Debug log
+        
         # Basic validation
         if not product_id_str:
-            flash('❌ Product selection is required', 'error')
-            return redirect(url_for('product_list'))
+            flash('❌ Product selection is required / उत्पादन चयन आवश्यक छ', 'error')
+            return redirect(request.referrer or url_for('product_list'))
         
         if not quantity_str:
-            flash('❌ Quantity is required', 'error')
-            return redirect(url_for('product_list'))
+            flash('❌ Quantity is required / मात्रा आवश्यक छ', 'error')
+            return redirect(request.referrer or url_for('product_list'))
 
         try:
             product_id = int(product_id_str)
             quantity = float(quantity_str)
         except (ValueError, TypeError):
             flash('❌ गलत डेटा / Invalid data provided', 'error')
-            return redirect(url_for('product_list'))
+            return redirect(request.referrer or url_for('product_list'))
 
         # Get product details
         product = Product.query.get_or_404(product_id)
@@ -280,6 +282,11 @@ def register_routes(app):
         session['cart'] = cart
         session.modified = True
 
+        # Get cart count for display
+        cart_count = len(cart)
+        
+        print(f"Debug - Cart updated: {cart}")  # Debug log
+        
         return redirect(url_for('cart'))
 
     @app.route('/update_cart', methods=['POST'])

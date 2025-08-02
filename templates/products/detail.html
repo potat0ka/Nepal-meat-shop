@@ -58,13 +58,17 @@
 
         <!-- Add to Cart Form -->
         {% if current_user.is_authenticated and product.stock_kg > 0 %}
-        <form method="POST" action="{{ url_for('add_to_cart') }}" class="cart-form">
+        <form method="POST" action="{{ url_for('add_to_cart') }}" class="cart-form" id="cartForm">
                         {{ form.hidden_tag() }}
                         <input type="hidden" name="product_id" value="{{ product.id }}">
 
                         <div class="mb-3">
                             {{ form.quantity.label(class="form-label") }}
-                            {{ form.quantity(class="form-control", min="2", step="0.5", max=product.stock_kg) }}
+                            <div class="input-group">
+                                <button class="btn btn-outline-secondary quantity-btn" type="button" data-action="decrease">-</button>
+                                {{ form.quantity(class="form-control", min="2", step="0.5", max=product.stock_kg, id="quantityInput") }}
+                                <button class="btn btn-outline-secondary quantity-btn" type="button" data-action="increase">+</button>
+                            </div>
                             {% if form.quantity.errors %}
                                 <div class="text-danger">
                                     {% for error in form.quantity.errors %}
@@ -75,7 +79,7 @@
                         </div>
 
                         {% if product.stock_kg > 0 %}
-                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <button type="submit" class="btn btn-primary btn-lg w-100" id="addToCartBtn">
                             <i class="fas fa-shopping-cart me-2"></i>
                             कार्टमा थप्नुहोस् / Add to Cart
                         </button>
@@ -255,4 +259,83 @@
 </div>
 {% endif %}
 {% endblock %}
-```The code has been modified to include a cart icon in the "Add to Cart" button.
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const quantityInput = document.getElementById('quantityInput');
+    const quantityButtons = document.querySelectorAll('.quantity-btn');
+    const totalPriceElement = document.getElementById('totalPrice');
+    const addToCartBtn = document.getElementById('addToCartBtn');
+    const cartForm = document.getElementById('cartForm');
+
+    const productPrice = {{ product.price }};
+    const maxStock = {{ product.stock_kg }};
+    const minQuantity = 2;
+    const step = 0.5;
+
+    // Update total price display
+    function updateTotalPrice() {
+        const quantity = parseFloat(quantityInput.value) || minQuantity;
+        const total = quantity * productPrice;
+        totalPriceElement.textContent = `रू ${Math.round(total)}`;
+    }
+
+    // Validate and fix quantity
+    function validateQuantity() {
+        let quantity = parseFloat(quantityInput.value) || minQuantity;
+
+        if (quantity < minQuantity) {
+            quantity = minQuantity;
+        } else if (quantity > maxStock) {
+            quantity = maxStock;
+        }
+
+        // Round to nearest step
+        quantity = Math.round(quantity / step) * step;
+        quantityInput.value = quantity.toFixed(1);
+        updateTotalPrice();
+    }
+
+    // Handle quantity button clicks
+    quantityButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const action = this.getAttribute('data-action');
+            let currentQuantity = parseFloat(quantityInput.value) || minQuantity;
+
+            if (action === 'increase' && currentQuantity < maxStock) {
+                currentQuantity += step;
+            } else if (action === 'decrease' && currentQuantity > minQuantity) {
+                currentQuantity -= step;
+            }
+
+            quantityInput.value = currentQuantity.toFixed(1);
+            validateQuantity();
+        });
+    });
+
+    // Handle direct input
+    quantityInput.addEventListener('input', validateQuantity);
+    quantityInput.addEventListener('blur', validateQuantity);
+
+    // Handle form submission
+    cartForm.addEventListener('submit', function(e) {
+        validateQuantity();
+
+        // Show loading state
+        addToCartBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Adding to Cart...';
+        addToCartBtn.disabled = true;
+
+        // Re-enable button after 3 seconds (fallback)
+        setTimeout(() => {
+            addToCartBtn.innerHTML = '<i class="fas fa-shopping-cart me-2"></i>कार्टमा थप्नुहोस् / Add to Cart';
+            addToCartBtn.disabled = false;
+        }, 3000);
+    });
+
+    // Initialize
+    validateQuantity();
+});
+</script>
+{% endblock %}
