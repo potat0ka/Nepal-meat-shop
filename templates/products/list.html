@@ -28,7 +28,7 @@
                             {% endfor %}
                         </select>
                     </div>
-                    
+
                     <!-- Meat Type Filter -->
                     <div class="mb-3">
                         <label class="form-label">Meat Type / मासुको प्रकार</label>
@@ -48,7 +48,7 @@
                             </option>
                         </select>
                     </div>
-                    
+
                     <!-- Preparation Type Filter -->
                     <div class="mb-3">
                         <label class="form-label">Preparation</label>
@@ -65,7 +65,7 @@
                             </option>
                         </select>
                     </div>
-                    
+
                     <!-- Sort Options -->
                     <div class="mb-3">
                         <label class="form-label">Sort By</label>
@@ -84,7 +84,7 @@
                             </option>
                         </select>
                     </div>
-                    
+
                     <a href="{{ url_for('product_list') }}" class="btn btn-outline-secondary btn-sm w-100">
                         Clear Filters
                     </a>
@@ -92,7 +92,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Products Grid -->
     <div class="col-md-9">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -102,7 +102,7 @@
             </h2>
             <span class="text-muted">{{ products|length }} products found</span>
         </div>
-        
+
         {% if products %}
         <div class="row">
             {% for product in products %}
@@ -116,16 +116,16 @@
                         <i class="fas fa-drumstick-bite fa-3x text-muted"></i>
                     </div>
                     {% endif %}
-                    
+
                     <div class="card-body">
                         <h6 class="card-title">{{ product.name }}</h6>
                         <p class="card-text small text-muted">{{ product.name_nepali }}</p>
-                        
+
                         <p class="card-text">
                             <span class="h5 text-primary">रू {{ "%.0f"|format(product.price) }}</span>
                             <small class="text-muted">/kg</small>
                         </p>
-                        
+
                         <div class="mb-2">
                             <span class="badge bg-info">{{ product.get_freshness_label() }}</span>
                             <span class="badge bg-secondary">{{ product.meat_type.title() }}</span>
@@ -135,7 +135,7 @@
                             <span class="badge bg-danger">Out of Stock</span>
                             {% endif %}
                         </div>
-                        
+
                         {% if product.is_featured %}
                         <div class="mb-2">
                             <span class="badge bg-warning text-dark">
@@ -143,9 +143,9 @@
                             </span>
                         </div>
                         {% endif %}
-                        
+
                         <p class="card-text small">{{ product.description[:100] }}...</p>
-                        
+
                         <div class="mt-auto">
                             {% if product.stock_kg > 0 %}
                             <p class="mb-2 small">
@@ -159,7 +159,7 @@
                             {% endif %}
                         </div>
                     </div>
-                    
+
                     <div class="card-footer bg-transparent">
                         <a href="{{ url_for('product_detail', product_id=product.id) }}" 
                            class="btn btn-primary btn-sm w-100">
@@ -183,3 +183,4 @@
     </div>
 </div>
 {% endblock %}
+`
