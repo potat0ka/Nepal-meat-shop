@@ -1,3 +1,4 @@
+
 import os
 import uuid
 from datetime import datetime, timedelta
@@ -11,6 +12,61 @@ from models import (User, Product, Category, Order, OrderItem, CartItem, Review,
 from forms import (LoginForm, RegisterForm, ProductForm, CartForm, CheckoutForm, ReviewForm,
                   OrderStatusForm, CategoryForm, OrderFilterForm, UpdateCartForm, RemoveCartForm)
 from utils import save_uploaded_file, generate_order_number
+
+def process_payment(payment_method, amount, order_number):
+    """
+    Process payment based on the selected method.
+    
+    Args:
+        payment_method: Payment method chosen by user
+        amount: Total amount to be paid
+        order_number: Order number for reference
+    
+    Returns:
+        dict: Payment result with success status and message
+    """
+    transaction_id = f"TXN{datetime.now().strftime('%Y%m%d%H%M%S')}{str(uuid.uuid4())[:8]}"
+    
+    if payment_method == 'cod':
+        # Cash on Delivery - always successful
+        return {
+            'success': True,
+            'message': 'अर्डर सफल भयो! घरमा पैसा तिर्नुहोस् / Order placed successfully! Pay on delivery.',
+            'payment_status': 'pending',
+            'transaction_id': transaction_id
+        }
+    
+    elif payment_method == 'esewa':
+        # Simulate eSewa payment
+        from payment_utils import simulate_esewa_payment
+        return simulate_esewa_payment(amount, transaction_id, order_number)
+    
+    elif payment_method == 'khalti':
+        # Simulate Khalti payment
+        from payment_utils import simulate_khalti_payment
+        return simulate_khalti_payment(amount, transaction_id, order_number)
+    
+    elif payment_method == 'phonepay':
+        # Simulate PhonePay payment
+        from payment_utils import simulate_phonepay_payment
+        return simulate_phonepay_payment(amount, transaction_id, order_number)
+    
+    elif payment_method == 'mobile_banking':
+        # Simulate Mobile Banking payment
+        from payment_utils import simulate_mobile_banking_payment
+        return simulate_mobile_banking_payment(amount, transaction_id, order_number)
+    
+    elif payment_method == 'bank_transfer':
+        # Simulate Bank Transfer payment
+        from payment_utils import simulate_bank_transfer_payment
+        return simulate_bank_transfer_payment(amount, transaction_id, order_number)
+    
+    else:
+        return {
+            'success': False,
+            'message': 'अमान्य भुक्तानी विधि / Invalid payment method',
+            'payment_status': 'failed'
+        }
 
 def register_routes(app):
     """Register all application routes."""
@@ -157,7 +213,7 @@ def register_routes(app):
             flash('कृपया पहिले लगइन गर्नुहोस् / Please login first', 'warning')
             return redirect(url_for('login'))
 
-        # Get form data directly
+        # Get form data directly from request
         product_id_str = request.form.get('product_id', '').strip()
         quantity_str = request.form.get('quantity', '').strip()
         
@@ -463,8 +519,14 @@ def register_routes(app):
     @app.route('/profile')
     @login_required
     def profile():
-        """User profile page."""
-        return render_template('user/profile.html')
+        """User profile page with safe order count."""
+        try:
+            # Get order count safely without triggering the relationship
+            order_count = Order.query.filter_by(user_id=current_user.id).count()
+            return render_template('user/profile.html', order_count=order_count)
+        except Exception as e:
+            # If there's still an error, set order count to 0
+            return render_template('user/profile.html', order_count=0)
 
     @app.route('/update_profile', methods=['POST'])
     @login_required
