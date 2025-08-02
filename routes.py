@@ -157,90 +157,74 @@ def register_routes(app):
             flash('कृपया पहिले लगइन गर्नुहोस् / Please login first', 'warning')
             return redirect(url_for('login'))
 
-        form = CartForm()
+        # Get form data directly
+        product_id_str = request.form.get('product_id', '').strip()
+        quantity_str = request.form.get('quantity', '').strip()
         
-        # Get product_id from form data for better debugging
-        product_id_str = request.form.get('product_id', '')
-        quantity_str = request.form.get('quantity', '')
+        # Basic validation
+        if not product_id_str:
+            flash('❌ Product selection is required', 'error')
+            return redirect(url_for('product_list'))
         
-        # Debug information
-        print(f"DEBUG: product_id from form: '{product_id_str}'")
-        print(f"DEBUG: quantity from form: '{quantity_str}'")
-        print(f"DEBUG: form.product_id.data: '{form.product_id.data}'")
-        print(f"DEBUG: form.quantity.data: '{form.quantity.data}'")
-        print(f"DEBUG: form.errors: {form.errors}")
-        
-        if form.validate_on_submit():
-            try:
-                product_id = int(form.product_id.data)
-                quantity = float(form.quantity.data)
-            except (ValueError, TypeError):
-                flash('❌ गलत डेटा / Invalid data provided', 'error')
-                return redirect(url_for('product_list'))
+        if not quantity_str:
+            flash('❌ Quantity is required', 'error')
+            return redirect(url_for('product_list'))
 
-            # Get product details
-            product = Product.query.get_or_404(product_id)
-
-            # Validate minimum order quantity (set to 2kg)
-            min_order = 2.0
-            if quantity < min_order:
-                flash(f'❌ न्यूनतम अर्डर {min_order} केजी हुनुपर्छ / Minimum order is {min_order} kg', 'error')
-                return redirect(url_for('product_detail', product_id=product_id))
-
-            # Validate stock availability
-            if quantity > product.stock_kg:
-                flash(f'❌ केवल {product.stock_kg} केजी स्टकमा छ / Only {product.stock_kg} kg in stock', 'error')
-                return redirect(url_for('product_detail', product_id=product_id))
-
-            # Initialize cart in session if it doesn't exist
-            if 'cart' not in session:
-                session['cart'] = {}
-
-            cart = session['cart']
-            product_id_str = str(product_id)
-
-            # Check if product already in cart
-            if product_id_str in cart:
-                # Add to existing quantity but check total doesn't exceed stock
-                new_quantity = cart[product_id_str]['quantity'] + quantity
-                if new_quantity > product.stock_kg:
-                    flash(f'❌ कुल मात्रा {product.stock_kg} केजीभन्दा बढी हुन सक्दैन / Total quantity cannot exceed {product.stock_kg} kg', 'error')
-                    return redirect(url_for('product_detail', product_id=product_id))
-
-                cart[product_id_str]['quantity'] = new_quantity
-                flash(f'✅ कार्टमा मात्रा अपडेट भयो / Cart quantity updated: {new_quantity} kg', 'success')
-            else:
-                # Add new item to cart
-                cart[product_id_str] = {
-                    'product_id': product_id,
-                    'name': product.name,
-                    'name_nepali': product.name_nepali,
-                    'price': product.price,
-                    'quantity': quantity,
-                    'image_url': product.image_url
-                }
-                flash(f'✅ कार्टमा थपियो / Added to cart: {product.name} ({quantity} kg)', 'success')
-
-            # Save updated cart to session
-            session['cart'] = cart
-            session.modified = True
-
-            return redirect(url_for('cart'))
-
-        # If form validation fails, show errors
-        for field, errors in form.errors.items():
-            for error in errors:
-                flash(f'❌ {error}', 'error')
-
-        # Try to redirect back to the product page if we have a valid product_id
         try:
-            if product_id_str and product_id_str != '':
-                product_id = int(product_id_str)
-                return redirect(url_for('product_detail', product_id=product_id))
+            product_id = int(product_id_str)
+            quantity = float(quantity_str)
         except (ValueError, TypeError):
-            pass
-        
-        return redirect(url_for('product_list'))
+            flash('❌ गलत डेटा / Invalid data provided', 'error')
+            return redirect(url_for('product_list'))
+
+        # Get product details
+        product = Product.query.get_or_404(product_id)
+
+        # Validate minimum order quantity (set to 2kg)
+        min_order = 2.0
+        if quantity < min_order:
+            flash(f'❌ न्यूनतम अर्डर {min_order} केजी हुनुपर्छ / Minimum order is {min_order} kg', 'error')
+            return redirect(url_for('product_detail', product_id=product_id))
+
+        # Validate stock availability
+        if quantity > product.stock_kg:
+            flash(f'❌ केवल {product.stock_kg} केजी स्टकमा छ / Only {product.stock_kg} kg in stock', 'error')
+            return redirect(url_for('product_detail', product_id=product_id))
+
+        # Initialize cart in session if it doesn't exist
+        if 'cart' not in session:
+            session['cart'] = {}
+
+        cart = session['cart']
+        product_id_str = str(product_id)
+
+        # Check if product already in cart
+        if product_id_str in cart:
+            # Add to existing quantity but check total doesn't exceed stock
+            new_quantity = cart[product_id_str]['quantity'] + quantity
+            if new_quantity > product.stock_kg:
+                flash(f'❌ कुल मात्रा {product.stock_kg} केजीभन्दा बढी हुन सक्दैन / Total quantity cannot exceed {product.stock_kg} kg', 'error')
+                return redirect(url_for('product_detail', product_id=product_id))
+
+            cart[product_id_str]['quantity'] = new_quantity
+            flash(f'✅ कार्टमा मात्रा अपडेट भयो / Cart quantity updated: {new_quantity} kg', 'success')
+        else:
+            # Add new item to cart
+            cart[product_id_str] = {
+                'product_id': product_id,
+                'name': product.name,
+                'name_nepali': product.name_nepali,
+                'price': product.price,
+                'quantity': quantity,
+                'image_url': product.image_url
+            }
+            flash(f'✅ कार्टमा थपियो / Added to cart: {product.name} ({quantity} kg)', 'success')
+
+        # Save updated cart to session
+        session['cart'] = cart
+        session.modified = True
+
+        return redirect(url_for('cart'))
 
     @app.route('/update_cart', methods=['POST'])
     def update_cart():

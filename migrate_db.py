@@ -14,6 +14,9 @@ def migrate_database():
     
     with app.app_context():
         try:
+            # Create all tables first (in case they don't exist)
+            db.create_all()
+            
             # Check if transaction_id column exists in Order table
             result = db.session.execute(text("""
                 SELECT COUNT(*) 
@@ -24,12 +27,11 @@ def migrate_database():
             if result[0] == 0:
                 print("Adding transaction_id column to Order table...")
                 db.session.execute(text("ALTER TABLE 'order' ADD COLUMN transaction_id VARCHAR(100)"))
+                db.session.commit()
                 print("✅ Added transaction_id column successfully!")
             else:
                 print("✅ transaction_id column already exists")
             
-            # Commit changes
-            db.session.commit()
             print("✅ Database migration completed successfully!")
             
         except Exception as e:
