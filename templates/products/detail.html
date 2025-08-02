@@ -60,7 +60,7 @@
         {% if current_user.is_authenticated and product.stock_kg > 0 %}
         <form method="POST" action="{{ url_for('add_to_cart') }}" class="cart-form" id="addToCartForm">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-            <input type="hidden" name="product_id" value="{{ product.id }}" id="productIdInput">
+            <input type="hidden" name="product_id" value="{{ product.id }}">
 
             <div class="mb-3">
                 <label class="form-label">
@@ -156,27 +156,37 @@
 
             // Handle form submission
             addToCartForm.addEventListener('submit', function(e) {
-                // Validate quantity one more time before submission
-                validateQuantity();
-
-                // Check if we have valid data
-                const productId = document.getElementById('productIdInput').value;
-                const quantity = quantityInput.value;
-
-                console.log('Submitting form with:', { productId, quantity });
-
-                if (!productId || !quantity || parseFloat(quantity) < minOrder) {
-                    e.preventDefault();
-                    alert('कृपया सही जानकारी भर्नुहोस् / Please fill valid information');
-                    return false;
-                }
+                e.preventDefault();
 
                 // Disable button and show loading
                 addToCartBtn.disabled = true;
                 addToCartBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Adding...';
-                
-                // Allow form to submit normally (no preventDefault)
-                return true;
+
+                // Validate quantity one more time
+                validateQuantity();
+
+                // Submit form
+                const formData = new FormData(addToCartForm);
+
+                fetch('{{ url_for("add_to_cart") }}', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // Redirect to cart page on success
+                        window.location.href = '{{ url_for("cart") }}';
+                    } else {
+                        throw new Error('Failed to add to cart');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to add item to cart. Please try again.');
+                    // Re-enable button
+                    addToCartBtn.disabled = false;
+                    addToCartBtn.innerHTML = '<i class="fas fa-shopping-cart me-2"></i>कार्टमा थप्नुहोस् / Add to Cart';
+                });
             });
 
             // Initial price update
