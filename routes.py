@@ -1,4 +1,3 @@
-
 import os
 import uuid
 from datetime import datetime, timedelta
@@ -16,17 +15,17 @@ from utils import save_uploaded_file, generate_order_number
 def process_payment(payment_method, amount, order_number):
     """
     Process payment based on the selected method.
-    
+
     Args:
         payment_method: Payment method chosen by user
         amount: Total amount to be paid
         order_number: Order number for reference
-    
+
     Returns:
         dict: Payment result with success status and message
     """
     transaction_id = f"TXN{datetime.now().strftime('%Y%m%d%H%M%S')}{str(uuid.uuid4())[:8]}"
-    
+
     if payment_method == 'cod':
         # Cash on Delivery - always successful
         return {
@@ -35,32 +34,32 @@ def process_payment(payment_method, amount, order_number):
             'payment_status': 'pending',
             'transaction_id': transaction_id
         }
-    
+
     elif payment_method == 'esewa':
         # Simulate eSewa payment
         from payment_utils import simulate_esewa_payment
         return simulate_esewa_payment(amount, transaction_id, order_number)
-    
+
     elif payment_method == 'khalti':
         # Simulate Khalti payment
         from payment_utils import simulate_khalti_payment
         return simulate_khalti_payment(amount, transaction_id, order_number)
-    
+
     elif payment_method == 'phonepay':
         # Simulate PhonePay payment
         from payment_utils import simulate_phonepay_payment
         return simulate_phonepay_payment(amount, transaction_id, order_number)
-    
+
     elif payment_method == 'mobile_banking':
         # Simulate Mobile Banking payment
         from payment_utils import simulate_mobile_banking_payment
         return simulate_mobile_banking_payment(amount, transaction_id, order_number)
-    
+
     elif payment_method == 'bank_transfer':
         # Simulate Bank Transfer payment
         from payment_utils import simulate_bank_transfer_payment
         return simulate_bank_transfer_payment(amount, transaction_id, order_number)
-    
+
     else:
         return {
             'success': False,
@@ -205,35 +204,41 @@ def register_routes(app):
                              form=form,
                              review_form=review_form)
 
-    
+
     @app.route('/add_to_cart', methods=['POST'])
     def add_to_cart():
         """Add item to cart using Flask session."""
         if not current_user.is_authenticated:
+            if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': 'Please login first'}), 401
             flash('कृपया पहिले लगइन गर्नुहोस् / Please login first', 'warning')
             return redirect(url_for('login'))
 
         # Get form data directly from request
         product_id_str = request.form.get('product_id', '').strip()
         quantity_str = request.form.get('quantity', '').strip()
-        
-        print(f"Debug - Product ID: {product_id_str}, Quantity: {quantity_str}")  # Debug log
-        
+
         # Basic validation
         if not product_id_str:
-            flash('❌ Product selection is required / उत्पादन चयन आवश्यक छ', 'error')
-            return redirect(request.referrer or url_for('product_list'))
-        
+            if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': 'Product selection is required'}), 400
+            flash('❌ Product selection is required', 'error')
+            return redirect(url_for('product_list'))
+
         if not quantity_str:
-            flash('❌ Quantity is required / मात्रा आवश्यक छ', 'error')
-            return redirect(request.referrer or url_for('product_list'))
+            if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': 'Quantity is required'}), 400
+            flash('❌ Quantity is required', 'error')
+            return redirect(url_for('product_list'))
 
         try:
             product_id = int(product_id_str)
             quantity = float(quantity_str)
         except (ValueError, TypeError):
+            if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': 'Invalid data provided'}), 400
             flash('❌ गलत डेटा / Invalid data provided', 'error')
-            return redirect(request.referrer or url_for('product_list'))
+            return redirect(url_for('product_list'))
 
         # Get product details
         product = Product.query.get_or_404(product_id)
@@ -241,12 +246,18 @@ def register_routes(app):
         # Validate minimum order quantity (set to 2kg)
         min_order = 2.0
         if quantity < min_order:
-            flash(f'❌ न्यूनतम अर्डर {min_order} केजी हुनुपर्छ / Minimum order is {min_order} kg', 'error')
+            message = f'न्यूनतम अर्डर {min_order} केजी हुनुपर्छ / Minimum order is {min_order} kg'
+            if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': message}), 400
+            flash(f'❌ {message}', 'error')
             return redirect(url_for('product_detail', product_id=product_id))
 
         # Validate stock availability
         if quantity > product.stock_kg:
-            flash(f'❌ केवल {product.stock_kg} केजी स्टकमा छ / Only {product.stock_kg} kg in stock', 'error')
+            message = f'केवल {product.stock_kg} केजी स्टकमा छ / Only {product.stock_kg} kg in stock'
+            if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': message}), 400
+            flash(f'❌ {message}', 'error')
             return redirect(url_for('product_detail', product_id=product_id))
 
         # Initialize cart in session if it doesn't exist
@@ -261,11 +272,15 @@ def register_routes(app):
             # Add to existing quantity but check total doesn't exceed stock
             new_quantity = cart[product_id_str]['quantity'] + quantity
             if new_quantity > product.stock_kg:
-                flash(f'❌ कुल मात्रा {product.stock_kg} केजीभन्दा बढी हुन सक्दैन / Total quantity cannot exceed {product.stock_kg} kg', 'error')
+                message = f'कुल मात्रा {product.stock_kg} केजीभन्दा बढी हुन सक्दैन / Total quantity cannot exceed {product.stock_kg} kg'
+                if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({'success': False, 'message': message}), 400
+                flash(f'❌ {message}', 'error')
                 return redirect(url_for('product_detail', product_id=product_id))
 
             cart[product_id_str]['quantity'] = new_quantity
-            flash(f'✅ कार्टमा मात्रा अपडेट भयो / Cart quantity updated: {new_quantity} kg', 'success')
+            message = f'कार्टमा मात्रा अपडेट भयो / Cart quantity updated: {new_quantity} kg'
+            flash(f'✅ {message}', 'success')
         else:
             # Add new item to cart
             cart[product_id_str] = {
@@ -276,17 +291,20 @@ def register_routes(app):
                 'quantity': quantity,
                 'image_url': product.image_url
             }
-            flash(f'✅ कार्टमा थपियो / Added to cart: {product.name} ({quantity} kg)', 'success')
+            message = f'कार्टमा थपियो / Added to cart: {product.name} ({quantity} kg)'
+            flash(f'✅ {message}', 'success')
 
         # Save updated cart to session
         session['cart'] = cart
         session.modified = True
 
-        # Get cart count for display
-        cart_count = len(cart)
-        
-        print(f"Debug - Cart updated: {cart}")  # Debug log
-        
+        if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({
+                'success': True, 
+                'message': message,
+                'cart_count': len(cart)
+            })
+
         return redirect(url_for('cart'))
 
     @app.route('/update_cart', methods=['POST'])
@@ -385,7 +403,7 @@ def register_routes(app):
             return redirect(url_for('cart'))
 
         form = CheckoutForm()
-        
+
         # Calculate cart total for display
         cart_total = 0
         cart_items = []
@@ -399,7 +417,7 @@ def register_routes(app):
                     'total': item_total
                 })
                 cart_total += item_total
-        
+
         if form.validate_on_submit():
             # Create order
             order = Order(
@@ -410,7 +428,7 @@ def register_routes(app):
                 special_instructions=form.special_instructions.data
             )
             order.generate_order_number()
-            
+
             total_amount = 0
             order_items = []
 
@@ -448,7 +466,7 @@ def register_routes(app):
                 order.payment_status = payment_result['payment_status']
                 if payment_result.get('transaction_id'):
                     order.transaction_id = payment_result['transaction_id']
-                
+
                 # Update stock only after successful payment
                 for product_id_str, item in cart.items():
                     product = Product.query.get(int(product_id_str))
@@ -484,7 +502,7 @@ def register_routes(app):
     def order_detail(order_id):
         """Order detail page."""
         order = Order.query.get_or_404(order_id)
-        
+
         # Check if user owns this order or is admin
         if order.user_id != current_user.id and not current_user.is_admin:
             flash('❌ अनधिकृत पहुँच / Unauthorized access', 'error')
@@ -497,7 +515,7 @@ def register_routes(app):
     def generate_invoice(order_id):
         """Generate invoice for an order."""
         order = Order.query.get_or_404(order_id)
-        
+
         # Check if user owns this order or is admin
         if order.user_id != current_user.id and not current_user.is_admin:
             flash('❌ अनधिकृत पहुँच / Unauthorized access', 'error')
@@ -505,7 +523,7 @@ def register_routes(app):
 
         # Check if invoice already exists
         invoice = Invoice.query.filter_by(order_id=order.id).first()
-        
+
         if not invoice:
             # Create new invoice
             invoice = Invoice(
@@ -544,27 +562,27 @@ def register_routes(app):
             full_name = request.form.get('full_name', '').strip()
             phone = request.form.get('phone', '').strip()
             address = request.form.get('address', '').strip()
-            
+
             # Validate required fields
             if not full_name or len(full_name) < 2:
                 flash('❌ पूरा नाम आवश्यक छ / Full name is required (min 2 characters)', 'error')
                 return redirect(url_for('profile'))
-            
+
             if not phone or len(phone) < 10:
                 flash('❌ वैध फोन नम्बर आवश्यक छ / Valid phone number is required (min 10 digits)', 'error')
                 return redirect(url_for('profile'))
-            
+
             # Update user information
             current_user.full_name = full_name
             current_user.phone = phone
             current_user.address = address if address else None
-            
+
             # Save to database
             db.session.commit()
-            
+
             flash('✅ प्रोफाइल अपडेट भयो / Profile updated successfully!', 'success')
             return redirect(url_for('profile'))
-            
+
         except Exception as e:
             flash('❌ प्रोफाइल अपडेट गर्न सकिएन / Failed to update profile', 'error')
             db.session.rollback()
@@ -578,29 +596,29 @@ def register_routes(app):
             current_password = request.form.get('current_password', '')
             new_password = request.form.get('new_password', '')
             confirm_password = request.form.get('confirm_password', '')
-            
+
             # Validate current password
             if not current_user.check_password(current_password):
                 flash('❌ हालको पासवर्ड गलत छ / Current password is incorrect', 'error')
                 return redirect(url_for('profile'))
-            
+
             # Validate new password
             if len(new_password) < 6:
                 flash('❌ नयाँ पासवर्ड कम्तिमा ६ अक्षरको हुनुपर्छ / New password must be at least 6 characters', 'error')
                 return redirect(url_for('profile'))
-            
+
             # Validate password confirmation
             if new_password != confirm_password:
                 flash('❌ नयाँ पासवर्डहरू मेल खाँदैनन् / New passwords do not match', 'error')
                 return redirect(url_for('profile'))
-            
+
             # Update password
             current_user.set_password(new_password)
             db.session.commit()
-            
+
             flash('✅ पासवर्ड परिवर्तन भयो / Password changed successfully!', 'success')
             return redirect(url_for('profile'))
-            
+
         except Exception as e:
             flash('❌ पासवर्ड परिवर्तन गर्न सकिएन / Failed to change password', 'error')
             db.session.rollback()
@@ -728,7 +746,7 @@ def register_routes(app):
             return redirect(url_for('index'))
 
         product = Product.query.get_or_404(product_id)
-        
+
         # Check if product has any orders
         if product.order_items:
             flash('❌ यो उत्पादनमा अर्डरहरू छन्, डिलीट गर्न सकिँदैन / Cannot delete product with existing orders', 'error')
@@ -752,7 +770,7 @@ def register_routes(app):
         product = Product.query.get_or_404(product_id)
         product.is_featured = not product.is_featured
         product.updated_at = datetime.utcnow()
-        
+
         db.session.commit()
 
         status = 'featured' if product.is_featured else 'removed from featured'
