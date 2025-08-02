@@ -159,8 +159,17 @@ def register_routes(app):
 
         form = CartForm()
         if form.validate_on_submit():
-            product_id = int(form.product_id.data)
-            quantity = float(form.quantity.data)
+            # Validate product_id is not empty
+            if not form.product_id.data or form.product_id.data == '':
+                flash('❌ उत्पादन चयन गर्नुहोस् / Please select a product', 'error')
+                return redirect(url_for('product_list'))
+            
+            try:
+                product_id = int(form.product_id.data)
+                quantity = float(form.quantity.data)
+            except (ValueError, TypeError):
+                flash('❌ गलत डेटा / Invalid data provided', 'error')
+                return redirect(url_for('product_list'))
 
             # Get product details
             product = Product.query.get_or_404(product_id)
@@ -215,7 +224,15 @@ def register_routes(app):
             for error in errors:
                 flash(f'❌ {error}', 'error')
 
-        return redirect(url_for('product_detail', product_id=form.product_id.data))
+        # Safe redirect - check if product_id exists and is valid
+        if form.product_id.data and form.product_id.data != '':
+            try:
+                product_id = int(form.product_id.data)
+                return redirect(url_for('product_detail', product_id=product_id))
+            except (ValueError, TypeError):
+                pass
+        
+        return redirect(url_for('product_list'))
 
     @app.route('/update_cart', methods=['POST'])
     def update_cart():
@@ -465,6 +482,86 @@ def register_routes(app):
             return redirect(url_for('admin_products'))
 
         return render_template('admin/product_form.html', form=form, title='Add Product')
+
+    @app.route('/admin/product/edit/<int:product_id>', methods=['GET', 'POST'])
+    @login_required
+    def admin_edit_product(product_id):
+        """Edit existing product."""
+        if not current_user.is_admin:
+            flash('❌ एडमिन पहुँच आवश्यक / Admin access required', 'error')
+            return redirect(url_for('index'))
+
+        product = Product.query.get_or_404(product_id)
+        form = ProductForm(obj=product)
+        form.category_id.choices = [(c.id, c.name) for c in Category.query.filter_by(is_active=True).all()]
+
+        if form.validate_on_submit():
+            # Handle image upload
+            if form.image.data:
+                image_url = save_uploaded_file(form.image.data, 'products')
+                product.image_url = image_url
+
+            # Update product fields
+            product.name = form.name.data
+            product.name_nepali = form.name_nepali.data
+            product.description = form.description.data
+            product.price = form.price.data
+            product.category_id = form.category_id.data
+            product.meat_type = form.meat_type.data
+            product.preparation_type = form.preparation_type.data
+            product.stock_kg = form.stock_kg.data
+            product.min_order_kg = form.min_order_kg.data
+            product.freshness_hours = form.freshness_hours.data
+            product.cooking_tips = form.cooking_tips.data
+            product.is_featured = form.is_featured.data
+            product.updated_at = datetime.utcnow()
+
+            db.session.commit()
+
+            flash('✅ उत्पादन अपडेट भयो / Product updated successfully!', 'success')
+            return redirect(url_for('admin_products'))
+
+        return render_template('admin/product_form.html', form=form, title='Edit Product', product=product)
+
+    @app.route('/admin/product/delete/<int:product_id>', methods=['POST'])
+    @login_required
+    def admin_delete_product(product_id):
+        """Delete product."""
+        if not current_user.is_admin:
+            flash('❌ एडमिन पहुँच आवश्यक / Admin access required', 'error')
+            return redirect(url_for('index'))
+
+        product = Product.query.get_or_404(product_id)
+        
+        # Check if product has any orders
+        if product.order_items:
+            flash('❌ यो उत्पादनमा अर्डरहरू छन्, डिलीट गर्न सकिँदैन / Cannot delete product with existing orders', 'error')
+            return redirect(url_for('admin_products'))
+
+        # Soft delete - just mark as inactive
+        product.is_active = False
+        db.session.commit()
+
+        flash('✅ उत्पादन डिलीट भयो / Product deleted successfully!', 'success')
+        return redirect(url_for('admin_products'))
+
+    @app.route('/admin/product/toggle-featured/<int:product_id>', methods=['POST'])
+    @login_required
+    def admin_toggle_featured(product_id):
+        """Toggle product featured status."""
+        if not current_user.is_admin:
+            flash('❌ एडमिन पहुँच आवश्यक / Admin access required', 'error')
+            return redirect(url_for('index'))
+
+        product = Product.query.get_or_404(product_id)
+        product.is_featured = not product.is_featured
+        product.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+
+        status = 'featured' if product.is_featured else 'removed from featured'
+        flash(f'✅ उत्पादन {status} भयो / Product {status} successfully!', 'success')
+        return redirect(url_for('admin_products'))
 
     @app.route('/admin/orders')
     @login_required

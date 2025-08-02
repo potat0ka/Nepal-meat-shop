@@ -15,7 +15,7 @@
                 Add New Product
             </a>
         </div>
-        
+
         {% if products %}
         <div class="card">
             <div class="card-header">
@@ -34,7 +34,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
                     <thead class="table-dark">
@@ -64,7 +64,7 @@
                                 </div>
                                 {% endif %}
                             </td>
-                            
+
                             <td>
                                 <div>
                                     <strong>{{ product.name }}</strong>
@@ -72,19 +72,19 @@
                                     <small class="text-muted">{{ product.name_nepali }}</small>
                                 </div>
                             </td>
-                            
+
                             <td>
                                 <span class="badge bg-secondary">{{ product.category.name }}</span>
                                 <br>
                                 <small class="text-muted">{{ product.meat_type.title() }}</small>
                             </td>
-                            
+
                             <td>
                                 <strong>रू {{ "%.0f"|format(product.price) }}</strong>
                                 <br>
                                 <small class="text-muted">per kg</small>
                             </td>
-                            
+
                             <td>
                                 <span class="badge bg-{{ 'success' if product.stock_kg > 10 else ('warning' if product.stock_kg > 0 else 'danger') }}">
                                     {{ "%.1f"|format(product.stock_kg) }}kg
@@ -94,7 +94,7 @@
                                 <small class="text-danger">Low Stock!</small>
                                 {% endif %}
                             </td>
-                            
+
                             <td>
                                 <span class="badge bg-{{ 'success' if product.is_active else 'secondary' }}">
                                     {{ 'Active' if product.is_active else 'Inactive' }}
@@ -104,32 +104,33 @@
                                 <span class="badge bg-warning text-dark">Featured</span>
                                 {% endif %}
                             </td>
-                            
+
                             <td>
                                 <small>{{ product.created_at.strftime('%b %d, %Y') }}</small>
                             </td>
-                            
+
                             <td>
                                 <div class="btn-group" role="group">
                                     <a href="{{ url_for('product_detail', product_id=product.id) }}" 
                                        class="btn btn-outline-primary btn-sm" title="View Product">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    
-                                    <button class="btn btn-outline-secondary btn-sm" 
-                                            title="Edit Product" onclick="editProduct({{ product.id }})">
+
+                                    <a href="{{ url_for('admin_edit_product', product_id=product.id) }}" 
+                                       class="btn btn-outline-primary btn-sm" title="Edit Product">
                                         <i class="fas fa-edit"></i>
+                                    </a>
+
+                                    <button class="btn btn-outline-danger btn-sm" 
+                                            title="Delete Product"
+                                            onclick="deleteProduct({{ product.id }}, '{{ product.name }}')">
+                                        <i class="fas fa-trash"></i>
                                     </button>
-                                    
-                                    <button class="btn btn-outline-warning btn-sm" 
-                                            title="Update Stock" onclick="updateStock({{ product.id }}, {{ product.stock_kg }})">
-                                        <i class="fas fa-boxes"></i>
-                                    </button>
-                                    
-                                    <button class="btn btn-outline-{{ 'secondary' if product.is_active else 'success' }} btn-sm" 
-                                            title="{{ 'Deactivate' if product.is_active else 'Activate' }} Product"
-                                            onclick="toggleProduct({{ product.id }}, {{ product.is_active|lower }})">
-                                        <i class="fas fa-{{ 'pause' if product.is_active else 'play' }}"></i>
+
+                                    <button class="btn btn-outline-{{ 'warning' if product.is_featured else 'success' }} btn-sm" 
+                                            title="{{ 'Remove from Featured' if product.is_featured else 'Add to Featured' }}"
+                                            onclick="toggleFeatured({{ product.id }}, {{ product.is_featured|lower }})">
+                                        <i class="fas fa-star{{ '' if product.is_featured else '-o' }}"></i>
                                     </button>
                                 </div>
                             </td>
@@ -139,7 +140,7 @@
                 </table>
             </div>
         </div>
-        
+
         {% else %}
         <div class="text-center py-5">
             <i class="fas fa-drumstick-bite fa-5x text-muted mb-4"></i>
@@ -186,48 +187,77 @@
     </div>
 </div>
 
-<script>
-function editProduct(productId) {
-    // Redirect to edit form (would need to create this route)
-    alert('Product edit functionality would be implemented here');
-}
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+                    Confirm Delete
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this product?</p>
+                <p><strong id="product-name-delete"></strong></p>
+                <p class="text-muted small">This action will mark the product as inactive. It cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="delete-form" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Delete Product</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
-function updateStock(productId, currentStock) {
-    document.getElementById('productId').value = productId;
-    document.getElementById('currentStock').value = currentStock + ' kg';
-    document.getElementById('newStock').value = currentStock;
-    
-    const modal = new bootstrap.Modal(document.getElementById('stockModal'));
+<script>
+function deleteProduct(productId, productName) {
+    // Set product name in modal
+    document.getElementById('product-name-delete').textContent = productName;
+
+    // Set form action
+    document.getElementById('delete-form').action = `/admin/product/delete/${productId}`;
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
     modal.show();
 }
 
-function saveStock() {
-    const productId = document.getElementById('productId').value;
-    const newStock = document.getElementById('newStock').value;
-    
-    // Implement stock update API call
-    alert(`Stock update for product ${productId} to ${newStock}kg would be implemented here`);
-    
-    // Close modal and refresh page
-    bootstrap.Modal.getInstance(document.getElementById('stockModal')).hide();
-}
+function toggleFeatured(productId, isFeatured) {
+    const action = isFeatured ? 'remove from featured' : 'add to featured';
 
-function toggleProduct(productId, isActive) {
-    const action = isActive ? 'deactivate' : 'activate';
     if (confirm(`Are you sure you want to ${action} this product?`)) {
-        // Implement product toggle API call
-        alert(`Product ${action} functionality would be implemented here`);
+        // Create form and submit
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/product/toggle-featured/${productId}`;
+
+        // Add CSRF token
+        const csrfToken = document.querySelector('meta[name=csrf-token]');
+        if (csrfToken) {
+            const tokenInput = document.createElement('input');
+            tokenInput.type = 'hidden';
+            tokenInput.name = 'csrf_token';
+            tokenInput.value = csrfToken.getAttribute('content');
+            form.appendChild(tokenInput);
+        }
+
+        document.body.appendChild(form);
+        form.submit();
     }
 }
 
 function filterProducts() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const rows = document.querySelectorAll('tbody tr');
-    
+
     rows.forEach(row => {
         const productName = row.cells[1].textContent.toLowerCase();
         const category = row.cells[2].textContent.toLowerCase();
-        
+
         if (productName.includes(searchTerm) || category.includes(searchTerm)) {
             row.style.display = '';
         } else {
@@ -242,5 +272,33 @@ document.getElementById('searchInput').addEventListener('keypress', function(e) 
         filterProducts();
     }
 });
+
+function updateStock(productId, currentStock) {
+    document.getElementById('productId').value = productId;
+    document.getElementById('currentStock').value = currentStock + ' kg';
+    document.getElementById('newStock').value = currentStock;
+
+    const modal = new bootstrap.Modal(document.getElementById('stockModal'));
+    modal.show();
+}
+
+function saveStock() {
+    const productId = document.getElementById('productId').value;
+    const newStock = document.getElementById('newStock').value;
+
+    // Implement stock update API call
+    alert(`Stock update for product ${productId} to ${newStock}kg would be implemented here`);
+
+    // Close modal and refresh page
+    bootstrap.Modal.getInstance(document.getElementById('stockModal')).hide();
+}
+
+function toggleProduct(productId, isActive) {
+    const action = isActive ? 'deactivate' : 'activate';
+    if (confirm(`Are you sure you want to ${action} this product?`)) {
+        // Implement product toggle API call
+        alert(`Product ${action} functionality would be implemented here`);
+    }
+}
 </script>
 {% endblock %}

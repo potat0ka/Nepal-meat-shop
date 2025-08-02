@@ -1,8 +1,8 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, TextAreaField, FloatField, IntegerField, SelectField, BooleanField, PasswordField, SubmitField, HiddenField
-from wtforms.validators import DataRequired, Email, Length, NumberRange, EqualTo, Optional
-from wtforms.widgets import TextArea
+from wtforms.validators import DataRequired, Email, Length, NumberRange, Optional, EqualTo, ValidationError
+import re
 
 class LoginForm(FlaskForm):
     """User login form."""
@@ -23,46 +23,74 @@ class RegisterForm(FlaskForm):
     submit = SubmitField('दर्ता गर्नुहोस् / Register')
 
 class ProductForm(FlaskForm):
-    """Product add/edit form."""
-    name = StringField('Product Name (English)', validators=[DataRequired(), Length(max=120)])
-    name_nepali = StringField('Product Name (Nepali)', validators=[DataRequired(), Length(max=120)])
-    description = TextAreaField('Description', validators=[DataRequired(), Length(max=1000)])
-    price = FloatField('Price per KG (NPR)', validators=[DataRequired(), NumberRange(min=0.01)])
+    """Form for adding/editing products."""
+    name = StringField('Product Name', validators=[DataRequired(), Length(min=2, max=120)])
+    name_nepali = StringField('Product Name (Nepali)', validators=[DataRequired(), Length(min=2, max=120)])
+    description = TextAreaField('Description', validators=[DataRequired(), Length(min=10, max=500)])
+    price = FloatField('Price per kg', validators=[DataRequired(), NumberRange(min=1, message='Price must be at least Rs. 1')])
     category_id = SelectField('Category', coerce=int, validators=[DataRequired()])
-    meat_type = SelectField('Meat Type', choices=[
-        ('pork', 'सुंगुर / Pork'),
-        ('buffalo', 'भैंसी / Buffalo'),
-        ('chicken', 'कुखुरा / Chicken'),
-        ('goat', 'खसी / Goat')
-    ], validators=[DataRequired()])
-    preparation_type = SelectField('Preparation Type', choices=[
-        ('fresh', 'Fresh'),
-        ('processed', 'Processed'),
-        ('marinated', 'Marinated'),
-        ('smoked', 'Smoked')
-    ], default='fresh')
-    stock_kg = FloatField('Stock (KG)', validators=[DataRequired(), NumberRange(min=0)])
-    min_order_kg = FloatField('Minimum Order (KG)', validators=[DataRequired(), NumberRange(min=0.1)], default=0.5)
-    freshness_hours = IntegerField('Freshness Hours', validators=[DataRequired(), NumberRange(min=1)], default=24)
-    cooking_tips = TextAreaField('Cooking Tips', validators=[Optional(), Length(max=1000)])
+    meat_type = SelectField('Meat Type', choices=[('pork', 'Pork'), ('buffalo', 'Buffalo')], validators=[DataRequired()])
+    preparation_type = SelectField('Preparation Type', choices=[('fresh', 'Fresh'), ('processed', 'Processed')], validators=[DataRequired()])
+    stock_kg = FloatField('Stock (kg)', validators=[DataRequired(), NumberRange(min=0, message='Stock cannot be negative')])
+    min_order_kg = FloatField('Minimum Order (kg)', validators=[DataRequired(), NumberRange(min=0.1, message='Minimum order must be at least 0.1 kg')])
+    freshness_hours = IntegerField('Freshness (hours)', validators=[Optional(), NumberRange(min=1, max=72, message='Freshness must be between 1-72 hours')])
+    cooking_tips = TextAreaField('Cooking Tips', validators=[Optional(), Length(max=300)])
     is_featured = BooleanField('Featured Product')
-    image = FileField('Product Image', validators=[FileAllowed(['jpg', 'png', 'jpeg', 'gif'], 'Images only!')])
+    image = FileField('Product Image', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Images only!')])
     submit = SubmitField('Save Product')
 
+    def validate_price(self, field):
+        """Custom validation for price field."""
+        try:
+            value = float(field.data)
+            if value <= 0:
+                raise ValidationError('Price must be greater than 0')
+        except (ValueError, TypeError):
+            raise ValidationError('Please enter a valid price')
+
+    def validate_stock_kg(self, field):
+        """Custom validation for stock field."""
+        try:
+            value = float(field.data)
+            if value < 0:
+                raise ValidationError('Stock cannot be negative')
+        except (ValueError, TypeError):
+            raise ValidationError('Please enter a valid stock amount')
+
+    def validate_min_order_kg(self, field):
+        """Custom validation for minimum order field."""
+        try:
+            value = float(field.data)
+            if value <= 0:
+                raise ValidationError('Minimum order must be greater than 0')
+        except (ValueError, TypeError):
+            raise ValidationError('Please enter a valid minimum order amount')
+
 class CartForm(FlaskForm):
-    """Add to cart form."""
+    """Form for adding items to cart."""
     product_id = HiddenField('Product ID', validators=[DataRequired()])
-    quantity = FloatField('मात्रा / Quantity (KG)', validators=[DataRequired(), NumberRange(min=0.1, max=50)])
-    submit = SubmitField('कार्टमा थप्नुहोस् / Add to Cart')
+    quantity = FloatField('Quantity (kg)', validators=[DataRequired(), NumberRange(min=0.1, max=100, message='Quantity must be between 0.1 and 100 kg')])
+    submit = SubmitField('Add to Cart')
+
+    def validate_quantity(self, field):
+        """Custom validation for quantity field."""
+        try:
+            value = float(field.data)
+            if value <= 0:
+                raise ValidationError('Quantity must be greater than 0')
+            if value < 0.1:
+                raise ValidationError('Minimum quantity is 0.1 kg')
+        except (ValueError, TypeError):
+            raise ValidationError('Please enter a valid number')
 
 class UpdateCartForm(FlaskForm):
-    """Update cart item form."""
+    """Form for updating cart item quantity."""
     product_id = HiddenField('Product ID', validators=[DataRequired()])
-    quantity = FloatField('Quantity (KG)', validators=[DataRequired(), NumberRange(min=0.1, max=50)])
+    quantity = FloatField('Quantity (kg)', validators=[DataRequired(), NumberRange(min=0.1, max=100, message='Quantity must be between 0.1 and 100 kg')])
     submit = SubmitField('Update')
 
 class RemoveCartForm(FlaskForm):
-    """Remove from cart form."""
+    """Form for removing items from cart."""
     product_id = HiddenField('Product ID', validators=[DataRequired()])
     submit = SubmitField('Remove')
 

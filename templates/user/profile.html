@@ -121,7 +121,7 @@
             </div>
             <div class="card-body">
                 {% if current_user.orders %}
-                {% for order in current_user.orders|sort(attribute='created_at', reverse=true)[:3] %}
+                {% for order in (current_user.orders|sort(attribute='created_at', reverse=true))[:3] %}
                 <div class="d-flex justify-content-between align-items-center {% if not loop.last %}border-bottom pb-3 mb-3{% endif %}">
                     <div>
                         <h6 class="mb-1">Order #{{ order.order_number }}</h6>
