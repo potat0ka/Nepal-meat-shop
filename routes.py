@@ -159,12 +159,19 @@ def register_routes(app):
             return redirect(url_for('login'))
 
         form = CartForm()
+        
+        # Get product_id from form data for better debugging
+        product_id_str = request.form.get('product_id', '')
+        quantity_str = request.form.get('quantity', '')
+        
+        # Debug information
+        print(f"DEBUG: product_id from form: '{product_id_str}'")
+        print(f"DEBUG: quantity from form: '{quantity_str}'")
+        print(f"DEBUG: form.product_id.data: '{form.product_id.data}'")
+        print(f"DEBUG: form.quantity.data: '{form.quantity.data}'")
+        print(f"DEBUG: form.errors: {form.errors}")
+        
         if form.validate_on_submit():
-            # Validate product_id is not empty
-            if not form.product_id.data or form.product_id.data == '':
-                flash('❌ उत्पादन चयन गर्नुहोस् / Please select a product', 'error')
-                return redirect(url_for('product_list'))
-            
             try:
                 product_id = int(form.product_id.data)
                 quantity = float(form.quantity.data)
@@ -226,13 +233,13 @@ def register_routes(app):
             for error in errors:
                 flash(f'❌ {error}', 'error')
 
-        # Safe redirect - check if product_id exists and is valid
-        if form.product_id.data and form.product_id.data != '':
-            try:
-                product_id = int(form.product_id.data)
+        # Try to redirect back to the product page if we have a valid product_id
+        try:
+            if product_id_str and product_id_str != '':
+                product_id = int(product_id_str)
                 return redirect(url_for('product_detail', product_id=product_id))
-            except (ValueError, TypeError):
-                pass
+        except (ValueError, TypeError):
+            pass
         
         return redirect(url_for('product_list'))
 

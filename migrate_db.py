@@ -15,7 +15,7 @@ def migrate_database():
     with app.app_context():
         try:
             # Check if transaction_id column exists in Order table
-            result = db.engine.execute(text("""
+            result = db.session.execute(text("""
                 SELECT COUNT(*) 
                 FROM pragma_table_info('order') 
                 WHERE name='transaction_id'
@@ -23,7 +23,7 @@ def migrate_database():
             
             if result[0] == 0:
                 print("Adding transaction_id column to Order table...")
-                db.engine.execute(text("ALTER TABLE 'order' ADD COLUMN transaction_id VARCHAR(100)"))
+                db.session.execute(text("ALTER TABLE 'order' ADD COLUMN transaction_id VARCHAR(100)"))
                 print("✅ Added transaction_id column successfully!")
             else:
                 print("✅ transaction_id column already exists")

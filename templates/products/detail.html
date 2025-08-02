@@ -82,7 +82,7 @@
                         <br>उपलब्ध: {{ product.stock_kg }} केजी / Available: {{ product.stock_kg }} kg
                     </div>
                     <div id="quantity-error" class="text-danger small" style="display: none;"></div>
-                    
+
                     <!-- Show form validation errors -->
                     {% if form.quantity.errors %}
                     <div class="text-danger small">
@@ -91,7 +91,7 @@
                         {% endfor %}
                     </div>
                     {% endif %}
-                    
+
                     {% if form.product_id.errors %}
                     <div class="text-danger small">
                         {% for error in form.product_id.errors %}
