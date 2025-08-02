@@ -157,7 +157,8 @@ body {
 
 .product-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+    transition: all 0.3s ease;
 }
 
 .product-card .card-img-top {
@@ -176,7 +177,8 @@ body {
 }
 
 .category-card:hover {
-    transform: translateY(-5px);
+    transform: translateY(-3px);
+    transition: all 0.3s ease;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
 }
 
@@ -435,6 +437,72 @@ body {
     }
 }
 
+/* Quantity Controls */
+.quantity-control {
+    max-width: 300px;
+}
+
+.quantity-control .btn {
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: all 0.3s ease;
+}
+
+.quantity-control .btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.quantity-control input[type="number"] {
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    transition: border-color 0.3s ease;
+}
+
+.quantity-control input[type="number"]:focus {
+    border-color: #e74c3c;
+    box-shadow: 0 0 0 0.2rem rgba(231, 76, 60, 0.25);
+}
+
+/* Hide number input spinners */
+.quantity-control input[type="number"]::-webkit-outer-spin-button,
+.quantity-control input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.quantity-control input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+/* Cart Form Enhancements */
+.cart-form {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.cart-form .btn-lg {
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.cart-form .btn-lg:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+}
+
 /* Footer */
 footer {
     background: linear-gradient(135deg, var(--dark-color) 0%, #2c3034 100%);
@@ -659,4 +727,67 @@ footer a:hover {
     background-clip: text;
     -webkit-text-fill-color: transparent;
     font-weight: bold;
+}
+
+/* Cart Badge Animation */
+.navbar .badge {
+    animation: pulse 2s infinite;
+    font-size: 0.7rem;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Quantity Controls */
+.input-group .btn {
+    min-width: 44px;
+    border-color: #dee2e6;
+}
+
+.input-group .btn:hover {
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+}
+
+.input-group input[type="number"] {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+/* Remove number input arrows */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+/* Cart button loading state */
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Improved card hover effects */
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+    transition: all 0.3s ease;
+}
+
+.category-card:hover {
+    transform: translateY(-3px);
+    transition: all 0.3s ease;
 }
