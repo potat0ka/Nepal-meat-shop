@@ -1,0 +1,447 @@
+{% extends "base.html" %}
+
+{% block title %}Order #{{ order.order_number }} - Nepal Meat Shop{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="fas fa-receipt me-2"></i>
+                Order #{{ order.order_number }}
+            </h2>
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('admin.admin_orders') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Back to Orders
+                </a>
+                <button class="btn btn-outline-primary" onclick="printOrder()">
+                    <i class="fas fa-print me-2"></i>
+                    Print
+                </button>
+            </div>
+        </div>
+        
+        <div class="row">
+            <!-- Order Information -->
+            <div class="col-md-8">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Order Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Order Number:</strong> #{{ order.order_number }}</p>
+                                <p><strong>Order Date:</strong> {{ order.created_at.strftime('%B %d, %Y at %I:%M %p') if order.created_at else 'N/A' }}</p>
+                                <p><strong>Payment Method:</strong> {{ order.payment_method.title() }}</p>
+                                <p><strong>Payment Status:</strong> 
+                                    <span class="badge bg-{{ 'success' if order.payment_status == 'paid' else ('warning' if order.payment_status == 'pending' else 'danger') }}">
+                                        {{ order.payment_status.title() }}
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Order Status:</strong>
+                                    <select class="form-select form-select-sm d-inline-block w-auto" 
+                                            onchange="updateOrderStatus('{{ order._id }}', this.value)"
+                                            data-order-id="{{ order._id }}"
+                                            data-old-status="{{ order.status }}">
+                                        <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
+                                        <option value="confirmed" {% if order.status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                                        <option value="processing" {% if order.status == 'processing' %}selected{% endif %}>Processing</option>
+                                        <option value="out_for_delivery" {% if order.status == 'out_for_delivery' %}selected{% endif %}>Out for Delivery</option>
+                                        <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Delivered</option>
+                                        <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                    </select>
+                                </p>
+                                <p><strong>Total Amount:</strong> <span class="text-primary fw-bold">रू {{ "%.0f"|format(order.total_amount or 0) }}</span></p>
+                                {% if order.special_instructions %}
+                                <p><strong>Special Instructions:</strong><br>
+                                    <em class="text-muted">{{ order.special_instructions }}</em>
+                                </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Order Items -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-shopping-basket me-2"></i>
+                            Order Items ({{ order.items|length }})
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Price</th>
+                                        <th>Quantity</th>
+                                        <th>Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in order.order_items %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-light rounded me-3 d-flex align-items-center justify-content-center" 
+                                                     style="width: 50px; height: 50px;">
+                                                    <i class="fas fa-drumstick-bite text-muted"></i>
+                                                </div>
+                                                <div>
+                                                    <strong>{{ item.product_name }}</strong>
+                                                    <br>
+                                                    <small class="text-muted">Product ID: {{ item.product_id }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>रू {{ "%.0f"|format(item.unit_price or 0) }}</td>
+                                        <td>{{ item.quantity or 0 }} kg</td>
+                                        <td><strong>रू {{ "%.0f"|format((item.unit_price or 0) * (item.quantity or 0)) }}</strong></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <th colspan="3" class="text-end">Total:</th>
+                                        <th class="text-primary">रू {{ "%.0f"|format(order.total_amount or 0) }}</th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Customer & Delivery Information -->
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-user me-2"></i>
+                            Customer Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Name:</strong> {{ user.full_name }}</p>
+                        <p><strong>Email:</strong> {{ user.email }}</p>
+                        <p><strong>Phone:</strong> {{ order.delivery_phone }}</p>
+                        <p><strong>Member Since:</strong> {{ user.created_at.strftime('%B %Y') if user.created_at else 'N/A' }}</p>
+                        
+                        <div class="mt-3">
+                            <a href="{{ url_for('admin.admin_edit_user', user_id=user._id) }}" 
+                               class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-user-edit me-2"></i>
+                                View Customer
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-map-marker-alt me-2"></i>
+                            Delivery Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Address:</strong><br>
+                            <span style="white-space: pre-line;">{{ order.formatted_delivery_address }}</span>
+                        </p>
+                        <p><strong>Phone:</strong> {{ order.delivery_phone }}</p>
+                        {% if order.delivery_notes %}
+                        <p><strong>Delivery Notes:</strong><br>
+                            <em class="text-muted">{{ order.delivery_notes }}</em>
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-bolt me-2"></i>
+                            Quick Actions
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            {% if order.status not in ['delivered', 'cancelled'] %}
+                            <!-- Quick Status Actions -->
+                            {% if order.status == 'pending' %}
+                            <button class="btn btn-success btn-sm" onclick="quickStatusUpdate('{{ order._id }}', 'confirmed')">
+                                <i class="fas fa-check me-2"></i>
+                                Confirm Order
+                            </button>
+                            {% elif order.status == 'confirmed' %}
+                            <button class="btn btn-primary btn-sm" onclick="quickStatusUpdate('{{ order._id }}', 'processing')">
+                                <i class="fas fa-cogs me-2"></i>
+                                Start Processing
+                            </button>
+                            {% elif order.status == 'processing' %}
+                            <button class="btn btn-info btn-sm" onclick="quickStatusUpdate('{{ order._id }}', 'out_for_delivery')">
+                                <i class="fas fa-truck me-2"></i>
+                                Out for Delivery
+                            </button>
+                            {% elif order.status == 'out_for_delivery' %}
+                            <button class="btn btn-success btn-sm" onclick="quickStatusUpdate('{{ order._id }}', 'delivered')">
+                                <i class="fas fa-check-circle me-2"></i>
+                                Mark Delivered
+                            </button>
+                            {% endif %}
+                            
+                            <!-- Send Notification -->
+                            <button class="btn btn-outline-success btn-sm" onclick="sendNotification('{{ order._id }}')">
+                                <i class="fas fa-bell me-2"></i>
+                                Send Update
+                            </button>
+                            
+                            <!-- Cancel Order -->
+                            <button class="btn btn-outline-danger btn-sm" onclick="cancelOrder('{{ order._id }}')">
+                                <i class="fas fa-times me-2"></i>
+                                Cancel Order
+                            </button>
+                            {% endif %}
+                            
+                            <hr class="my-2">
+                            
+                            <!-- Other Actions -->
+                            <button class="btn btn-info btn-sm" onclick="printOrder()">
+                                <i class="fas fa-print me-2"></i>
+                                Print Order
+                            </button>
+                            
+                            <button class="btn btn-warning btn-sm" onclick="exportOrder()">
+                                <i class="fas fa-download me-2"></i>
+                                Export PDF
+                            </button>
+                            
+                            <!-- View Order History -->
+                            <button class="btn btn-outline-secondary btn-sm" onclick="viewOrderHistory('{{ order._id }}')">
+                                <i class="fas fa-history me-2"></i>
+                                View History
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateOrderStatus(orderId, newStatus) {
+    const selectElement = document.querySelector(`select[data-order-id="${orderId}"]`);
+    const oldStatus = selectElement ? selectElement.dataset.oldStatus : 'pending';
+    
+    if (confirm(`Update order status to "${newStatus.replace('_', ' ').toUpperCase()}"?`)) {
+        fetch(`/admin/orders/${orderId}/update-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the data attribute for future reference
+                if (selectElement) {
+                    selectElement.dataset.oldStatus = newStatus;
+                }
+                showToast(data.message, 'success');
+                // Refresh page to show updated status
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                // Revert selection on error
+                if (selectElement) {
+                    selectElement.value = oldStatus;
+                }
+                showToast(data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Revert selection on error
+            if (selectElement) {
+                selectElement.value = oldStatus;
+            }
+            showToast('Error updating order status', 'danger');
+        });
+    } else {
+        // Revert selection if user cancels
+        if (selectElement) {
+            selectElement.value = oldStatus;
+        }
+    }
+}
+
+function quickStatusUpdate(orderId, newStatus) {
+    const statusNames = {
+        'confirmed': 'CONFIRMED',
+        'processing': 'PROCESSING',
+        'out_for_delivery': 'OUT FOR DELIVERY',
+        'delivered': 'DELIVERED'
+    };
+    
+    console.log('Quick status update called:', orderId, newStatus);
+    
+    if (confirm(`Mark order as ${statusNames[newStatus]}?`)) {
+        const csrfToken = getCSRFToken();
+        console.log('CSRF Token:', csrfToken);
+        
+        fetch(`/admin/orders/${orderId}/update-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            if (data.success) {
+                showToast(data.message, 'success');
+                // Refresh page to show updated status
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showToast(data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error updating order status', 'danger');
+        });
+    }
+}
+
+function cancelOrder(orderId) {
+    if (confirm('Are you sure you want to CANCEL this order? This action cannot be undone.')) {
+        fetch(`/admin/orders/${orderId}/update-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: 'cancelled' })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Order cancelled successfully', 'warning');
+                // Refresh page to show updated status
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showToast(data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error cancelling order', 'danger');
+        });
+    }
+}
+
+function sendNotification(orderId) {
+    // Show modal for custom message
+    const customMessage = prompt('Enter custom message (leave empty for default):');
+    
+    if (customMessage !== null) { // User didn't cancel
+        const requestBody = customMessage.trim() ? { message: customMessage } : {};
+        
+        fetch(`/admin/orders/${orderId}/send-notification`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify(requestBody)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message, 'success');
+            } else {
+                showToast(data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error sending notification', 'danger');
+        });
+    }
+}
+
+function viewOrderHistory(orderId) {
+    // This would open a modal or new page showing order status history
+    showToast('Order history feature coming soon!', 'info');
+}
+
+function printOrder() {
+    window.print();
+}
+
+function exportOrder() {
+    // Export current order as PDF
+    window.open(`/admin/export/orders?order_id=${orderId}`, '_blank');
+}
+
+function getCSRFToken() {
+    // Get CSRF token from meta tag or cookie
+    const token = document.querySelector('meta[name="csrf-token"]');
+    return token ? token.getAttribute('content') : '';
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    toast.style.top = '20px';
+    toast.style.right = '20px';
+    toast.style.zIndex = '9999';
+    toast.style.minWidth = '300px';
+    toast.innerHTML = `
+        <strong>${type === 'success' ? '✓' : type === 'danger' ? '✗' : 'ℹ'}</strong> ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.remove();
+        }
+    }, 5000);
+}
+
+// Update status dropdown change handler
+document.addEventListener('DOMContentLoaded', function() {
+    const statusSelect = document.querySelector('select[onchange*="updateOrderStatus"]');
+    if (statusSelect) {
+        statusSelect.addEventListener('change', function() {
+            const orderId = '{{ order._id }}';
+            const newStatus = this.value;
+            updateOrderStatus(orderId, newStatus);
+        });
+    }
+});
+</script>
+{% endblock %}

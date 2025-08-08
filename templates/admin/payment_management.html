@@ -1,0 +1,402 @@
+{% extends "base.html" %}
+
+{% block title %}Payment Management - Nepal Meat Shop{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-credit-card text-primary"></i>
+                    भुक्तानी व्यवस्थापन / Payment Management
+                </h2>
+                <div class="btn-group">
+                    <button class="btn btn-outline-primary" onclick="refreshPaymentLogs()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                    <button class="btn btn-outline-success" onclick="exportPaymentLogs()">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Pending Payments</h6>
+                            <h3 id="pendingCount">{{ payment_stats.pending_count or 0 }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Verified Payments</h6>
+                            <h3 id="verifiedCount">{{ payment_stats.verified_count or 0 }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Failed Payments</h6>
+                            <h3 id="failedCount">{{ payment_stats.failed_count or 0 }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-times-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Total Amount</h6>
+                            <h3 id="totalAmount">Rs. {{ "{:,.2f}".format(payment_stats.total_amount or 0) }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-money-bill-wave fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Filters -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5><i class="fas fa-filter"></i> Filters</h5>
+        </div>
+        <div class="card-body">
+            <form id="paymentFilterForm" class="row g-3">
+                <div class="col-md-3">
+                    <label for="statusFilter" class="form-label">Payment Status</label>
+                    <select class="form-select" id="statusFilter" name="status">
+                        <option value="">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="verified">Verified</option>
+                        <option value="failed">Failed</option>
+                        <option value="initiated">Initiated</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="methodFilter" class="form-label">Payment Method</label>
+                    <select class="form-select" id="methodFilter" name="method">
+                        <option value="">All Methods</option>
+                        <option value="esewa">eSewa</option>
+                        <option value="khalti">Khalti</option>
+                        <option value="stripe">Stripe</option>
+                        <option value="cod">Cash on Delivery</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="dateFrom" class="form-label">From Date</label>
+                    <input type="date" class="form-control" id="dateFrom" name="date_from">
+                </div>
+                <div class="col-md-3">
+                    <label for="dateTo" class="form-label">To Date</label>
+                    <input type="date" class="form-control" id="dateTo" name="date_to">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Apply Filters
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="clearFilters()">
+                        <i class="fas fa-times"></i> Clear
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Payment Logs Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5><i class="fas fa-list"></i> Payment Logs</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover" id="paymentLogsTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Order Number</th>
+                            <th>Payment Method</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Transaction ID</th>
+                            <th>Created At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paymentLogsBody">
+                        {% for log in payment_logs %}
+                        <tr data-order-id="{{ log.order_number }}">
+                            <td>
+                                <a href="{{ url_for('orders.order_detail', order_id=log.order_id) }}" 
+                                   class="text-decoration-none">
+                                    {{ log.order_number }}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ log.payment_method.upper() }}</span>
+                            </td>
+                            <td>Rs. {{ "{:,.2f}".format(log.amount) }}</td>
+                            <td>
+                                {% if log.status == 'verified' %}
+                                    <span class="badge bg-success">Verified</span>
+                                {% elif log.status == 'pending' %}
+                                    <span class="badge bg-warning">Pending</span>
+                                {% elif log.status == 'failed' %}
+                                    <span class="badge bg-danger">Failed</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ log.status.title() }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <code>{{ log.transaction_id or 'N/A' }}</code>
+                            </td>
+                            <td>{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    {% if log.status == 'pending' and log.payment_method != 'cod' %}
+                                    <button class="btn btn-success btn-sm" 
+                                            onclick="verifyPayment('{{ log.order_number }}', '{{ log.payment_method }}')">
+                                        <i class="fas fa-check"></i> Verify
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" 
+                                            onclick="markPaymentFailed('{{ log.order_number }}')">
+                                        <i class="fas fa-times"></i> Mark Failed
+                                    </button>
+                                    {% endif %}
+                                    <button class="btn btn-info btn-sm" 
+                                            onclick="viewPaymentDetails('{{ log.order_number }}')">
+                                        <i class="fas fa-eye"></i> Details
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if payment_logs.pages > 1 %}
+            <nav aria-label="Payment logs pagination">
+                <ul class="pagination justify-content-center">
+                    {% if payment_logs.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.payment_management', page=payment_logs.prev_num) }}">Previous</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in payment_logs.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != payment_logs.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('admin.payment_management', page=page_num) }}">{{ page_num }}</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if payment_logs.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.payment_management', page=payment_logs.next_num) }}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Payment Verification Modal -->
+<div class="modal fade" id="paymentVerificationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Manual Payment Verification</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="verificationForm">
+                    <div class="mb-3">
+                        <label for="verificationOrderNumber" class="form-label">Order Number</label>
+                        <input type="text" class="form-control" id="verificationOrderNumber" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="verificationTransactionId" class="form-label">Transaction ID</label>
+                        <input type="text" class="form-control" id="verificationTransactionId" required>
+                        <div class="form-text">Enter the transaction ID from the payment gateway</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="verificationNotes" class="form-label">Verification Notes</label>
+                        <textarea class="form-control" id="verificationNotes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="confirmPaymentVerification()">
+                    <i class="fas fa-check"></i> Verify Payment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Payment management JavaScript functions
+let currentOrderNumber = '';
+let currentPaymentMethod = '';
+
+function refreshPaymentLogs() {
+    window.location.reload();
+}
+
+function exportPaymentLogs() {
+    const form = document.getElementById('paymentFilterForm');
+    const formData = new FormData(form);
+    const params = new URLSearchParams(formData);
+    window.open(`{{ url_for('admin.export_payment_logs') }}?${params.toString()}`, '_blank');
+}
+
+function clearFilters() {
+    document.getElementById('paymentFilterForm').reset();
+    document.getElementById('paymentFilterForm').submit();
+}
+
+function verifyPayment(orderNumber, paymentMethod) {
+    currentOrderNumber = orderNumber;
+    currentPaymentMethod = paymentMethod;
+    
+    document.getElementById('verificationOrderNumber').value = orderNumber;
+    document.getElementById('verificationTransactionId').value = '';
+    document.getElementById('verificationNotes').value = '';
+    
+    const modal = new bootstrap.Modal(document.getElementById('paymentVerificationModal'));
+    modal.show();
+}
+
+function confirmPaymentVerification() {
+    const transactionId = document.getElementById('verificationTransactionId').value.trim();
+    const notes = document.getElementById('verificationNotes').value.trim();
+    
+    if (!transactionId) {
+        alert('Please enter a transaction ID');
+        return;
+    }
+    
+    fetch(`/payment/verify/${currentPaymentMethod}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            order_number: currentOrderNumber,
+            transaction_id: transactionId,
+            notes: notes
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert('Payment verified successfully!');
+            window.location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Verification failed'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error verifying payment');
+    });
+    
+    const modal = bootstrap.Modal.getInstance(document.getElementById('paymentVerificationModal'));
+    modal.hide();
+}
+
+function markPaymentFailed(orderNumber) {
+    if (confirm('Are you sure you want to mark this payment as failed?')) {
+        fetch(`/payment/mark-failed`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                order_number: orderNumber
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('Payment marked as failed');
+                window.location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Failed to update payment status'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error updating payment status');
+        });
+    }
+}
+
+function viewPaymentDetails(orderNumber) {
+    // Redirect to order detail page
+    window.open(`{{ url_for('orders.order_detail', order_id='ORDER_ID') }}`.replace('ORDER_ID', orderNumber), '_blank');
+}
+
+// Auto-refresh every 30 seconds for pending payments
+setInterval(function() {
+    const pendingRows = document.querySelectorAll('tr[data-order-id] .badge.bg-warning');
+    if (pendingRows.length > 0) {
+        refreshPaymentLogs();
+    }
+}, 30000);
+
+// Form submission handler
+document.getElementById('paymentFilterForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const params = new URLSearchParams(formData);
+    window.location.href = `{{ url_for('admin.payment_management') }}?${params.toString()}`;
+});
+</script>
+{% endblock %}

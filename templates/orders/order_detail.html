@@ -9,7 +9,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h2>Order #{{ order.order_number }}</h2>
-                <p class="text-muted mb-0">Placed on {{ order.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                <p class="text-muted mb-0">Placed on {{ order.created_at.strftime('%B %d, %Y at %I:%M %p') if order.created_at else 'N/A' }}</p>
             </div>
             <div class="text-end">
                 <span class="badge bg-{{ 'success' if order.status == 'delivered' else ('primary' if order.status == 'processing' else ('warning' if order.status == 'pending' else 'secondary')) }} fs-6">
@@ -33,7 +33,7 @@
                         <div class="row align-items-center mb-3 {% if not loop.last %}border-bottom pb-3{% endif %}">
                             <div class="col-md-2">
                                 {% if item.product.image_url %}
-                                <img src="{{ url_for('uploaded_file', filename=item.product.image_url) }}" 
+                                <img src="{{ url_for('main.uploaded_file', filename=item.product.image_url) }}" 
                                      class="img-fluid rounded" alt="{{ item.product.name }}">
                                 {% else %}
                                 <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 80px;">
@@ -133,7 +133,7 @@
                     <div class="card-body">
                         <p class="mb-2">
                             <strong>Address:</strong><br>
-                            {{ order.delivery_address }}
+                            <span style="white-space: pre-line;">{{ order.formatted_delivery_address }}</span>
                         </p>
                         <p class="mb-2">
                             <strong>Phone:</strong><br>
@@ -199,17 +199,17 @@
         <div class="row mt-4">
             <div class="col-12">
                 <div class="d-flex gap-2">
-                    <a href="{{ url_for('order_list') }}" class="btn btn-outline-secondary me-2">
+                    <a href="{{ url_for('orders.my_orders') }}" class="btn btn-outline-secondary me-2">
                         <i class="fas fa-arrow-left me-2"></i>
                         Back to Orders
                     </a>
-                    <a href="{{ url_for('generate_invoice', order_id=order.id) }}" class="btn btn-primary">
+                    <a href="{{ url_for('products.list') }}" class="btn btn-primary">
                         <i class="fas fa-file-invoice me-2"></i>
                         Download Invoice
                     </a>
 
                     {% if order.status == 'pending' %}
-                    <button class="btn btn-outline-danger" onclick="cancelOrder({{ order.id }})">
+                    <button class="btn btn-outline-danger" onclick="cancelOrder('{{ order.id }}')">
                         <i class="fas fa-times me-2"></i>
                         Cancel Order
                     </button>
@@ -245,9 +245,56 @@
 
 <script>
 function cancelOrder(orderId) {
-    if (confirm('Are you sure you want to cancel this order?')) {
-        // Implement order cancellation logic
-        alert('Order cancellation feature will be implemented');
+    if (confirm('के तपाईं यो अर्डर रद्द गर्न चाहनुहुन्छ? / Are you sure you want to cancel this order?')) {
+        // Show loading state
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Cancelling...';
+        button.disabled = true;
+        
+        // Make AJAX request to cancel order
+        fetch(`/cancel_order/${orderId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                if (window.MeatShop && window.MeatShop.showToast) {
+                    window.MeatShop.showToast(data.message, 'success');
+                } else {
+                    alert(data.message);
+                }
+                // Redirect to orders list after successful cancellation
+                setTimeout(() => {
+                    window.location.href = '/orders';
+                }, 1500);
+            } else {
+                // Show error message
+                if (window.MeatShop && window.MeatShop.showToast) {
+                    window.MeatShop.showToast(data.message, 'error');
+                } else {
+                    alert(data.message);
+                }
+                // Restore button state
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (window.MeatShop && window.MeatShop.showToast) {
+                window.MeatShop.showToast('अर्डर रद्द गर्न सकिएन / Failed to cancel order', 'error');
+            } else {
+                alert('अर्डर रद्द गर्न सकिएन / Failed to cancel order');
+            }
+            // Restore button state
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
     }
 }
 </script>

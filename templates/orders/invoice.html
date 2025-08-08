@@ -71,10 +71,10 @@
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <h6 class="text-muted">Bill To:</h6>
-                            <h5>{{ order.customer.full_name }}</h5>
-                            <p class="mb-1">{{ order.customer.email }}</p>
-                            <p class="mb-1">{{ order.customer.phone }}</p>
-                            <p class="mb-0">{{ order.delivery_address }}</p>
+                            <h5>{{ order.user.full_name }}</h5>
+                            <p class="mb-1">{{ order.user.email }}</p>
+                            <p class="mb-1">{{ order.user.phone }}</p>
+                            <p class="mb-0" style="white-space: pre-line;">{{ order.formatted_delivery_address }}</p>
                         </div>
                         <div class="col-md-6">
                             <h6 class="text-muted">Payment Method:</h6>

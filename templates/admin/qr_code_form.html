@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if qr_code %}
+        Edit QR Code - {{ payment_method_display }}
+    {% else %}
+        Upload QR Code - {{ payment_method_display }}
+    {% endif %}
+    - Nepal Meat Shop Admin
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        {% if qr_code %}
+                            <i class="fas fa-edit me-2"></i>
+                            Edit QR Code for {{ payment_method_display }}
+                        {% else %}
+                            <i class="fas fa-upload me-2"></i>
+                            Upload QR Code for {{ payment_method_display }}
+                        {% endif %}
+                    </h4>
+                    <p class="mb-0 mt-2">
+                        <small>
+                            {% if qr_code %}
+                                Update the QR code image and description for {{ payment_method_display }} payments
+                            {% else %}
+                                Upload a QR code image for {{ payment_method_display }} payments
+                            {% endif %}
+                        </small>
+                    </p>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data" id="qrForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Payment Method (Hidden) -->
+                        {{ form.payment_method() }}
+                        
+                        <!-- Current QR Code (if editing) -->
+                        {% if qr_code %}
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Current QR Code:</label>
+                            <div class="text-center">
+                                <img src="{{ url_for('main.uploaded_file', filename=qr_code.qr_image) }}" 
+                                     alt="{{ payment_method_display }} QR Code" 
+                                     class="img-fluid rounded border" 
+                                     style="max-width: 300px; max-height: 300px; cursor: pointer;"
+                                     id="currentQrImage"
+                                     onclick="enlargeImage(this.src)">
+                            </div>
+                            <div class="text-center mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-clock me-1"></i>
+                                    Last updated: {{ qr_code.last_updated.strftime('%Y-%m-%d %H:%M') if qr_code.last_updated else 'N/A' }}
+                                </small>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- QR Code Image Upload -->
+                        <div class="mb-4">
+                            {{ form.qr_image.label(class="form-label fw-bold") }}
+                            <div class="input-group">
+                                {{ form.qr_image(class="form-control", accept="image/*", id="qrImageInput") }}
+                                <label class="input-group-text" for="qrImageInput">
+                                    <i class="fas fa-image"></i>
+                                </label>
+                            </div>
+                            {% if form.qr_image.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.qr_image.errors %}
+                                        <small>{{ error }}</small><br>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                {% if qr_code %}
+                                    Leave empty to keep current image. 
+                                {% endif %}
+                                Supported formats: JPG, JPEG, PNG, GIF. Maximum size: 5MB
+                            </div>
+                        </div>
+                        
+                        <!-- Image Preview -->
+                        <div class="mb-4" id="imagePreview" style="display: none;">
+                            <label class="form-label fw-bold">
+                                {% if qr_code %}New Image Preview:{% else %}Preview:{% endif %}
+                            </label>
+                            <div class="text-center">
+                                <img id="previewImg" src="" alt="QR Code Preview" 
+                                     class="img-fluid rounded border" 
+                                     style="max-width: 300px; max-height: 300px;">
+                            </div>
+                        </div>
+                        
+                        <!-- Description -->
+                        <div class="mb-4">
+                            {{ form.description.label(class="form-label fw-bold") }}
+                            {{ form.description(class="form-control", rows="3", placeholder="Enter a description for this QR code (optional)") }}
+                            {% if form.description.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.description.errors %}
+                                        <small>{{ error }}</small><br>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Optional description to help identify this QR code
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('admin.admin_qr_codes') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>
+                                Back to QR Codes
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                {% if qr_code %}
+                                    <i class="fas fa-save me-1"></i>
+                                    Update QR Code
+                                {% else %}
+                                    <i class="fas fa-upload me-1"></i>
+                                    Upload QR Code
+                                {% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Image Enlargement Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">QR Code - {{ payment_method_display }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="enlargedImage" src="" alt="Enlarged QR Code" class="img-fluid mb-3">
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <button type="button" class="btn btn-success" onclick="downloadQrFromModal()">
+                        <i class="fas fa-download me-1"></i>
+                        Download QR Code
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const imageInput = document.getElementById('qrImageInput');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    const submitBtn = document.getElementById('submitBtn');
+    const form = document.getElementById('qrForm');
+    
+    // Image preview functionality
+    imageInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Validate file type
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+            if (!validTypes.includes(file.type)) {
+                alert('Please select a valid image file (JPG, JPEG, PNG, or GIF)');
+                imageInput.value = '';
+                imagePreview.style.display = 'none';
+                return;
+            }
+            
+            // Validate file size (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('File size must be less than 5MB');
+                imageInput.value = '';
+                imagePreview.style.display = 'none';
+                return;
+            }
+            
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                imagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            imagePreview.style.display = 'none';
+        }
+    });
+    
+    // Form submission with loading state
+    form.addEventListener('submit', function(e) {
+{% if not qr_code and not imageInput.files[0] %}
+
+
+
+        if (!imageInput.files[0]) {
+            e.preventDefault();
+            alert('Please select an image file to upload');
+            return;
+        }
+{% endif %}
+        
+        // Show loading state
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '{% if qr_code %}<i class="fas fa-spinner fa-spin me-1"></i>Updating...{% else %}<i class="fas fa-spinner fa-spin me-1"></i>Uploading...{% endif %}';
+    });
+});
+
+// Function to enlarge image
+function enlargeImage(src) {
+    const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+    document.getElementById('enlargedImage').src = src;
+    modal.show();
+}
+
+// Function to download QR code from modal
+function downloadQrFromModal() {
+    const enlargedImage = document.getElementById('enlargedImage');
+    const imageSrc = enlargedImage.src;
+    
+    if (!imageSrc) return;
+    
+    const link = document.createElement('a');
+    link.href = imageSrc;
+    
+    // Extract filename from URL or create a default name
+    const urlParts = imageSrc.split('/');
+    const originalFilename = urlParts[urlParts.length - 1];
+    const fileExtension = originalFilename.split('.').pop();
+    
+    // Create a clean filename
+    const paymentMethod = '{{ payment_method_display }}';
+    const cleanName = paymentMethod.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    link.download = `${cleanName}_qr_code.${fileExtension}`;
+    
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+</script>
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.btn {
+    transition: all 0.2s ease-in-out;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+#previewImg, #currentQrImage {
+    transition: transform 0.2s ease-in-out;
+    cursor: pointer;
+}
+
+#previewImg:hover, #currentQrImage:hover {
+    transform: scale(1.05);
+}
+
+.input-group-text {
+    background-color: #f8f9fa;
+    border-color: #ced4da;
+}
+</style>
+{% endblock %}

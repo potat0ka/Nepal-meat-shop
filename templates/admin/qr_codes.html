@@ -1,0 +1,666 @@
+{% extends "base.html" %}
+
+{% block title %}QR Code Management - Nepal Meat Shop Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center justify-content-between flex-wrap">
+                <div class="page-header-content">
+                    <h2 class="page-title mb-2">
+                        <i class="fas fa-qrcode me-3 text-primary"></i>
+                        QR Code Management
+                        <span class="text-muted fs-5 ms-2">/ QR कोड व्यवस्थापन</span>
+                    </h2>
+                    <p class="text-muted mb-0 fs-6">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Manage payment QR codes for different payment methods
+                    </p>
+                </div>
+                <div class="page-header-actions">
+                    <div class="badge bg-primary fs-6 px-3 py-2">
+                        <i class="fas fa-mobile-alt me-2"></i>
+                        {{ available_methods|length }} Payment Methods
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code Grid -->
+    <div class="row g-4">
+        {% for method in available_methods %}
+        <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+            <div class="card qr-management-card h-100 border-0 shadow-sm position-relative overflow-hidden">
+                <!-- Payment Method Header -->
+                <div class="card-header border-0 bg-gradient-primary text-white position-relative">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="payment-method-info">
+                            <h6 class="mb-1 fw-bold">
+                                <i class="fas fa-mobile-alt me-2"></i>
+                                {{ method.name }}
+                            </h6>
+                            <small class="opacity-75">{{ method.name_nepali }}</small>
+                        </div>
+                        <div class="payment-status-badge">
+                            {% if method.id in qr_codes %}
+                                <span class="badge bg-success bg-opacity-75">
+                                    <i class="fas fa-check-circle me-1"></i>Active
+                                </span>
+                            {% else %}
+                                <span class="badge bg-warning bg-opacity-75">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>Pending
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <!-- Decorative Pattern -->
+                    <div class="header-pattern"></div>
+                </div>
+
+                <!-- QR Code Content -->
+                <div class="card-body text-center p-4">
+                    {% if method.id in qr_codes %}
+                        {% set qr_code = qr_codes[method.id] %}
+                        <!-- Existing QR Code Display -->
+                        <div class="qr-code-container mb-3 position-relative">
+                            <div class="qr-image-wrapper">
+                                <img src="{{ url_for('main.uploaded_file', filename=qr_code.qr_image) }}" 
+                                     alt="{{ method.name }} QR Code" 
+                                     class="img-fluid qr-image rounded-3 shadow-sm"
+                                     onclick="enlargeImage('{{ url_for('main.uploaded_file', filename=qr_code.qr_image) }}', '{{ method.name }}')"
+                                     loading="lazy">
+                                <div class="qr-overlay">
+                                    <i class="fas fa-search-plus"></i>
+                                    <span>Click to enlarge</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if qr_code.description %}
+                        <div class="qr-description mb-3">
+                            <p class="text-muted small mb-0 fst-italic">
+                                <i class="fas fa-quote-left me-1"></i>
+                                {{ qr_code.description }}
+                            </p>
+                        </div>
+                        {% endif %}
+
+                        <!-- Action Buttons -->
+                        <div class="qr-actions d-grid gap-2">
+                            <a href="{{ url_for('admin.admin_edit_qr_code', payment_method=method.id) }}" 
+                               class="btn btn-outline-primary btn-sm qr-btn">
+                                <i class="fas fa-edit me-2"></i>
+                                Edit QR Code
+                            </a>
+                            <button type="button" 
+                                    class="btn btn-outline-success btn-sm"
+                                    onclick="downloadQrFromCard('{{ url_for('main.uploaded_file', filename=qr_code.qr_image) }}', '{{ method.name }}')">
+                                <i class="fas fa-download me-2"></i>
+                                Download
+                            </button>
+                        </div>
+                    {% else %}
+                        <!-- No QR Code State -->
+                        <div class="no-qr-state mb-3">
+                            <div class="empty-qr-placeholder">
+                                <div class="empty-qr-icon">
+                                    <i class="fas fa-qrcode"></i>
+                                </div>
+                                <h6 class="text-muted mt-3 mb-2">No QR Code</h6>
+                                <p class="text-muted small mb-0">Upload a QR code for this payment method</p>
+                            </div>
+                        </div>
+
+                        <!-- Upload Button -->
+                        <div class="d-grid">
+                            <a href="{{ url_for('admin.admin_upload_qr_code', payment_method=method.id) }}" 
+                               class="btn btn-primary btn-sm qr-btn">
+                                <i class="fas fa-cloud-upload-alt me-2"></i>
+                                Upload QR Code
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Card Footer -->
+                <div class="card-footer bg-light border-0 text-center py-3">
+                    <small class="text-muted d-flex align-items-center justify-content-center">
+                        <i class="fas fa-clock me-2"></i>
+                        {% if method.id in qr_codes %}
+                            Last updated: {{ qr_codes[method.id].last_updated.strftime('%b %d, %Y') if qr_codes[method.id].last_updated else 'Unknown' }}
+                        {% else %}
+                            <span class="text-warning">Awaiting upload</span>
+                        {% endif %}
+                    </small>
+                </div>
+
+                <!-- Card Accent -->
+                <div class="card-accent"></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body py-4">
+                    <div class="row text-center">
+                        <div class="col-md-3 col-6 mb-3 mb-md-0">
+                            <div class="stat-item">
+                                <h4 class="text-primary mb-1">{{ qr_codes|length }}</h4>
+                                <small class="text-muted">Active QR Codes</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3 mb-md-0">
+                            <div class="stat-item">
+                                <h4 class="text-warning mb-1">{{ available_methods|length - qr_codes|length }}</h4>
+                                <small class="text-muted">Pending Uploads</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="stat-item">
+                                <h4 class="text-success mb-1">{{ available_methods|length }}</h4>
+                                <small class="text-muted">Total Methods</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="stat-item">
+                                <h4 class="text-info mb-1">{{ ((qr_codes|length / available_methods|length) * 100)|round|int }}%</h4>
+                                <small class="text-muted">Completion Rate</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- QR Code Enlargement Modal -->
+<div class="modal fade" id="qrModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="qrModalTitle">QR Code</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="enlargedQrImage" src="" alt="Enlarged QR Code" class="img-fluid mb-3">
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <button type="button" class="btn btn-success" onclick="downloadQrCode()">
+                        <i class="fas fa-download me-1"></i>
+                        Download QR Code
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentQrImageSrc = '';
+let currentQrName = '';
+
+// Function to enlarge QR code image
+function enlargeImage(src, paymentMethodName) {
+    currentQrImageSrc = src;
+    currentQrName = paymentMethodName;
+    
+    const modal = new bootstrap.Modal(document.getElementById('qrModal'));
+    document.getElementById('enlargedQrImage').src = src;
+    document.getElementById('qrModalTitle').textContent = `${paymentMethodName} QR Code`;
+    modal.show();
+}
+
+// Function to download QR code from modal
+function downloadQrCode() {
+    if (!currentQrImageSrc) return;
+    downloadQrImage(currentQrImageSrc, currentQrName);
+}
+
+// Function to download QR code directly from card
+function downloadQrFromCard(src, paymentMethodName) {
+    downloadQrImage(src, paymentMethodName);
+}
+
+// Common download function
+function downloadQrImage(src, paymentMethodName) {
+    if (!src) return;
+    
+    // Create a temporary anchor element to trigger download
+    const link = document.createElement('a');
+    link.href = src;
+    
+    // Extract filename from URL or create a default name
+    const urlParts = src.split('/');
+    const originalFilename = urlParts[urlParts.length - 1];
+    const fileExtension = originalFilename.split('.').pop();
+    
+    // Create a clean filename
+    const cleanName = paymentMethodName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    link.download = `${cleanName}_qr_code.${fileExtension}`;
+    
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Show success feedback
+    showToast(`${paymentMethodName} QR code downloaded successfully!`, 'success');
+}
+
+// Toast notification function
+function showToast(message, type = 'info') {
+    // Create toast element
+    const toastHtml = `
+        <div class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-check-circle me-2"></i>${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    `;
+    
+    // Create toast container if it doesn't exist
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '9999';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Add toast to container
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+    
+    // Initialize and show toast
+    const toastElement = toastContainer.lastElementChild;
+    const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
+    toast.show();
+    
+    // Remove toast element after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', () => {
+        toastElement.remove();
+    });
+}
+
+// Add loading states to buttons
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click handlers for better UX
+    const qrButtons = document.querySelectorAll('.qr-btn');
+    qrButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Loading...';
+            this.disabled = true;
+            
+            // Re-enable after a short delay (for visual feedback)
+            setTimeout(() => {
+                this.innerHTML = originalText;
+                this.disabled = false;
+            }, 1000);
+        });
+    });
+    
+    // Add hover effects to QR images
+    const qrImages = document.querySelectorAll('.qr-image');
+    qrImages.forEach(img => {
+        img.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.05)';
+        });
+        
+        img.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
+    });
+});
+</script>
+
+<style>
+/* Page Header Styles */
+.page-title {
+    font-weight: 700;
+    color: #2c3e50;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.page-header-actions .badge {
+    border-radius: 25px;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(0,123,255,0.3);
+}
+
+/* QR Management Card Styles */
+.qr-management-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 16px;
+    background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+    position: relative;
+}
+
+.qr-management-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.qr-management-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(145deg, rgba(255,255,255,0.8) 0%, rgba(248,249,250,0.8) 100%);
+    border-radius: 16px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.qr-management-card:hover::before {
+    opacity: 1;
+}
+
+/* Card Header Styles */
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+    border-radius: 16px 16px 0 0;
+}
+
+.header-pattern {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100%;
+    background: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M20 20c0 4.4-3.6 8-8 8s-8-3.6-8-8 3.6-8 8-8 8 3.6 8 8zm0-20c0 4.4-3.6 8-8 8s-8-3.6-8-8 3.6-8 8-8 8 3.6 8 8z'/%3E%3C/g%3E%3C/svg%3E") repeat;
+    opacity: 0.3;
+}
+
+.payment-status-badge .badge {
+    border-radius: 20px;
+    font-size: 0.75rem;
+    padding: 0.4rem 0.8rem;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* QR Code Display Styles */
+.qr-code-container {
+    position: relative;
+    display: inline-block;
+}
+
+.qr-image-wrapper {
+    position: relative;
+    display: inline-block;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.qr-image-wrapper:hover {
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    transform: scale(1.05);
+}
+
+.qr-image {
+    max-width: 180px;
+    max-height: 180px;
+    width: 100%;
+    height: auto;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 12px;
+}
+
+.qr-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.3s ease;
+    border-radius: 12px;
+    font-size: 0.9rem;
+}
+
+.qr-image-wrapper:hover .qr-overlay {
+    opacity: 1;
+}
+
+.qr-overlay i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Empty State Styles */
+.empty-qr-placeholder {
+    padding: 2rem 1rem;
+    border: 2px dashed #dee2e6;
+    border-radius: 12px;
+    background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
+    transition: all 0.3s ease;
+}
+
+.empty-qr-placeholder:hover {
+    border-color: #007bff;
+    background: linear-gradient(145deg, #e3f2fd 0%, #bbdefb 100%);
+}
+
+.empty-qr-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1rem;
+    background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.empty-qr-placeholder:hover .empty-qr-icon {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+    transform: scale(1.1);
+}
+
+.empty-qr-icon i {
+    font-size: 2rem;
+    color: #6c757d;
+    transition: color 0.3s ease;
+}
+
+.empty-qr-placeholder:hover .empty-qr-icon i {
+    color: white;
+}
+
+/* Button Styles */
+.qr-btn {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0.5px;
+}
+
+.qr-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.qr-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.5s ease;
+}
+
+.qr-btn:hover::before {
+    left: 100%;
+}
+
+.qr-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Card Accent */
+.card-accent {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #007bff 0%, #28a745 50%, #ffc107 100%);
+    border-radius: 0 0 16px 16px;
+}
+
+/* Stats Section */
+.stat-item {
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    border-radius: 12px;
+}
+
+.stat-item:hover {
+    transform: translateY(-3px);
+    background: rgba(255,255,255,0.8);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.stat-item h4 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 1.5rem;
+    }
+    
+    .page-title .text-muted {
+        display: block;
+        margin-top: 0.5rem;
+        font-size: 1rem;
+    }
+    
+    .page-header-actions {
+        margin-top: 1rem;
+    }
+    
+    .qr-image {
+        max-width: 150px;
+        max-height: 150px;
+    }
+    
+    .stat-item h4 {
+        font-size: 2rem;
+    }
+    
+    .qr-management-card:hover {
+        transform: translateY(-4px) scale(1.01);
+    }
+}
+
+@media (max-width: 576px) {
+    .container-fluid {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    .qr-image {
+        max-width: 120px;
+        max-height: 120px;
+    }
+    
+    .empty-qr-icon {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .empty-qr-icon i {
+        font-size: 1.5rem;
+    }
+    
+    .stat-item {
+        padding: 1rem;
+    }
+    
+    .stat-item h4 {
+        font-size: 1.5rem;
+    }
+}
+
+/* Animation Classes */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.qr-management-card {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.qr-management-card:nth-child(1) { animation-delay: 0.1s; }
+.qr-management-card:nth-child(2) { animation-delay: 0.2s; }
+.qr-management-card:nth-child(3) { animation-delay: 0.3s; }
+.qr-management-card:nth-child(4) { animation-delay: 0.4s; }
+.qr-management-card:nth-child(5) { animation-delay: 0.5s; }
+.qr-management-card:nth-child(6) { animation-delay: 0.6s; }
+.qr-management-card:nth-child(7) { animation-delay: 0.7s; }
+
+/* Loading States */
+.btn-loading {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.btn-loading .fa-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+{% endblock %}

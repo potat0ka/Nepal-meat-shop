@@ -1,0 +1,458 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-tags me-2"></i>{{ title }}</h2>
+                <a href="{{ url_for('admin.admin_categories') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Categories
+                </a>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-body">
+                            <form method="POST" novalidate>
+                                {{ form.hidden_tag() }}
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            {{ form.name.label(class="form-label") }}
+                                            {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), id="name") }}
+                                            <div class="invalid-feedback">
+                                                {% for error in form.name.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            {{ form.name_nepali.label(class="form-label") }}
+                                            <div class="input-group">
+                                                {{ form.name_nepali(class="form-control" + (" is-invalid" if form.name_nepali.errors else ""), id="name_nepali", placeholder="Type in English and it will convert to Nepali") }}
+                                                <button type="button" class="btn btn-outline-secondary" onclick="translateToNepali()" title="Auto-translate from English name">
+                                                    <i class="fas fa-language"></i>
+                                                </button>
+                                            </div>
+                                            <small class="form-text text-muted">
+                                                Type English words (e.g., "meat", "chicken", "beef") and they will auto-convert to Nepali
+                                            </small>
+                                            <div class="invalid-feedback">
+                                                {% for error in form.name_nepali.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    {{ form.description.label(class="form-label") }}
+                                    {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows="3") }}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.description.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    <div class="form-text">Optional description for the category</div>
+                                </div>
+
+                                <div class="d-flex justify-content-between">
+                                    <a href="{{ url_for('admin.admin_categories') }}" class="btn btn-secondary">
+                                        <i class="fas fa-times me-2"></i>Cancel
+                                    </a>
+                                    <div>
+                                        <button type="reset" class="btn btn-outline-secondary me-2">
+                                            <i class="fas fa-undo me-2"></i>Reset
+                                        </button>
+                                        {{ form.submit(class="btn btn-primary") }}
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// English to Nepali meaningful translation mapping for categories
+const englishToNepali = {
+    // Animals and meat types
+    'pork': 'सुँगुरको मासु',
+    'pig': 'सुँगुर',
+    'sungur': 'सुँगुर',
+    'buffalo': 'भैंसीको मासु',
+    'buff': 'भैंसी',
+    'goat': 'बाख्राको मासु',
+    'khasi': 'खसी',
+    'mutton': 'खसीको मासु',
+    'chicken': 'कुखुराको मासु',
+    'kukhura': 'कुखुरा',
+    'duck': 'हाँसको मासु',
+    'fish': 'माछा',
+    'machha': 'माछा',
+    'lamb': 'भेडाको मासु',
+    'beef': 'गाईको मासु',
+    'turkey': 'टर्कीको मासु',
+    'cow': 'गाई',
+    'ox': 'गोरु',
+
+    // Body parts and cuts
+    'head': 'टाउको',
+    'tauko': 'टाउको',
+    'brain': 'दिमाग',
+    'tongue': 'जिब्रो',
+    'liver': 'कलेजो',
+    'heart': 'मुटु',
+    'kidney': 'मिर्गौला',
+    'lung': 'फोक्सो',
+    'stomach': 'पेट',
+    'intestine': 'आन्द्रा',
+    'leg': 'खुट्टा',
+    'thigh': 'तिघ्रा',
+    'breast': 'छाती',
+    'wing': 'पखेटा',
+    'neck': 'घाँटी',
+    'back': 'ढाड',
+    'shoulder': 'काँध',
+    'ribs': 'करङ',
+    'bone': 'हड्डी',
+    'skin': 'छाला',
+    'fat': 'बोसो',
+    'tail': 'पुच्छर',
+    'feet': 'खुट्टा',
+    'hoof': 'खुर',
+
+    // General meat and food categories
+    'meat': 'मासु',
+    'fresh meat': 'ताजा मासु',
+    'frozen meat': 'जमेको मासु',
+    'red meat': 'रातो मासु',
+    'white meat': 'सेतो मासु',
+    'poultry': 'कुखुरा जातीय',
+    'seafood': 'समुद्री खाना',
+    'organic': 'जैविक',
+    'premium': 'उत्कृष्ट',
+    'local': 'स्थानीय',
+    'imported': 'आयातित',
+    'fresh': 'ताजा',
+    'frozen': 'जमेको',
+    'processed': 'प्रशोधित',
+    'raw': 'काँचो',
+    'cooked': 'पकाएको',
+    'marinated': 'मसलामा राखेको',
+    'spiced': 'मसलेदार',
+    'boneless': 'हड्डीरहित',
+    'with bone': 'हड्डी सहित',
+    'skinless': 'छाला नभएको',
+    'with skin': 'छाला सहित',
+
+    // Quality descriptors
+    'quality': 'गुणस्तर',
+    'special': 'विशेष',
+    'premium': 'प्रिमियम',
+    'standard': 'मानक',
+    'economy': 'किफायती',
+    'deluxe': 'डिलक्स',
+    'best': 'सबैभन्दा राम्रो',
+    'good': 'राम्रो',
+    'excellent': 'उत्कृष्ट',
+    'perfect': 'उत्तम',
+
+    // Common category terms
+    'category': 'श्रेणी',
+    'type': 'प्रकार',
+    'variety': 'किसिम',
+    'selection': 'छनोट',
+    'collection': 'संग्रह',
+    'range': 'दायरा',
+    'assortment': 'मिश्रण',
+
+    // Size and preparation
+    'large': 'ठूलो',
+    'medium': 'मध्यम',
+    'small': 'सानो',
+    'family': 'पारिवारिक',
+    'bulk': 'थोक',
+    'retail': 'खुद्रा',
+    'wholesale': 'थोक बिक्री',
+
+    // Common adjectives
+    'hot': 'तातो',
+    'cold': 'चिसो',
+    'spicy': 'तीतो',
+    'mild': 'हल्का',
+    'tender': 'नरम',
+    'tough': 'कडा',
+    'lean': 'बोसो नभएको',
+    'fatty': 'बोसो भएको',
+
+    // Prepositions and connectors
+    'with': 'सहित',
+    'without': 'बिना',
+    'and': 'र',
+    'or': 'वा',
+    'of': 'को',
+    'for': 'को लागि'
+};
+
+function translateToNepali() {
+    const englishField = document.getElementById('name');
+    const nepaliField = document.getElementById('name_nepali');
+    
+    if (!englishField || !nepaliField) {
+        console.error('Translation fields not found');
+        return;
+    }
+    
+    const englishName = englishField.value.toLowerCase().trim();
+
+    if (!englishName) {
+        alert('Please enter English name first');
+        englishField.focus();
+        return;
+    }
+
+    let translated = englishName;
+    let hasTranslation = false;
+    let partialTranslation = false;
+    const originalWords = englishName.split(/\s+/);
+    let translatedWords = [];
+
+    // Sort keys by length (longer phrases first) to handle multi-word translations
+    const sortedKeys = Object.keys(englishToNepali).sort((a, b) => b.length - a.length);
+
+    // First pass: Try to translate complete phrases
+    for (const english of sortedKeys) {
+        const escapedEnglish = english.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp('\\b' + escapedEnglish + '\\b', 'gi');
+        
+        if (regex.test(translated)) {
+            translated = translated.replace(regex, englishToNepali[english]);
+            hasTranslation = true;
+        }
+    }
+
+    // Second pass: Try to translate individual words if no complete phrase match
+    if (!hasTranslation) {
+        for (let i = 0; i < originalWords.length; i++) {
+            const word = originalWords[i].toLowerCase();
+            if (englishToNepali[word]) {
+                translatedWords.push(englishToNepali[word]);
+                partialTranslation = true;
+            } else {
+                translatedWords.push(originalWords[i]);
+            }
+        }
+        
+        if (partialTranslation) {
+            translated = translatedWords.join(' ');
+            hasTranslation = true;
+        }
+    }
+
+    // Clean up extra spaces and format properly
+    translated = translated.replace(/\s+/g, ' ').trim();
+
+    // Capitalize first letter if it's English
+    if (translated && /^[a-zA-Z]/.test(translated)) {
+        translated = translated.charAt(0).toUpperCase() + translated.slice(1);
+    }
+
+    nepaliField.value = translated;
+
+    // Show feedback
+    const button = event.target;
+    const originalHTML = button.innerHTML;
+    
+    if (hasTranslation && translated !== englishName) {
+        // Show success feedback
+        button.innerHTML = '<i class="fas fa-check text-success"></i>';
+        button.classList.add('btn-success');
+        button.classList.remove('btn-outline-secondary', 'btn-warning');
+        
+        // Show success message
+        const successMsg = document.createElement('div');
+        successMsg.className = 'alert alert-success alert-dismissible fade show mt-2';
+        successMsg.innerHTML = `
+            <i class="fas fa-check-circle me-2"></i>${partialTranslation ? 'Partial translation completed!' : 'Translation successful!'}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        nepaliField.parentNode.appendChild(successMsg);
+        
+        // Auto-dismiss success message
+        setTimeout(() => {
+            if (successMsg.parentNode) {
+                successMsg.remove();
+            }
+        }, 3000);
+        
+    } else {
+        // Show that no translation was found
+        button.innerHTML = '<i class="fas fa-edit text-info"></i>';
+        button.classList.add('btn-info');
+        button.classList.remove('btn-outline-secondary', 'btn-success');
+        
+        // Show info message with suggestion
+        const infoMsg = document.createElement('div');
+        infoMsg.className = 'alert alert-info alert-dismissible fade show mt-2';
+        infoMsg.innerHTML = `
+            <i class="fas fa-lightbulb me-2"></i>No translation found for "${englishName}". 
+            <br><small>You can type the Nepali translation manually. Common examples: head = टाउको, liver = कलेजो, heart = मुटु</small>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        nepaliField.parentNode.appendChild(infoMsg);
+        
+        // Auto-dismiss info message
+        setTimeout(() => {
+            if (infoMsg.parentNode) {
+                infoMsg.remove();
+            }
+        }, 5000);
+        
+        // Focus on Nepali field for manual input
+        nepaliField.focus();
+    }
+    
+    // Reset button after delay
+    setTimeout(() => {
+        button.innerHTML = originalHTML;
+        button.classList.remove('btn-success', 'btn-warning', 'btn-info');
+        button.classList.add('btn-outline-secondary');
+    }, 1500);
+}
+
+// Load custom translations from localStorage
+function loadCustomTranslations() {
+    const customTranslations = localStorage.getItem('customNepaliTranslations');
+    if (customTranslations) {
+        try {
+            const custom = JSON.parse(customTranslations);
+            Object.assign(englishToNepali, custom);
+        } catch (e) {
+            console.error('Error loading custom translations:', e);
+        }
+    }
+}
+
+// Save custom translation to localStorage
+function saveCustomTranslation(english, nepali) {
+    if (!english || !nepali) return;
+    
+    const customTranslations = localStorage.getItem('customNepaliTranslations');
+    let custom = {};
+    
+    if (customTranslations) {
+        try {
+            custom = JSON.parse(customTranslations);
+        } catch (e) {
+            console.error('Error parsing custom translations:', e);
+        }
+    }
+    
+    custom[english.toLowerCase()] = nepali;
+    englishToNepali[english.toLowerCase()] = nepali;
+    
+    try {
+        localStorage.setItem('customNepaliTranslations', JSON.stringify(custom));
+        console.log('Custom translation saved:', english, '→', nepali);
+    } catch (e) {
+        console.error('Error saving custom translation:', e);
+    }
+}
+
+// Add button to save current translation as custom
+function addSaveTranslationButton() {
+    const nepaliField = document.getElementById('name_nepali');
+    const englishField = document.getElementById('name');
+    
+    if (!nepaliField || !englishField) return;
+    
+    // Create save button
+    const saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.className = 'btn btn-sm btn-outline-success ms-2';
+    saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Translation';
+    saveBtn.title = 'Save this translation for future use';
+    
+    saveBtn.addEventListener('click', function() {
+        const english = englishField.value.trim();
+        const nepali = nepaliField.value.trim();
+        
+        if (english && nepali) {
+            saveCustomTranslation(english, nepali);
+            
+            // Show success feedback
+            const originalHTML = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="fas fa-check text-success"></i> Saved!';
+            saveBtn.classList.add('btn-success');
+            saveBtn.classList.remove('btn-outline-success');
+            
+            setTimeout(() => {
+                saveBtn.innerHTML = originalHTML;
+                saveBtn.classList.remove('btn-success');
+                saveBtn.classList.add('btn-outline-success');
+            }, 2000);
+        } else {
+            alert('Please enter both English and Nepali names to save the translation.');
+        }
+    });
+    
+    // Insert after the translate button
+    const translateBtn = document.querySelector('button[onclick="translateToNepali()"]');
+    if (translateBtn && translateBtn.parentNode) {
+        translateBtn.parentNode.insertBefore(saveBtn, translateBtn.nextSibling);
+    }
+}
+
+// Auto-transliterate on typing (only for complete words)
+document.addEventListener('DOMContentLoaded', function() {
+    // Load custom translations first
+    loadCustomTranslations();
+    
+    // Add save translation button
+    addSaveTranslationButton();
+    
+    const nepaliField = document.getElementById('name_nepali');
+    if (nepaliField) {
+        nepaliField.addEventListener('input', function(e) {
+            const input = e.target.value;
+            let translated = input;
+            let hasTranslation = false;
+
+            // Only translate if the user has finished typing a word (ends with space or common punctuation)
+            if (input.endsWith(' ') || input.endsWith(',') || input.endsWith('.')) {
+                // Sort keys by length (longer phrases first)
+                const sortedKeys = Object.keys(englishToNepali).sort((a, b) => b.length - a.length);
+                
+                for (const english of sortedKeys) {
+                    // Only replace complete words with word boundaries
+                    const escapedEnglish = english.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const regex = new RegExp('\\b' + escapedEnglish + '\\b', 'gi');
+                    if (regex.test(translated.toLowerCase())) {
+                        translated = translated.replace(regex, englishToNepali[english]);
+                        hasTranslation = true;
+                    }
+                }
+
+                if (hasTranslation) {
+                    // Clean up extra spaces
+                    translated = translated.replace(/\s+/g, ' ');
+                    e.target.value = translated;
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

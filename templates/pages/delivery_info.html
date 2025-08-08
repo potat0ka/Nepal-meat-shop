@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+
+{% block title %}Delivery Information - Nepal Meat Shop{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Page Header -->
+        <div class="card mb-4">
+            <div class="card-body text-center py-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                <h1 class="display-5 mb-3">
+                    <i class="fas fa-truck me-3 text-primary"></i>
+                    Delivery Information
+                </h1>
+                <p class="lead text-muted">
+                    डेलिभरी जानकारी - Everything you need to know about our delivery service
+                </p>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Main Content -->
+            <div class="col-lg-8">
+                <!-- Delivery Areas -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3 class="mb-0">
+                            <i class="fas fa-map-marked-alt me-2"></i>
+                            Delivery Areas / डेलिभरी क्षेत्रहरू
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="lead">We currently deliver to the following areas in Kathmandu Valley:</p>
+                        <p class="text-muted">हामी हाल काठमाडौं उपत्यकाका निम्नलिखित क्षेत्रहरूमा डेलिभरी गर्छौं:</p>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <h5><i class="fas fa-city text-primary me-2"></i>Kathmandu</h5>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-check text-success me-2"></i>Thamel</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>New Baneshwor</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Maharajgunj</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Baluwatar</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Durbarmarg</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Lazimpat</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-4">
+                                <h5><i class="fas fa-city text-success me-2"></i>Lalitpur</h5>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-check text-success me-2"></i>Patan</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Jawalakhel</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Kupondole</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Sanepa</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Pulchowk</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Satdobato</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-4">
+                                <h5><i class="fas fa-city text-warning me-2"></i>Bhaktapur</h5>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-check text-success me-2"></i>Bhaktapur Durbar</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Thimi</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Madhyapur</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Suryabinayak</li>
+                                    <li><i class="fas fa-times text-danger me-2"></i>Changunarayan <small>(Coming Soon)</small></li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Note:</strong> We are constantly expanding our delivery areas. If your location is not listed, please contact us to check availability.
+                            <br><small class="text-muted">नोट: हामी निरन्तर हाम्रो डेलिभरी क्षेत्रहरू विस्तार गर्दै छौं। यदि तपाईंको स्थान सूचीमा छैन भने, उपलब्धता जाँच गर्न हामीलाई सम्पर्क गर्नुहोस्।</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Delivery Schedule -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3 class="mb-0">
+                            <i class="fas fa-clock me-2"></i>
+                            Delivery Schedule / डेलिभरी तालिका
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-sun text-warning me-2"></i>Regular Delivery Hours</h5>
+                                <p><strong>Daily:</strong> 6:00 AM - 8:00 PM</p>
+                                <p class="text-muted small">दैनिक: बिहान ६ बजेदेखि बेलुका ८ बजेसम्म</p>
+                                
+                                <h6 class="mt-3">Time Slots / समय स्लटहरू:</h6>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Morning / बिहान</span>
+                                        <span class="badge bg-primary">6:00 AM - 10:00 AM</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Afternoon / दिउँसो</span>
+                                        <span class="badge bg-success">12:00 PM - 4:00 PM</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Evening / साँझ</span>
+                                        <span class="badge bg-warning">5:00 PM - 8:00 PM</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-bolt text-danger me-2"></i>Express Delivery</h5>
+                                <p><strong>Available:</strong> 8:00 AM - 6:00 PM</p>
+                                <p class="text-muted small">उपलब्ध: बिहान ८ बजेदेखि साँझ ६ बजेसम्म</p>
+                                
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-lightning-bolt me-2"></i>
+                                    <strong>Express Delivery:</strong> 1-2 hours delivery for urgent orders
+                                    <br><small>एक्सप्रेस डेलिभरी: जरुरी अर्डरहरूको लागि १-२ घण्टामा डेलिभरी</small>
+                                </div>
+                                
+                                <h6>Express Charges / एक्सप्रेस शुल्क:</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-rupee-sign text-success me-2"></i>Within 5km: Rs. 100</li>
+                                    <li><i class="fas fa-rupee-sign text-warning me-2"></i>5-10km: Rs. 150</li>
+                                    <li><i class="fas fa-rupee-sign text-danger me-2"></i>10km+: Rs. 200</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Delivery Charges -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3 class="mb-0">
+                            <i class="fas fa-money-bill-wave me-2"></i>
+                            Delivery Charges / डेलिभरी शुल्क
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Order Amount / अर्डर रकम</th>
+                                        <th>Distance / दूरी</th>
+                                        <th>Delivery Charge / डेलिभरी शुल्क</th>
+                                        <th>Delivery Time / डेलिभरी समय</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Rs. 2000+</td>
+                                        <td>Any distance / कुनै पनि दूरी</td>
+                                        <td><span class="badge bg-success">FREE / निःशुल्क</span></td>
+                                        <td>2-4 hours</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Rs. 1000 - 1999</td>
+                                        <td>Within 5km</td>
+                                        <td>Rs. 50</td>
+                                        <td>2-4 hours</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Rs. 1000 - 1999</td>
+                                        <td>5-10km</td>
+                                        <td>Rs. 75</td>
+                                        <td>3-5 hours</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Below Rs. 1000</td>
+                                        <td>Within 5km</td>
+                                        <td>Rs. 75</td>
+                                        <td>3-5 hours</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Below Rs. 1000</td>
+                                        <td>5-10km</td>
+                                        <td>Rs. 100</td>
+                                        <td>4-6 hours</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Delivery Guidelines -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3 class="mb-0">
+                            <i class="fas fa-clipboard-list me-2"></i>
+                            Delivery Guidelines / डेलिभरी दिशानिर्देशहरू
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-user-check text-success me-2"></i>For Customers</h5>
+                                <ul class="list-unstyled">
+                                    <li class="mb-2">
+                                        <i class="fas fa-check text-success me-2"></i>
+                                        Be available at the delivery address
+                                        <br><small class="text-muted">डेलिभरी ठेगानामा उपलब्ध रहनुहोस्</small>
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check text-success me-2"></i>
+                                        Keep your phone accessible
+                                        <br><small class="text-muted">आफ्नो फोन पहुँचयोग्य राख्नुहोस्</small>
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check text-success me-2"></i>
+                                        Verify products before accepting
+                                        <br><small class="text-muted">स्वीकार गर्नु अघि उत्पादनहरू प्रमाणित गर्नुहोस्</small>
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check text-success me-2"></i>
+                                        Have exact change ready (for COD)
+                                        <br><small class="text-muted">सही रकम तयार राख्नुहोस् (COD को लागि)</small>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-truck text-primary me-2"></i>Our Commitment</h5>
+                                <ul class="list-unstyled">
+                                    <li class="mb-2">
+                                        <i class="fas fa-check text-primary me-2"></i>
+                                        Temperature-controlled delivery
+                                        <br><small class="text-muted">तापमान नियन्त्रित डेलिभरी</small>
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check text-primary me-2"></i>
+                                        Hygienic packaging
+                                        <br><small class="text-muted">स्वच्छ प्याकेजिङ</small>
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check text-primary me-2"></i>
+                                        Real-time order tracking
+                                        <br><small class="text-muted">वास्तविक समय अर्डर ट्र्याकिङ</small>
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check text-primary me-2"></i>
+                                        Professional delivery staff
+                                        <br><small class="text-muted">व्यावसायिक डेलिभरी कर्मचारी</small>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Quick Order -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-shopping-cart me-2"></i>
+                            Quick Order
+                        </h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <p class="mb-3">Need fresh meat delivered today?</p>
+                        <a href="{{ url_for('main.products') }}" class="btn btn-primary w-100 mb-2">
+                            <i class="fas fa-shopping-bag me-2"></i>
+                            Browse Products
+                        </a>
+                        <a href="tel:+977-98XXXXXXXX" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-phone me-2"></i>
+                            Call to Order
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Delivery Status -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-map-marker-alt me-2"></i>
+                            Track Your Order
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form>
+                            <div class="mb-3">
+                                <label for="orderNumber" class="form-label">Order Number</label>
+                                <input type="text" class="form-control" id="orderNumber" placeholder="Enter order number">
+                            </div>
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="fas fa-search me-2"></i>
+                                Track Order
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Contact for Delivery -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-headset me-2"></i>
+                            Delivery Support
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <h6><i class="fas fa-phone text-success me-2"></i>Call Us</h6>
+                            <p class="mb-0">
+                                <a href="tel:+977-1-XXXXXXX" class="text-decoration-none">+977-1-XXXXXXX</a><br>
+                                <small class="text-muted">Daily: 6:00 AM - 8:00 PM</small>
+                            </p>
+                        </div>
+                        <div class="mb-3">
+                            <h6><i class="fab fa-whatsapp text-success me-2"></i>WhatsApp</h6>
+                            <p class="mb-0">
+                                <a href="https://wa.me/977XXXXXXXXX" class="text-decoration-none">+977-98XXXXXXXX</a><br>
+                                <small class="text-muted">Quick delivery updates</small>
+                            </p>
+                        </div>
+                        <div class="mb-0">
+                            <h6><i class="fas fa-envelope text-primary me-2"></i>Email</h6>
+                            <p class="mb-0">
+                                <a href="mailto:delivery@nepalmeatshop.com" class="text-decoration-none">delivery@nepalmeatshop.com</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Special Offers -->
+                <div class="card">
+                    <div class="card-header bg-warning">
+                        <h5 class="mb-0">
+                            <i class="fas fa-gift me-2"></i>
+                            Special Offers
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <h6 class="text-success">Free Delivery Weekend!</h6>
+                            <p class="small mb-0">Free delivery on all orders above Rs. 1500 during weekends.</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6 class="text-primary">Express Delivery Discount</h6>
+                            <p class="small mb-0">50% off on express delivery charges for first-time customers.</p>
+                        </div>
+                        <div class="mb-0">
+                            <h6 class="text-danger">Bulk Order Benefits</h6>
+                            <p class="small mb-0">Orders above Rs. 5000 get priority delivery and special packaging.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

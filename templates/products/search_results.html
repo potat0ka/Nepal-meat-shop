@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results - Nepal Meat Shop{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="h4 mb-1">
+                    <i class="fas fa-search me-2"></i>
+                    Search Results / खोज परिणाम
+                </h2>
+                {% if query %}
+                <p class="text-muted mb-0">
+                    Results for "<strong>{{ query }}</strong>" - {{ products|length }} products found
+                </p>
+                {% endif %}
+            </div>
+            <a href="{{ url_for('products.list') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>
+                Back to Products
+            </a>
+        </div>
+
+        <!-- Search Form -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('main.search') }}">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <input type="text" name="q" class="form-control" 
+                                   placeholder="Search for products... / उत्पादनहरू खोज्नुहोस्..." 
+                                   value="{{ query if query else '' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-2"></i>
+                                Search
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if products %}
+        <!-- Products Grid -->
+        <div class="row">
+            {% for product in products %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100 shadow-sm product-card">
+                    {% if product.image_url %}
+                    <img src="{{ url_for('main.uploaded_file', filename=product.image_url) }}" 
+                         class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+                    {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                        <i class="fas fa-drumstick-bite fa-3x text-muted"></i>
+                    </div>
+                    {% endif %}
+
+                    <div class="card-body">
+                        <h6 class="card-title">{{ product.name }}</h6>
+                        {% if product.name_nepali %}
+                        <p class="card-text small text-muted">{{ product.name_nepali }}</p>
+                        {% endif %}
+
+                        <p class="card-text">
+                            <span class="h5 text-primary">रू {{ "%.0f"|format(product.price) }}</span>
+                            <small class="text-muted">/kg</small>
+                        </p>
+
+                        <div class="mb-2">
+                            {% if hasattr(product, 'get_freshness_label') %}
+                            <span class="badge bg-info">{{ product.get_freshness_label() }}</span>
+                            {% endif %}
+                            {% if product.meat_type %}
+                            <span class="badge bg-secondary">{{ product.meat_type.title() }}</span>
+                            {% endif %}
+                            {% if hasattr(product, 'stock_kg') %}
+                                {% if product.stock_kg > 0 %}
+                                <span class="badge bg-success">In Stock</span>
+                                {% else %}
+                                <span class="badge bg-danger">Out of Stock</span>
+                                {% endif %}
+                            {% elif hasattr(product, 'stock') %}
+                                {% if product.stock > 0 %}
+                                <span class="badge bg-success">In Stock</span>
+                                {% else %}
+                                <span class="badge bg-danger">Out of Stock</span>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+
+                        {% if hasattr(product, 'is_featured') and product.is_featured %}
+                        <div class="mb-2">
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-star me-1"></i>Featured
+                            </span>
+                        </div>
+                        {% endif %}
+
+                        <p class="card-text small">{{ product.description[:100] }}...</p>
+
+                        <div class="mt-auto">
+                            {% if hasattr(product, 'stock_kg') and product.stock_kg > 0 %}
+                            <p class="mb-2 small">
+                                <i class="fas fa-box me-1"></i>
+                                Stock: {{ "%.1f"|format(product.stock_kg) }} kg
+                            </p>
+                            {% elif hasattr(product, 'stock') and product.stock > 0 %}
+                            <p class="mb-2 small">
+                                <i class="fas fa-box me-1"></i>
+                                Stock: {{ product.stock }} units
+                            </p>
+                            {% endif %}
+                            
+                            {% if hasattr(product, 'min_order_kg') %}
+                            <p class="mb-2 small">
+                                <i class="fas fa-shopping-basket me-1"></i>
+                                Min order: {{ "%.1f"|format(product.min_order_kg) }} kg
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="card-footer bg-transparent">
+                        {% if hasattr(product, 'id') %}
+                        <a href="{{ url_for('products.detail', product_id=product._id) }}" 
+                           class="btn btn-primary btn-sm w-100">
+                            <i class="fas fa-eye me-1"></i>View Details
+                        </a>
+                        {% elif hasattr(product, '_id') %}
+                        <a href="{{ url_for('products.detail', product_id=product._id) }}" 
+                           class="btn btn-primary btn-sm w-100">
+                            <i class="fas fa-eye me-1"></i>View Details
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination (if needed) -->
+        {% if pagination %}
+        <nav aria-label="Search results pagination">
+            <ul class="pagination justify-content-center">
+                {% if pagination.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('main.search', q=query, page=pagination.prev_num) }}">Previous</a>
+                </li>
+                {% endif %}
+                
+                {% for page_num in pagination.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num != pagination.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('main.search', q=query, page=page_num) }}">{{ page_num }}</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if pagination.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('main.search', q=query, page=pagination.next_num) }}">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <!-- No Results -->
+        <div class="text-center py-5">
+            <i class="fas fa-search fa-5x text-muted mb-4"></i>
+            <h4>No products found</h4>
+            {% if query %}
+            <p class="text-muted mb-4">
+                Sorry, we couldn't find any products matching "<strong>{{ query }}</strong>"<br>
+                माफ गर्नुहोस्, हामीले "{{ query }}" सँग मिल्ने कुनै उत्पादन फेला पारेनौं
+            </p>
+            {% else %}
+            <p class="text-muted mb-4">
+                Please enter a search term to find products<br>
+                उत्पादनहरू फेला पार्न खोज शब्द प्रविष्ट गर्नुहोस्
+            </p>
+            {% endif %}
+            
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <h6 class="mb-3">Search suggestions:</h6>
+                    <div class="d-flex flex-wrap gap-2 justify-content-center">
+                        <a href="{{ url_for('main.search', q='chicken') }}" class="btn btn-outline-primary btn-sm">Chicken</a>
+                <a href="{{ url_for('main.search', q='buffalo') }}" class="btn btn-outline-primary btn-sm">Buffalo</a>
+                <a href="{{ url_for('main.search', q='pork') }}" class="btn btn-outline-primary btn-sm">Pork</a>
+                <a href="{{ url_for('main.search', q='goat') }}" class="btn btn-outline-primary btn-sm">Goat</a>
+                <a href="{{ url_for('main.search', q='fresh') }}" class="btn btn-outline-primary btn-sm">Fresh</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <a href="{{ url_for('products.list') }}" class="btn btn-primary">
+                    <i class="fas fa-store me-2"></i>
+                    Browse All Products
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.product-card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+.search-suggestions .btn {
+    margin: 2px;
+}
+</style>
+{% endblock %}

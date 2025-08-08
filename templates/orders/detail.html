@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+
+{% block title %}Order Details - Nepal Meat Shop{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Order Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="mb-1">
+                    <i class="fas fa-receipt me-2"></i>
+                    Order #{{ order.order_number }}
+                </h2>
+                <p class="text-muted mb-0">
+                    Placed on {{ order.created_at.strftime('%B %d, %Y at %I:%M %p') if order.created_at else 'N/A' }}
+                </p>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-{{ 'success' if order.status == 'delivered' else ('primary' if order.status == 'processing' else ('warning' if order.status == 'pending' else ('danger' if order.status == 'cancelled' else 'secondary'))) }} fs-6 mb-2">
+                    {% if order.status == 'pending' %}
+                        Pending / पेन्डिङ
+                    {% elif order.status == 'processing' %}
+                        Processing / प्रक्रियामा
+                    {% elif order.status == 'delivered' %}
+                        Delivered / डेलिभर भयो
+                    {% elif order.status == 'cancelled' %}
+                        Cancelled / रद्द
+                    {% else %}
+                        {{ order.status }}
+                    {% endif %}
+                </span>
+                <br>
+                <a href="{{ url_for('orders.my_orders') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>
+                    Back to Orders
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Order Items -->
+            <div class="col-lg-8">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-shopping-bag me-2"></i>
+                            Order Items ({{ order.items|length }})
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% for item in order.items %}
+                        <div class="row align-items-center py-3 {% if not loop.last %}border-bottom{% endif %}">
+                            <div class="col-md-2">
+                                {% if item.product and item.product.image_url %}
+                                <img src="{{ url_for('main.uploaded_file', filename=item.product.image_url) }}" 
+                                     class="img-fluid rounded" style="max-height: 80px; object-fit: cover;" 
+                                     alt="{{ item.product.name }}">
+                                {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                     style="height: 80px;">
+                                    <i class="fas fa-drumstick-bite fa-2x text-muted"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-5">
+                                <h6 class="mb-1">{{ item.product_name if item.product_name else (item.product.name if item.product else 'Product') }}</h6>
+                                {% if item.product and item.product.description %}
+                                <p class="text-muted small mb-0">{{ item.product.description[:100] }}...</p>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-2 text-center">
+                                <span class="fw-bold">{{ item.quantity }}kg</span>
+                            </div>
+                            <div class="col-md-2 text-center">
+                                <span class="text-muted">रू {{ "%.0f"|format(item.unit_price) }}/kg</span>
+                            </div>
+                            <div class="col-md-1 text-end">
+                                <span class="fw-bold">रू {{ "%.0f"|format(item.quantity * item.unit_price) }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Order Timeline -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-clock me-2"></i>
+                            Order Timeline
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="timeline">
+                            <div class="timeline-item {{ 'active' if order.status in ['pending', 'processing', 'delivered'] else '' }}">
+                                <div class="timeline-marker bg-primary"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Order Placed</h6>
+                                    <p class="text-muted small mb-0">{{ order.created_at.strftime('%B %d, %Y at %I:%M %p') if order.created_at else 'N/A' }}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="timeline-item {{ 'active' if order.status in ['processing', 'delivered'] else '' }}">
+                                <div class="timeline-marker bg-warning"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Order Processing</h6>
+                                    <p class="text-muted small mb-0">
+                                        {% if order.status in ['processing', 'delivered'] %}
+                                            Your order is being prepared
+                                        {% else %}
+                                            Waiting for confirmation
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div class="timeline-item {{ 'active' if order.status == 'delivered' else '' }}">
+                                <div class="timeline-marker bg-success"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Order Delivered</h6>
+                                    <p class="text-muted small mb-0">
+                                        {% if order.status == 'delivered' %}
+                                            Order delivered successfully
+                                        {% else %}
+                                            Estimated delivery time
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="col-lg-4">
+                <!-- Delivery Information -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-truck me-2"></i>
+                            Delivery Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Delivery Address:</label>
+                            <p class="mb-0" style="white-space: pre-line;">{{ order.formatted_delivery_address }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Phone Number:</label>
+                            <p class="mb-0">{{ order.phone }}</p>
+                        </div>
+                        {% if order.delivery_notes %}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Delivery Notes:</label>
+                            <p class="mb-0">{{ order.delivery_notes }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Payment Information -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-credit-card me-2"></i>
+                            Payment Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Payment Method:</label>
+                            <p class="mb-0">{{ order.payment_method.upper() if order.payment_method else 'CASH ON DELIVERY' }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Payment Status:</label>
+                            <span class="badge bg-{{ 'success' if order.payment_status == 'paid' else 'warning' }}">
+                                {{ order.payment_status.upper() if order.payment_status else 'PENDING' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Summary -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-calculator me-2"></i>
+                            Order Summary
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <span>रू {{ "%.0f"|format(order.total_amount - (order.delivery_fee if order.delivery_fee else 0)) }}</span>
+                        </div>
+                        {% if order.delivery_fee %}
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Delivery Fee:</span>
+                            <span>रू {{ "%.0f"|format(order.delivery_fee) }}</span>
+                        </div>
+                        {% endif %}
+                        <hr>
+                        <div class="d-flex justify-content-between fw-bold fs-5">
+                            <span>Total:</span>
+                            <span class="text-primary">रू {{ "%.0f"|format(order.total_amount) }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="mt-4">
+                    {% if order.status == 'pending' %}
+                    <button class="btn btn-danger w-100 mb-2" onclick="cancelOrder('{{ order._id }}')">
+                        <i class="fas fa-times me-2"></i>
+                        Cancel Order
+                    </button>
+                    {% endif %}
+                    
+                    {% if order.status == 'delivered' %}
+                    <button class="btn btn-success w-100 mb-2" onclick="showReviewModal('{{ order._id }}')">
+                        <i class="fas fa-star me-2"></i>
+                        Rate & Review
+                    </button>
+                    {% endif %}
+                    
+                    <button class="btn btn-outline-primary w-100" onclick="window.print()">
+                        <i class="fas fa-print me-2"></i>
+                        Print Order
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e9ecef;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -22px;
+    top: 5px;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 2px #e9ecef;
+}
+
+.timeline-item.active .timeline-marker {
+    box-shadow: 0 0 0 2px #28a745;
+}
+
+.timeline-content h6 {
+    margin-bottom: 5px;
+    color: #495057;
+}
+
+.timeline-item.active .timeline-content h6 {
+    color: #28a745;
+    font-weight: 600;
+}
+</style>
+
+<script>
+function cancelOrder(orderId) {
+    if (confirm('के तपाईं यो अर्डर रद्द गर्न चाहनुहुन्छ? / Are you sure you want to cancel this order?')) {
+        // Show loading state
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Cancelling...';
+        button.disabled = true;
+        
+        // Make AJAX request to cancel order
+        fetch(`/cancel_order/${orderId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message and redirect
+                if (window.MeatShop && window.MeatShop.showToast) {
+                    window.MeatShop.showToast(data.message, 'success');
+                } else {
+                    alert(data.message);
+                }
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                // Show error message
+                if (window.MeatShop && window.MeatShop.showToast) {
+                    window.MeatShop.showToast(data.message, 'error');
+                } else {
+                    alert(data.message);
+                }
+                // Restore button state
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (window.MeatShop && window.MeatShop.showToast) {
+                window.MeatShop.showToast('अर्डर रद्द गर्न सकिएन / Failed to cancel order', 'error');
+            } else {
+                alert('अर्डर रद्द गर्न सकिएन / Failed to cancel order');
+            }
+            // Restore button state
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
+    }
+}
+
+function showReviewModal(orderId) {
+    // Review functionality to be implemented
+    alert('Review functionality will be implemented soon.');
+}
+</script>
+{% endblock %}

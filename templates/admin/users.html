@@ -10,17 +10,31 @@
                 <i class="fas fa-users me-2"></i>
                 User Management
             </h2>
-            <div>
-                <button class="btn btn-outline-primary" onclick="exportUsers()">
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="fas fa-download me-2"></i>
                     Export Users
                 </button>
+                <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                    <li>
+                        <a class="dropdown-item" href="#" onclick="exportUsersCSV()">
+                            <i class="fas fa-file-csv me-2"></i>
+                            Export as CSV
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#" onclick="exportUsersPDF()">
+                            <i class="fas fa-file-pdf me-2"></i>
+                            Export as PDF
+                        </a>
+                    </li>
+                </ul>
             </div>
         </div>
         
         <!-- User Statistics -->
         <div class="row mb-4">
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <div class="card bg-primary text-white">
                     <div class="card-body text-center">
                         <h4>{{ users|selectattr('is_active')|list|length }}</h4>
@@ -28,7 +42,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <div class="card bg-success text-white">
                     <div class="card-body text-center">
                         <h4>{{ users|selectattr('is_admin')|list|length }}</h4>
@@ -36,19 +50,35 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
+                <div class="card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <h4>{{ users|selectattr('is_sub_admin')|list|length }}</h4>
+                        <small>Sub-Admins</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card bg-purple text-white">
+                    <div class="card-body text-center">
+                        <h4>{{ users|selectattr('is_staff')|list|length }}</h4>
+                        <small>Staff</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
                 <div class="card bg-info text-white">
                     <div class="card-body text-center">
-                        <h4>{{ users|rejectattr('is_admin')|list|length }}</h4>
+                        <h4>{{ users|rejectattr('is_admin')|rejectattr('is_sub_admin')|rejectattr('is_staff')|list|length }}</h4>
                         <small>Customers</small>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card bg-warning text-white">
+            <div class="col-md-2">
+                <div class="card bg-secondary text-white">
                     <div class="card-body text-center">
                         <h4>{{ users|rejectattr('is_active')|list|length }}</h4>
-                        <small>Inactive Users</small>
+                        <small>Inactive</small>
                     </div>
                 </div>
             </div>
@@ -69,6 +99,8 @@
                         <select class="form-select" id="roleFilter" onchange="filterUsers()">
                             <option value="">All Roles</option>
                             <option value="admin">Administrators</option>
+                            <option value="sub_admin">Sub-Admins</option>
+                            <option value="staff">Staff</option>
                             <option value="customer">Customers</option>
                         </select>
                     </div>
@@ -113,15 +145,21 @@
                     </thead>
                     <tbody>
                         {% for user in users %}
-                        <tr data-role="{{ 'admin' if user.is_admin else 'customer' }}" 
+                        <tr data-role="{{ 'admin' if user.is_admin else ('sub_admin' if user.is_sub_admin else ('staff' if user.is_staff else 'customer')) }}" 
                             data-status="{{ 'active' if user.is_active else 'inactive' }}">
                             <td>
                                 <div class="d-flex align-items-center">
                                     <div class="avatar me-3">
+                                        {% if user.profile_image %}
+                                        <img src="{{ url_for('main.uploaded_file', filename=user.profile_image) }}" 
+                                             alt="{{ user.full_name }}" class="rounded-circle" 
+                                             style="width: 40px; height: 40px; object-fit: cover;">
+                                        {% else %}
                                         <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
                                              style="width: 40px; height: 40px;">
                                             {{ user.full_name[0].upper() }}
                                         </div>
+                                        {% endif %}
                                     </div>
                                     <div>
                                         <strong>{{ user.full_name }}</strong>
@@ -149,6 +187,14 @@
                                 <span class="badge bg-success">
                                     <i class="fas fa-crown me-1"></i>Administrator
                                 </span>
+                                {% elif user.is_sub_admin %}
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-user-shield me-1"></i>Sub-Admin
+                                </span>
+                                {% elif user.is_staff %}
+                                <span class="badge bg-purple">
+                                    <i class="fas fa-user-tie me-1"></i>Staff
+                                </span>
                                 {% else %}
                                 <span class="badge bg-info">
                                     <i class="fas fa-user me-1"></i>Customer
@@ -164,9 +210,9 @@
                             
                             <td>
                                 <div>
-                                    {{ user.created_at.strftime('%b %d, %Y') }}
-                                    <br>
-                                    <small class="text-muted">{{ user.created_at.strftime('%I:%M %p') }}</small>
+                                    {{ user.created_at.strftime('%b %d, %Y') if user.created_at else 'N/A' }}
+                            <br>
+                            <small class="text-muted">{{ user.created_at.strftime('%I:%M %p') if user.created_at else '' }}</small>
                                 </div>
                             </td>
                             
@@ -175,37 +221,78 @@
                                 {% if user.orders %}
                                 <br>
                                 <small class="text-muted">
-                                    Last: {{ user.orders|sort(attribute='created_at', reverse=true)|first.created_at.strftime('%b %d') }}
+                                    Last: {{ user.orders|sort(attribute='created_at', reverse=true)|first.created_at.strftime('%b %d') if user.orders|sort(attribute='created_at', reverse=true)|first.created_at else 'N/A' }}
                                 </small>
                                 {% endif %}
                             </td>
                             
                             <td>
                                 <div class="btn-group" role="group">
-                                    <button class="btn btn-outline-primary btn-sm" 
-                                            title="View Profile" onclick="viewUser({{ user.id }})">
+                                    <!-- Edit User Button -->
+                                    {% if current_user.can_manage_users() %}
+                                    <a href="{{ url_for('admin.admin_edit_user', user_id=user._id) }}" 
+                                       class="btn btn-outline-primary btn-sm" title="Edit User">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% endif %}
+                                    
+                                    <!-- View Profile Button -->
+                                    <button class="btn btn-outline-info btn-sm" 
+                                            title="View Profile" onclick="viewUser('{{ user.id }}')">
                                         <i class="fas fa-eye"></i>
                                     </button>
                                     
+                                    <!-- View Orders Button -->
                                     {% if user.orders %}
-                                    <button class="btn btn-outline-info btn-sm" 
-                                            title="View Orders" onclick="viewUserOrders({{ user.id }})">
+                                    <button class="btn btn-outline-secondary btn-sm" 
+                                            title="View Orders" onclick="viewUserOrders('{{ user.id }}')">
                                         <i class="fas fa-shopping-cart"></i>
                                     </button>
                                     {% endif %}
                                     
-                                    {% if not user.is_admin or user.id != current_user.id %}
-                                    <button class="btn btn-outline-{{ 'secondary' if user.is_active else 'success' }} btn-sm" 
-                                            title="{{ 'Deactivate' if user.is_active else 'Activate' }} User"
-                                            onclick="toggleUser({{ user.id }}, {{ user.is_active|lower }})">
-                                        <i class="fas fa-{{ 'pause' if user.is_active else 'play' }}"></i>
-                                    </button>
+                                    <!-- Role Management Dropdown -->
+                                    {% if (current_user.can_grant_roles() or current_user.can_grant_staff_role()) and not user.is_admin and user._id != current_user._id and not (current_user.is_sub_admin and user.is_sub_admin) %}
+                                    <div class="dropdown">
+                                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" 
+                                                data-bs-toggle="dropdown" title="Change Role">
+                                            <i class="fas fa-user-cog"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><h6 class="dropdown-header">Change Role</h6></li>
+                                            <li>
+                                                <a class="dropdown-item" href="#" 
+                                                   onclick="changeUserRole('{{ user._id }}', 'customer', '{{ user.full_name }}')">
+                                                    <i class="fas fa-user me-2"></i>Customer
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="#" 
+                                                   onclick="changeUserRole('{{ user._id }}', 'staff', '{{ user.full_name }}')">
+                                                    <i class="fas fa-user-tie me-2"></i>Staff
+                                                </a>
+                                            </li>
+                                            {% if current_user.is_admin %}
+                                            <li>
+                                                <a class="dropdown-item" href="#" 
+                                                   onclick="changeUserRole('{{ user._id }}', 'sub_admin', '{{ user.full_name }}')">
+                                                    <i class="fas fa-user-shield me-2"></i>Sub-Admin
+                                                </a>
+                                            </li>
+                                            {% endif %}
+                                        </ul>
+                                    </div>
                                     {% endif %}
                                     
-                                    <button class="btn btn-outline-warning btn-sm" 
-                                            title="Send Email" onclick="emailUser('{{ user.email }}')">
-                                        <i class="fas fa-envelope"></i>
-                                    </button>
+                                    <!-- Status Toggle Button -->
+                                    {% if current_user.can_manage_users() and user._id != current_user._id and (not user.is_admin and (not user.is_sub_admin or current_user.is_admin)) %}
+                                    <form method="POST" action="{{ url_for('admin.admin_toggle_user_status', user_id=user._id) }}" 
+                                          style="display: inline;" onsubmit="return confirmStatusChange('{{ user.full_name }}', '{{ user.is_active|lower }}')">
+                                        <button type="submit" class="btn btn-outline-{{ 'danger' if user.is_active else 'success' }} btn-sm" 
+                                                title="{{ 'Deactivate' if user.is_active else 'Activate' }} User">
+                                            <i class="fas fa-{{ 'pause' if user.is_active else 'play' }}"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
                                 </div>
                             </td>
                         </tr>
@@ -277,6 +364,60 @@ function filterUsers() {
     });
 }
 
+function changeUserRole(userId, newRole, userName) {
+    const roleNames = {
+        'customer': 'Customer',
+        'staff': 'Staff',
+        'sub_admin': 'Sub-Admin'
+    };
+    
+    const roleName = roleNames[newRole] || 'Customer';
+    
+    if (confirm(`Are you sure you want to change ${userName}'s role to ${roleName}?`)) {
+        // Create a form and submit it
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/users/${userId}/toggle-role`;
+        
+        // Add CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        if (csrfToken) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = csrfToken.getAttribute('content');
+            form.appendChild(csrfInput);
+        }
+        
+        // Add role input
+        const roleInput = document.createElement('input');
+        roleInput.type = 'hidden';
+        roleInput.name = 'role';
+        roleInput.value = newRole;
+        form.appendChild(roleInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function confirmRoleChange(userName, isSubAdmin) {
+    console.log('confirmRoleChange called for:', userName, 'isSubAdmin:', isSubAdmin);
+    const action = isSubAdmin === 'true' ? 'remove Sub-Admin role from' : 'grant Sub-Admin role to';
+    const message = `Are you sure you want to ${action} ${userName}?\n\nThis will ${isSubAdmin === 'true' ? 'downgrade them to Customer' : 'upgrade them to Sub-Admin'}.`;
+    const confirmed = confirm(message);
+    console.log('User confirmed:', confirmed);
+    if (confirmed) {
+        console.log('Form will be submitted...');
+    }
+    return confirmed;
+}
+
+function confirmStatusChange(userName, isActive) {
+    const action = isActive ? 'deactivate' : 'activate';
+    return confirm(`Are you sure you want to ${action} ${userName}?`);
+}
+
 function clearUserFilters() {
     document.getElementById('userSearch').value = '';
     document.getElementById('roleFilter').value = '';
@@ -330,8 +471,48 @@ function emailUser(userEmail) {
     window.location.href = `mailto:${userEmail}`;
 }
 
-function exportUsers() {
-    alert('User export functionality would be implemented here');
+function exportUsersCSV() {
+    // Show loading state
+    const exportBtn = document.getElementById('exportDropdown');
+    const originalText = exportBtn.innerHTML;
+    exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting CSV...';
+    exportBtn.disabled = true;
+    
+    // Create a temporary link to trigger download
+    const link = document.createElement('a');
+    link.href = '{{ url_for("admin.export_users") }}';
+    link.download = '';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Reset button state after a short delay
+    setTimeout(() => {
+        exportBtn.innerHTML = '<i class="fas fa-download me-2"></i>Export Users';
+        exportBtn.disabled = false;
+    }, 2000);
+}
+
+function exportUsersPDF() {
+    // Show loading state
+    const exportBtn = document.getElementById('exportDropdown');
+    const originalText = exportBtn.innerHTML;
+    exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting PDF...';
+    exportBtn.disabled = true;
+    
+    // Create a temporary link to trigger download
+    const link = document.createElement('a');
+    link.href = '{{ url_for("admin.export_users_pdf") }}';
+    link.download = '';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Reset button state after a short delay
+    setTimeout(() => {
+        exportBtn.innerHTML = '<i class="fas fa-download me-2"></i>Export Users';
+        exportBtn.disabled = false;
+    }, 2000);
 }
 
 // Enable search on Enter key

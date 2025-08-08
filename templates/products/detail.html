@@ -7,8 +7,8 @@
     <div class="col-md-6 mb-4">
         <!-- Product Image -->
         {% if product.image_url %}
-        <img src="{{ url_for('uploaded_file', filename=product.image_url) }}" 
-             class="img-fluid rounded shadow" alt="{{ product.name }}">
+        <img src="{{ url_for('main.uploaded_file', filename=product.image_url) }}" 
+             class="img-fluid rounded shadow" alt="{{ product.name }}" style="max-height: 400px; object-fit: cover;">
         {% else %}
         <div class="bg-light rounded shadow d-flex align-items-center justify-content-center" style="height: 400px;">
             <i class="fas fa-drumstick-bite fa-5x text-muted"></i>
@@ -22,8 +22,19 @@
         <h2 class="h5 text-muted mb-3">{{ product.name_nepali }}</h2>
 
         <div class="mb-3">
-            <span class="h2 text-primary">रू {{ "%.0f"|format(product.price) }}</span>
-            <span class="text-muted">/kg</span>
+            <div class="price-display">
+                <div class="unit-price">
+                    <span class="h4 text-primary">रू {{ "%.0f"|format(product.price) }}</span>
+                    <span class="text-muted">/kg</span>
+                </div>
+                <div class="total-price-section mt-2" style="display: none;">
+                    <div class="d-flex align-items-center">
+                        <span class="text-muted me-2">Total:</span>
+                        <span class="h3 text-success total-price" data-unit-price="{{ product.price }}">रू {{ "%.0f"|format(product.price * 2) }}</span>
+                        <small class="text-muted ms-2">(<span class="quantity-display">2.0</span> kg)</small>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Badges -->
@@ -58,13 +69,21 @@
 
         <!-- Add to Cart Form -->
         {% if current_user.is_authenticated and product.stock_kg > 0 %}
-        <form method="POST" action="{{ url_for('add_to_cart') }}" class="cart-form">
-                        {{ form.hidden_tag() }}
+        <form method="POST" action="{{ url_for('orders.add_to_cart') }}" class="cart-form">
                         <input type="hidden" name="product_id" value="{{ product.id }}">
 
                         <div class="mb-3">
                             {{ form.quantity.label(class="form-label") }}
-                            {{ form.quantity(class="form-control", min="2", step="0.5", max=product.stock_kg) }}
+                            <div class="quantity-selector">
+                                <button type="button" class="btn btn-outline-secondary quantity-btn" data-action="decrease">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                {{ form.quantity(class="form-control quantity-input", min="2", step="0.5", max=product.stock_kg, readonly="readonly") }}
+                                <button type="button" class="btn btn-outline-secondary quantity-btn" data-action="increase">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <small class="text-muted">Minimum: 2 kg | Maximum: {{ product.stock_kg }} kg | Step: 0.5 kg</small>
                             {% if form.quantity.errors %}
                                 <div class="text-danger">
                                     {% for error in form.quantity.errors %}
@@ -89,7 +108,7 @@
         {% elif not current_user.is_authenticated %}
         <div class="alert alert-warning">
             <i class="fas fa-sign-in-alt me-2"></i>
-            Please <a href="{{ url_for('login') }}">login</a> to add items to cart.
+            Please <a href="{{ url_for('auth.login') }}">login</a> to add items to cart.
         </div>
         {% else %}
         <div class="alert alert-danger">
@@ -156,7 +175,7 @@
                 <h6 class="mb-0">Write a Review</h6>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('product_detail', product_id=product.id) }}">
+                <form method="POST" action="{{ url_for('products.detail', product_id=product.id) }}">
                     {{ review_form.hidden_tag() }}
 
                     <div class="mb-3">
@@ -224,7 +243,7 @@
             <div class="col-md-3 mb-4">
                 <div class="card h-100 shadow-sm">
                     {% if related_product.image_url %}
-                    <img src="{{ url_for('uploaded_file', filename=related_product.image_url) }}" 
+                    <img src="{{ url_for('main.uploaded_file', filename=related_product.image_url) }}" 
                          class="card-img-top" alt="{{ related_product.name }}" style="height: 150px; object-fit: cover;">
                     {% else %}
                     <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 150px;">
@@ -242,7 +261,7 @@
                     </div>
 
                     <div class="card-footer bg-transparent">
-                        <a href="{{ url_for('product_detail', product_id=related_product.id) }}" 
+                        <a href="{{ url_for('products.detail', product_id=related_product.id) }}" 
                            class="btn btn-outline-primary btn-sm w-100">
                             View Details
                         </a>

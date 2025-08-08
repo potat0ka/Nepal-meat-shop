@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}Edit User - {{ user.full_name }} - Nepal Meat Shop{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0" style="color: white !important; font-weight: bold;">
+                        <i class="fas fa-user-edit me-2"></i>
+                        Edit User - {{ user.full_name }}
+                    </h5>
+                    <a href="{{ url_for('admin.admin_users') }}" class="btn btn-outline-light btn-sm">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Back to Users
+                    </a>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                <!-- User Role Badge -->
+                <div class="text-center mb-4">
+                    {% if user.is_admin %}
+                    <span class="badge bg-success fs-6">
+                        <i class="fas fa-crown me-1"></i>Administrator
+                    </span>
+                    {% elif user.is_sub_admin %}
+                    <span class="badge bg-warning fs-6">
+                        <i class="fas fa-user-shield me-1"></i>Sub-Admin
+                    </span>
+                    {% else %}
+                    <span class="badge bg-info fs-6">
+                        <i class="fas fa-user me-1"></i>Customer
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <form method="POST" enctype="multipart/form-data">
+                    <!-- Profile Picture Section -->
+                    <div class="row mb-4">
+                        <div class="col-md-4 text-center">
+                            <div class="mb-3">
+                                <label class="form-label" style="color: #333 !important; font-weight: bold;">Profile Picture</label>
+                                <div class="profile-picture-container">
+                                    {% if user.profile_image %}
+                                    <img id="profilePreview" src="{{ url_for('main.uploaded_file', filename=user.profile_image) }}" 
+                                         alt="{{ user.full_name }}" class="rounded-circle mb-3" 
+                                         style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #dee2e6;">
+                                    {% else %}
+                                    <div id="profilePreview" class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mb-3 mx-auto" 
+                                         style="width: 120px; height: 120px; font-size: 48px; border: 3px solid #dee2e6;">
+                                        {{ user.full_name[0].upper() }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <input type="file" class="form-control" id="profile_picture" name="profile_picture" 
+                                       accept="image/*" onchange="previewImage(this)">
+                                <small class="text-muted">JPG, PNG, GIF (Max 5MB)</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-8">
+                            <!-- Basic Information -->
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="full_name" class="form-label" style="color: #333 !important; font-weight: bold;">
+                                        <i class="fas fa-user me-2"></i>Full Name *
+                                    </label>
+                                    <input type="text" class="form-control" id="full_name" name="full_name" 
+                                           value="{{ user.full_name }}" required>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="email" class="form-label" style="color: #333 !important; font-weight: bold;">
+                                        <i class="fas fa-envelope me-2"></i>Email Address *
+                                    </label>
+                                    <input type="email" class="form-control" id="email" name="email" 
+                                           value="{{ user.email }}" required>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="phone" class="form-label" style="color: #333 !important; font-weight: bold;">
+                                        <i class="fas fa-phone me-2"></i>Phone Number *
+                                    </label>
+                                    <input type="tel" class="form-control" id="phone" name="phone" 
+                                           value="{{ user.phone }}" required>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="new_password" class="form-label" style="color: #333 !important; font-weight: bold;">
+                                        <i class="fas fa-lock me-2"></i>New Password
+                                    </label>
+                                    <input type="password" class="form-control" id="new_password" name="new_password" 
+                                           placeholder="Leave blank to keep current password">
+                                    <small class="text-muted">Minimum 6 characters</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Address Information -->
+                    <div class="mb-4">
+                        <label for="address" class="form-label" style="color: #333 !important; font-weight: bold;">
+                            <i class="fas fa-map-marker-alt me-2"></i>Address
+                        </label>
+                        <textarea class="form-control" id="address" name="address" rows="3" 
+                                  placeholder="Enter full address">{{ user.address or '' }}</textarea>
+                    </div>
+                    
+                    <!-- Account Information -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title" style="color: #333 !important; font-weight: bold;">
+                                        <i class="fas fa-info-circle me-2"></i>Account Information
+                                    </h6>
+                                    <p class="mb-1"><strong>Username:</strong> {{ user.username }}</p>
+                                    <p class="mb-1"><strong>Member Since:</strong> {{ user.created_at.strftime('%B %d, %Y') if user.created_at else 'N/A' }}</p>
+                                    <p class="mb-1"><strong>Status:</strong> 
+                                        <span class="badge bg-{{ 'success' if user.is_active else 'secondary' }}">
+                                            {{ 'Active' if user.is_active else 'Inactive' }}
+                                        </span>
+                                    </p>
+                                    <p class="mb-0"><strong>Total Orders:</strong> {{ user.orders|length }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title" style="color: #333 !important; font-weight: bold;">
+                                        <i class="fas fa-shield-alt me-2"></i>Permissions
+                                    </h6>
+                                    <p class="mb-1">
+                                        <i class="fas fa-{{ 'check text-success' if user.has_admin_access() else 'times text-danger' }} me-2"></i>
+                                        Admin Access
+                                    </p>
+                                    <p class="mb-1">
+                                        <i class="fas fa-{{ 'check text-success' if user.can_manage_users() else 'times text-danger' }} me-2"></i>
+                                        Manage Users
+                                    </p>
+                                    <p class="mb-0">
+                                        <i class="fas fa-{{ 'check text-success' if user.can_grant_roles() else 'times text-danger' }} me-2"></i>
+                                        Grant Roles
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('admin.admin_users') }}" class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Update User
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const preview = document.getElementById('profilePreview');
+            
+            // Create new image element
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.className = 'rounded-circle mb-3';
+            img.style.cssText = 'width: 120px; height: 120px; object-fit: cover; border: 3px solid #dee2e6;';
+            img.alt = 'Profile Preview';
+            
+            // Replace the current preview
+            preview.parentNode.replaceChild(img, preview);
+            img.id = 'profilePreview';
+        };
+        
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const fullName = document.getElementById('full_name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const newPassword = document.getElementById('new_password').value;
+    
+    if (fullName.length < 2) {
+        alert('Full name must be at least 2 characters long.');
+        e.preventDefault();
+        return;
+    }
+    
+    if (!email.includes('@')) {
+        alert('Please enter a valid email address.');
+        e.preventDefault();
+        return;
+    }
+    
+    if (phone.length < 10) {
+        alert('Phone number must be at least 10 digits long.');
+        e.preventDefault();
+        return;
+    }
+    
+    if (newPassword && newPassword.length < 6) {
+        alert('Password must be at least 6 characters long.');
+        e.preventDefault();
+        return;
+    }
+});
+</script>
+{% endblock %}

@@ -8,21 +8,28 @@
         <div class="col-md-4">
             <div class="card">
                 <div class="card-header bg-primary text-white">
-                    <h5><i class="fas fa-user me-2"></i>प्रोफाइल / Profile</h5>
+                    <h5 style="color: white !important; font-weight: bold;"><i class="fas fa-user me-2"></i>प्रोफाइल / Profile</h5>
                 </div>
                 <div class="card-body text-center">
                     <div class="mb-3">
-                        <i class="fas fa-user-circle fa-5x text-primary"></i>
+                        {% if current_user.profile_image %}
+                            <img src="{{ url_for('main.uploaded_file', filename=current_user.profile_image) }}" 
+                                 alt="Profile Picture" 
+                                 class="rounded-circle mb-3" 
+                                 style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #007bff;">
+                        {% else %}
+                            <i class="fas fa-user-circle fa-5x text-primary"></i>
+                        {% endif %}
                     </div>
-                    <h5>{{ current_user.full_name }}</h5>
-                    <p class="text-muted">{{ current_user.email }}</p>
-                    <p class="text-muted">{{ current_user.phone }}</p>
+                    <h5 style="color: #333 !important; font-weight: bold;">{{ current_user.full_name }}</h5>
+                    <p class="text-muted" style="color: #666 !important;">{{ current_user.email }}</p>
+                    <p class="text-muted" style="color: #666 !important;">{{ current_user.phone }}</p>
                 </div>
             </div>
 
             <div class="card mt-3">
                 <div class="card-header bg-success text-white">
-                    <h6><i class="fas fa-chart-bar me-2"></i>तथ्याङ्कहरू / Statistics</h6>
+                    <h6 style="color: white !important; font-weight: bold;"><i class="fas fa-chart-bar me-2"></i>तथ्याङ्कहरू / Statistics</h6>
                 </div>
                 <div class="card-body">
                     <div class="row text-center">
@@ -31,7 +38,7 @@
                             <small class="text-muted">Total Orders</small>
                         </div>
                         <div class="col-6">
-                            <h4 class="text-success">{{ current_user.created_at.strftime('%Y') }}</h4>
+                            <h4 class="text-success">{{ current_user.created_at.strftime('%Y') if current_user.created_at else 'N/A' }}</h4>
                             <small class="text-muted">Member Since</small>
                         </div>
                     </div>
@@ -43,35 +50,98 @@
             <!-- Edit Profile Form -->
             <div class="card">
                 <div class="card-header bg-info text-white">
-                    <h5><i class="fas fa-edit me-2"></i>प्रोफाइल सम्पादन / Edit Profile</h5>
+                    <h5 style="color: white !important; font-weight: bold;"><i class="fas fa-edit me-2"></i>प्रोफाइल सम्पादन / Edit Profile</h5>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ url_for('update_profile') }}">
+                    <form method="POST" action="{{ url_for('auth.profile') }}" enctype="multipart/form-data">
+                        {{ profile_form.hidden_tag() }}
+                        
+                        <!-- Profile Picture Upload -->
+                        {% if profile_form.profile_picture %}
+                        <div class="mb-3">
+                            {{ profile_form.profile_picture.label(class="form-label", style="color: #333 !important; font-weight: bold;") }}
+                            {{ profile_form.profile_picture(class="form-control", accept="image/*") }}
+                            {% if profile_form.profile_picture.errors %}
+                                <div class="text-danger">
+                                    {% for error in profile_form.profile_picture.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">प्रोफाइल फोटो अपलोड गर्नुहोस् (JPG, PNG, GIF) / Upload profile photo (JPG, PNG, GIF)</small>
+                        </div>
+                        {% endif %}
+                        
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="full_name" class="form-label">पूरा नाम / Full Name *</label>
-                                    <input type="text" class="form-control" id="full_name" name="full_name" 
-                                           value="{{ current_user.full_name }}" required minlength="2">
+                                    {{ profile_form.username.label(class="form-label", style="color: #333 !important; font-weight: bold;") }}
+                                    {{ profile_form.username(class="form-control") }}
+                                    {% if profile_form.username.errors %}
+                                        <div class="text-danger">
+                                            {% for error in profile_form.username.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="phone" class="form-label">फोन नम्बर / Phone Number *</label>
-                                    <input type="tel" class="form-control" id="phone" name="phone" 
-                                           value="{{ current_user.phone }}" required minlength="10">
+                                    {{ profile_form.email.label(class="form-label", style="color: #333 !important; font-weight: bold;") }}
+                                    {{ profile_form.email(class="form-control") }}
+                                    {% if profile_form.email.errors %}
+                                        <div class="text-danger">
+                                            {% for error in profile_form.email.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ profile_form.full_name.label(class="form-label", style="color: #333 !important; font-weight: bold;") }}
+                                    {{ profile_form.full_name(class="form-control") }}
+                                    {% if profile_form.full_name.errors %}
+                                        <div class="text-danger">
+                                            {% for error in profile_form.full_name.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ profile_form.phone.label(class="form-label", style="color: #333 !important; font-weight: bold;") }}
+                                    {{ profile_form.phone(class="form-control") }}
+                                    {% if profile_form.phone.errors %}
+                                        <div class="text-danger">
+                                            {% for error in profile_form.phone.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label for="address" class="form-label">ठेगाना / Address</label>
-                            <textarea class="form-control" id="address" name="address" rows="3">{{ current_user.address or '' }}</textarea>
+                            {{ profile_form.address.label(class="form-label", style="color: #333 !important; font-weight: bold;") }}
+                            {{ profile_form.address(class="form-control", rows="3") }}
+                            {% if profile_form.address.errors %}
+                                <div class="text-danger">
+                                    {% for error in profile_form.address.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
 
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-2"></i>प्रोफाइल अपडेट गर्नुहोस् / Update Profile
-                        </button>
+                        {{ profile_form.submit(class="btn btn-primary") }}
                     </form>
                 </div>
             </div>
@@ -79,59 +149,35 @@
             <!-- Change Password Form -->
             <div class="card mt-3">
                 <div class="card-header bg-warning text-white">
-                    <h5><i class="fas fa-lock me-2"></i>पासवर्ड परिवर्तन / Change Password</h5>
+                    <h5 style="color: white !important; font-weight: bold;"><i class="fas fa-lock me-2"></i>पासवर्ड परिवर्तन / Change Password</h5>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ url_for('change_password') }}">
-                        <div class="mb-3">
-                            <label for="current_password" class="form-label">हालको पासवर्ड / Current Password *</label>
-                            <input type="password" class="form-control" id="current_password" name="current_password" required>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="new_password" class="form-label">नयाँ पासवर्ड / New Password *</label>
-                                    <input type="password" class="form-control" id="new_password" name="new_password" 
-                                           required minlength="6">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="confirm_password" class="form-label">नयाँ पासवर्ड पुष्टि / Confirm New Password *</label>
-                                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
-                                           required minlength="6">
-                                </div>
-                            </div>
-                        </div>
-
-                        <button type="submit" class="btn btn-warning">
-                            <i class="fas fa-key me-2"></i>पासवर्ड परिवर्तन गर्नुहोस् / Change Password
-                        </button>
-                    </form>
+                    <a href="{{ url_for('auth.change_password') }}" class="btn btn-warning">
+                        <i class="fas fa-key me-2"></i>पासवर्ड परिवर्तन गर्नुहोस् / Change Password
+                    </a>
                 </div>
             </div>
 
             <!-- Quick Actions -->
             <div class="card mt-3">
                 <div class="card-header bg-secondary text-white">
-                    <h5><i class="fas fa-bolt me-2"></i>द्रुत कार्यहरू / Quick Actions</h5>
+                    <h5 style="color: white !important; font-weight: bold;"><i class="fas fa-bolt me-2"></i>द्रुत कार्यहरू / Quick Actions</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-4 mb-2">
-                            <a href="{{ url_for('order_list') }}" class="btn btn-outline-primary w-100">
+                            <a href="{{ url_for('orders.my_orders') }}" class="btn btn-outline-primary w-100">
                                 <i class="fas fa-box me-2"></i>मेरा अर्डरहरू
                             </a>
                         </div>
                         <div class="col-md-4 mb-2">
-                            <a href="{{ url_for('cart') }}" class="btn btn-outline-success w-100">
+                            <a href="{{ url_for('orders.cart') }}" class="btn btn-outline-success w-100">
                                 <i class="fas fa-shopping-cart me-2"></i>कार्ट हेर्नुहोस्
                             </a>
                         </div>
                         <div class="col-md-4 mb-2">
-                            <a href="{{ url_for('product_list') }}" class="btn btn-outline-info w-100">
-                                <i class="fas fa-store me-2"></i>किनमेल गर्नुहोस्
+                            <a href="{{ url_for('products.list') }}" class="btn btn-outline-info w-100">
+                                <i class="fas fa-shopping-basket me-2"></i>Continue Shopping
                             </a>
                         </div>
                     </div>

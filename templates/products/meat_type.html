@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}{{ meat_type.title() }} Products - Nepal Meat Shop{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Meat Type Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="h3 mb-1">
+                    <i class="fas fa-drumstick-bite me-2"></i>
+                    {{ meat_type.title() }} Products
+                    {% if meat_type == 'pork' %}
+                    / सुंगुरको मासु
+                    {% elif meat_type == 'buffalo' %}
+                    / भैंसीको मासु
+                    {% elif meat_type == 'chicken' %}
+                    / कुखुराको मासु
+                    {% elif meat_type == 'goat' %}
+                    / खसीको मासु
+                    {% endif %}
+                </h2>
+                <small class="text-muted">{{ products|length }} products found</small>
+            </div>
+            <a href="{{ url_for('products.list') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>
+                All Products
+            </a>
+        </div>
+
+        <!-- Meat Type Banner -->
+        <div class="card mb-4">
+            <div class="card-body text-center bg-gradient" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h4 class="mb-2">
+                            {% if meat_type == 'pork' %}
+                            <i class="fas fa-pig me-2 text-danger"></i>
+                            Premium Pork Selection / प्रिमियम सुंगुरको मासु
+                            {% elif meat_type == 'buffalo' %}
+                            <i class="fas fa-cow me-2 text-dark"></i>
+                            Fresh Buffalo Meat / ताजा भैंसीको मासु
+                            {% elif meat_type == 'chicken' %}
+                            <i class="fas fa-drumstick-bite me-2 text-warning"></i>
+                            Farm Fresh Chicken / फार्म ताजा कुखुरा
+                            {% elif meat_type == 'goat' %}
+                            <i class="fas fa-sheep me-2 text-success"></i>
+                            Premium Goat Meat / प्रिमियम खसीको मासु
+                            {% endif %}
+                        </h4>
+                        <p class="text-muted mb-0">
+                            {% if meat_type == 'pork' %}
+                            High-quality pork cuts from local farms, perfect for traditional Nepali dishes.
+                            {% elif meat_type == 'buffalo' %}
+                            Lean and nutritious buffalo meat, a staple in Nepali cuisine.
+                            {% elif meat_type == 'chicken' %}
+                            Fresh, tender chicken from trusted local suppliers.
+                            {% elif meat_type == 'goat' %}
+                            Premium goat meat, ideal for special occasions and festivals.
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            {% if meat_type == 'pork' %}
+                            <i class="fas fa-pig fa-4x text-danger opacity-50"></i>
+                            {% elif meat_type == 'buffalo' %}
+                            <i class="fas fa-cow fa-4x text-dark opacity-50"></i>
+                            {% elif meat_type == 'chicken' %}
+                            <i class="fas fa-drumstick-bite fa-4x text-warning opacity-50"></i>
+                            {% elif meat_type == 'goat' %}
+                            <i class="fas fa-sheep fa-4x text-success opacity-50"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter and Sort Options -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Category</label>
+                        <select name="category" class="form-select" onchange="this.form.submit()">
+                            <option value="">All Categories</option>
+                            {% for category in categories %}
+                            <option value="{{ category._id }}" {% if current_category == category._id %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label class="form-label">Sort By</label>
+                        <select name="sort" class="form-select" onchange="this.form.submit()">
+                            <option value="name" {% if current_sort == 'name' %}selected{% endif %}>
+                                Name A-Z
+                            </option>
+                            <option value="price_low" {% if current_sort == 'price_low' %}selected{% endif %}>
+                                Price: Low to High
+                            </option>
+                            <option value="price_high" {% if current_sort == 'price_high' %}selected{% endif %}>
+                                Price: High to Low
+                            </option>
+                            <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>
+                                Newest First
+                            </option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-4 d-flex align-items-end">
+                        <a href="{{ url_for('products.by_meat_type', meat_type=meat_type) }}" 
+                           class="btn btn-outline-secondary w-100">
+                            Clear Filters
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if products %}
+        <!-- Products Grid -->
+        <div class="row">
+            {% for product in products %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100 shadow-sm product-card">
+                    {% if product.image_url %}
+                    <img src="{{ url_for('main.uploaded_file', filename=product.image_url) }}" 
+                         class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+                    {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                        {% if meat_type == 'pork' %}
+                        <i class="fas fa-pig fa-3x text-danger"></i>
+                        {% elif meat_type == 'buffalo' %}
+                        <i class="fas fa-cow fa-3x text-dark"></i>
+                        {% elif meat_type == 'chicken' %}
+                        <i class="fas fa-drumstick-bite fa-3x text-warning"></i>
+                        {% elif meat_type == 'goat' %}
+                        <i class="fas fa-sheep fa-3x text-success"></i>
+                        {% else %}
+                        <i class="fas fa-drumstick-bite fa-3x text-muted"></i>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <div class="card-body">
+                        <h6 class="card-title">{{ product.name }}</h6>
+                        {% if product.name_nepali %}
+                        <p class="card-text small text-muted">{{ product.name_nepali }}</p>
+                        {% endif %}
+
+                        <p class="card-text">
+                            <span class="h5 text-primary">रू {{ "%.0f"|format(product.price) }}</span>
+                            <small class="text-muted">/kg</small>
+                        </p>
+
+                        <div class="mb-2">
+                            {% if product.freshness_hours is defined %}
+                            <span class="badge bg-info">
+                                {% if product.freshness_hours <= 6 %}
+                                    Very Fresh
+                                {% elif product.freshness_hours <= 12 %}
+                                    Fresh
+                                {% elif product.freshness_hours <= 24 %}
+                                    Good
+                                {% else %}
+                                    Standard
+                                {% endif %}
+                            </span>
+                            {% endif %}
+                            
+                            {% if product.category %}
+                            <span class="badge bg-primary">{{ product.category.name if product.category.name else 'Category' }}</span>
+                            {% endif %}
+                            
+                            {% if product.stock > 0 %}
+                            <span class="badge bg-success">In Stock</span>
+                            {% else %}
+                            <span class="badge bg-danger">Out of Stock</span>
+                            {% endif %}
+                        </div>
+
+                        {% if product.is_featured %}
+                        <div class="mb-2">
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-star me-1"></i>Featured
+                            </span>
+                        </div>
+                        {% endif %}
+
+                        <p class="card-text small">{{ product.description[:100] }}...</p>
+
+                        <div class="mt-auto">
+                            {% if product.stock > 0 %}
+                            <p class="mb-2 small">
+                                <i class="fas fa-box me-1"></i>
+                                Stock: {{ product.stock }} kg
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="card-footer bg-transparent">
+                        <a href="{{ url_for('products.detail', product_id=product._id) }}" 
+                           class="btn btn-primary btn-sm w-100">
+                            <i class="fas fa-eye me-1"></i>View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <!-- No Products -->
+        <div class="text-center py-5">
+            <div class="mb-4">
+                {% if meat_type == 'pork' %}
+                <i class="fas fa-pig fa-5x text-muted"></i>
+                {% elif meat_type == 'buffalo' %}
+                <i class="fas fa-cow fa-5x text-muted"></i>
+                {% elif meat_type == 'chicken' %}
+                <i class="fas fa-drumstick-bite fa-5x text-muted"></i>
+                {% elif meat_type == 'goat' %}
+                <i class="fas fa-sheep fa-5x text-muted"></i>
+                {% else %}
+                <i class="fas fa-drumstick-bite fa-5x text-muted"></i>
+                {% endif %}
+            </div>
+            <h4>No {{ meat_type }} products available</h4>
+            <p class="text-muted mb-4">
+                {% if meat_type == 'pork' %}
+                हाल सुंगुरको मासु उपलब्ध छैन<br>
+                {% elif meat_type == 'buffalo' %}
+                हाल भैंसीको मासु उपलब्ध छैन<br>
+                {% elif meat_type == 'chicken' %}
+                हाल कुखुराको मासु उपलब्ध छैन<br>
+                {% elif meat_type == 'goat' %}
+                हाल खसीको मासु उपलब्ध छैन<br>
+                {% endif %}
+                No {{ meat_type }} products are currently available. Please check back later.
+            </p>
+            <a href="{{ url_for('products.list') }}" class="btn btn-primary">
+                <i class="fas fa-store me-2"></i>
+                Browse All Products
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.product-card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+.bg-gradient {
+    border-radius: 10px;
+}
+
+.opacity-50 {
+    opacity: 0.5;
+}
+</style>
+{% endblock %}

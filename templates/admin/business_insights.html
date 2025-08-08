@@ -1,0 +1,2787 @@
+{% extends "base.html" %}
+
+{% block title %}Business Insights Dashboard{% endblock %}
+
+{% block extra_head %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<style>
+    .insights-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+    }
+    
+    .insights-header {
+        text-align: center;
+        margin-bottom: 30px;
+        color: white;
+        position: relative;
+    }
+    
+    .insights-header h1 {
+        font-size: 2.8rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+    }
+    
+    .insights-header p {
+        font-size: 1.2rem;
+        opacity: 0.9;
+        margin-bottom: 20px;
+    }
+    
+    .header-actions {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 20px;
+    }
+    
+    .btn-download {
+        background: linear-gradient(45deg, #e74c3c, #c0392b);
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 25px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+    }
+    
+    .btn-download:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+    
+    .btn-refresh {
+        background: linear-gradient(45deg, #27ae60, #2ecc71);
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 25px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+    }
+    
+    .btn-refresh:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 25px;
+        margin-bottom: 40px;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        text-align: center;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        border: none;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #3498db, #2980b9);
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 45px rgba(0,0,0,0.15);
+    }
+    
+    .stat-icon {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        background: linear-gradient(45deg, #3498db, #2980b9);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .stat-number {
+        font-size: 2.8rem;
+        font-weight: bold;
+        color: #2c3e50;
+        margin-bottom: 10px;
+        line-height: 1;
+    }
+    
+    .stat-label {
+        font-size: 1.1rem;
+        color: #7f8c8d;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+    }
+    
+    .stat-percentage {
+        font-size: 0.9rem;
+        margin-top: 10px;
+        padding: 5px 10px;
+        border-radius: 20px;
+        display: inline-block;
+    }
+    
+    .percentage-success {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .percentage-danger {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .insights-section {
+        background: white;
+        border-radius: 20px;
+        padding: 35px;
+        margin-bottom: 30px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .insights-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+    }
+    
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .section-title {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #2c3e50;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .section-title i {
+        color: #3498db;
+    }
+    
+    .filters-container {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 25px;
+        border: 1px solid #dee2e6;
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .filter-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+    
+    .filter-input {
+        padding: 8px 12px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        transition: border-color 0.3s ease;
+    }
+    
+    .filter-input:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    
+    .btn-filter {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background 0.3s ease;
+        align-self: flex-end;
+    }
+    
+    .btn-filter:hover {
+        background: #5a6fd8;
+    }
+    
+    .small-charts-section {
+        margin-bottom: 20px;
+        padding: 15px 0;
+    }
+    
+    .small-chart-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .small-chart-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        border-left: 4px solid #667eea;
+        text-align: center;
+    }
+    
+    .small-chart-title {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #2c3e50;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .small-chart-content {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .small-chart-content canvas {
+        max-width: 200px;
+        max-height: 200px;
+        border-radius: 8px;
+    }
+    
+    .table-responsive {
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        background: white;
+        margin-top: 20px;
+    }
+    
+    .table {
+        margin: 0;
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+    }
+    
+    .table thead th {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border: none;
+        padding: 18px 15px;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+        letter-spacing: 0.5px;
+    }
+    
+    .table tbody td {
+        padding: 18px 15px;
+        border-bottom: 1px solid #f1f3f4;
+        vertical-align: middle;
+    }
+    
+    .table tbody tr:hover {
+        background: #f8f9fa;
+        transition: background-color 0.3s ease;
+    }
+    
+    .status-badge {
+        padding: 8px 16px;
+        border-radius: 25px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .status-completed {
+        background: linear-gradient(45deg, #27ae60, #2ecc71);
+        color: white;
+    }
+    
+    .status-cancelled {
+        background: linear-gradient(45deg, #e74c3c, #c0392b);
+        color: white;
+    }
+    
+    .status-pending {
+        background: linear-gradient(45deg, #f39c12, #e67e22);
+        color: white;
+    }
+    
+    .rating-stars {
+        color: #f39c12;
+        font-size: 1.2rem;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    
+    /* Enhanced Customer Reviews Table Styles */
+    .enhanced-table-container {
+        margin-top: 20px;
+        background: white;
+        border: 2px solid #333;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .enhanced-reviews-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        border: 1px solid #333;
+    }
+    
+    .enhanced-reviews-table thead {
+        background: #f8f9fa;
+        color: #333;
+        border-bottom: 2px solid #333;
+    }
+    
+    .enhanced-reviews-table th {
+        padding: 12px 10px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: 1px solid #333;
+        position: relative;
+    }
+    
+    .enhanced-reviews-table th i {
+        margin-right: 8px;
+        font-size: 1rem;
+    }
+    
+    .enhanced-reviews-table tbody tr {
+        transition: background-color 0.2s ease;
+        border-bottom: 1px solid #333;
+    }
+    
+    .enhanced-reviews-table tbody tr:hover {
+        background-color: #f0f0f0;
+    }
+    
+    .enhanced-reviews-table tbody tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+    
+    .enhanced-reviews-table tbody tr:nth-child(even):hover {
+        background-color: #e9e9e9;
+    }
+    
+    .enhanced-reviews-table td {
+        padding: 12px 10px;
+        vertical-align: middle;
+        border: 1px solid #333;
+    }
+    
+    .customer-cell .customer-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .customer-cell .customer-avatar {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1rem;
+        box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+    }
+    
+    .customer-name {
+        color: #2c3e50;
+        font-size: 1rem;
+        font-weight: 700;
+    }
+    
+    .product-cell .product-name {
+        color: #34495e;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+    
+    .rating-cell .rating-display {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .rating-cell .rating-stars {
+        color: #f39c12;
+        font-size: 1.1rem;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    
+    .rating-cell .rating-text {
+        color: #7f8c8d;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    
+    .review-cell .review-content {
+        max-width: 300px;
+    }
+    
+    .review-cell .review-text {
+        margin: 0;
+        color: #34495e;
+        font-style: italic;
+        line-height: 1.5;
+        font-size: 0.9rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .date-cell .review-date {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    
+    /* Column width adjustments */
+    .customer-col { width: 20%; }
+    .product-col { width: 18%; }
+    .rating-col { width: 15%; }
+    .review-col { width: 35%; }
+    .date-col { width: 12%; }
+    
+    /* Enhanced Financial Summary Styles */
+    .financial-overview {
+        margin-bottom: 40px;
+    }
+    
+    .financial-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 25px;
+        margin-bottom: 35px;
+    }
+    
+    .financial-item {
+        display: flex;
+        align-items: center;
+        padding: 25px;
+        background: linear-gradient(135deg, #ffffff, #f8f9fa);
+        border-radius: 20px;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        border: 1px solid #dee2e6;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    
+    .financial-item::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+    }
+    
+    .revenue-item::before {
+        background: linear-gradient(90deg, #27ae60, #2ecc71);
+    }
+    
+    .average-item::before {
+        background: linear-gradient(90deg, #3498db, #2980b9);
+    }
+    
+    .orders-item::before {
+        background: linear-gradient(90deg, #f39c12, #e67e22);
+    }
+    
+    .financial-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+    }
+    
+    .financial-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+        margin-right: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    
+    .revenue-item .financial-icon {
+        background: linear-gradient(135deg, #27ae60, #2ecc71);
+    }
+    
+    .average-item .financial-icon {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+    }
+    
+    .orders-item .financial-icon {
+        background: linear-gradient(135deg, #f39c12, #e67e22);
+    }
+    
+    .financial-content {
+        flex: 1;
+    }
+    
+    .financial-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 5px;
+        line-height: 1;
+    }
+    
+    .financial-label {
+        color: #7f8c8d;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+    
+    .financial-trend {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.85rem;
+    }
+    
+    .trend-text {
+        color: #95a5a6;
+        font-weight: 500;
+    }
+    
+    /* Enhanced Delivery Areas Styles */
+    .delivery-areas-section {
+        margin-top: 40px;
+    }
+    
+    .delivery-areas-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+    }
+    
+    .delivery-areas-header h4 {
+        color: #2c3e50;
+        margin: 0;
+        font-weight: 700;
+        font-size: 1.3rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .areas-summary {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+    }
+    
+    .delivery-areas-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+    
+    .area-card {
+        background: linear-gradient(135deg, #ffffff, #f8f9fa);
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        border: 1px solid #e9ecef;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .area-card::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: linear-gradient(180deg, #27ae60, #2ecc71);
+    }
+    
+    .area-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    }
+    
+    .area-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .area-icon {
+        width: 45px;
+        height: 45px;
+        background: linear-gradient(135deg, #27ae60, #2ecc71);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.1rem;
+        box-shadow: 0 3px 10px rgba(39, 174, 96, 0.3);
+    }
+    
+    .area-info h5 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+    
+    .area-description {
+        margin: 3px 0 0 0;
+        color: #7f8c8d;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    
+    .area-stats {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .order-count {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .count-number {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #27ae60;
+        line-height: 1;
+    }
+    
+    .count-label {
+        font-size: 0.8rem;
+        color: #7f8c8d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+    }
+    
+    .area-progress {
+        flex: 1;
+        height: 8px;
+        background: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-left: 15px;
+    }
+    
+    .area-progress .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #27ae60, #2ecc71);
+        border-radius: 4px;
+        transition: width 0.6s ease;
+        box-shadow: 0 2px 4px rgba(39, 174, 96, 0.3);
+    }
+    
+    /* Bootstrap utility classes */
+    .d-flex {
+        display: flex !important;
+    }
+    
+    .align-items-center {
+        align-items: center !important;
+    }
+    
+    .me-2 {
+        margin-right: 0.5rem !important;
+    }
+    
+    .text-success {
+        color: #28a745 !important;
+    }
+    
+    .text-danger {
+        color: #dc3545 !important;
+    }
+    
+    .text-warning {
+        color: #ffc107 !important;
+    }
+    
+    .text-primary {
+        color: #007bff !important;
+    }
+    
+    .badge {
+        display: inline-block;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 700;
+        line-height: 1;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: baseline;
+        border-radius: 0.375rem;
+    }
+    
+    .bg-success {
+        background-color: #28a745 !important;
+        color: white !important;
+    }
+    
+    .bg-danger {
+        background-color: #dc3545 !important;
+        color: white !important;
+    }
+    
+    .bg-warning {
+        background-color: #ffc107 !important;
+        color: #212529 !important;
+    }
+    
+    .bg-primary {
+        background-color: #007bff !important;
+        color: white !important;
+    }
+    
+    .progress {
+        display: flex;
+        height: 1rem;
+        overflow: hidden;
+        font-size: 0.75rem;
+        background-color: #e9ecef;
+        border-radius: 0.375rem;
+    }
+    
+    .progress-bar {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        overflow: hidden;
+        color: #fff;
+        text-align: center;
+        white-space: nowrap;
+        background-color: #007bff;
+        transition: width 0.6s ease;
+    }
+    
+    .progress-bar.bg-success {
+        background-color: #28a745 !important;
+    }
+    
+    .progress-bar.bg-danger {
+        background-color: #dc3545 !important;
+    }
+    
+    .progress-bar.bg-warning {
+        background-color: #ffc107 !important;
+        color: #212529 !important;
+    }
+    
+    .progress-bar.bg-primary {
+        background-color: #007bff !important;
+    }
+    
+    .table-info {
+        background-color: rgba(13, 202, 240, 0.125);
+    }
+    
+    /* Order Analytics Enhanced Styles */
+    .order-analytics-section {
+        margin-top: 30px;
+    }
+    
+    .order-count-badge {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-left: 10px;
+        display: inline-block;
+    }
+    
+    /* Advanced Filters */
+    .advanced-filters-container {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 15px;
+        padding: 25px;
+        margin: 20px 0;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        border: 1px solid #dee2e6;
+    }
+    
+    .filters-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        align-items: end;
+    }
+    
+    .filter-group {
+        flex: 1;
+        min-width: 200px;
+    }
+    
+    .filter-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #495057;
+        font-size: 0.9rem;
+    }
+    
+    .filter-label i {
+        margin-right: 5px;
+        color: #6c757d;
+    }
+    
+    .enhanced-select,
+    .date-input {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        background: white;
+    }
+    
+    .enhanced-select:focus,
+    .date-input:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        outline: none;
+    }
+    
+    .filter-actions {
+        display: flex;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+    
+    .btn-filter.primary {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .btn-filter.primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+    }
+    
+    .btn-filter.secondary {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .btn-filter.secondary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(108, 117, 125, 0.3);
+        color: white;
+        text-decoration: none;
+    }
+    
+    /* Order Summary Cards */
+    .order-summary-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin: 25px 0;
+    }
+    
+    .summary-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e9ecef;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .summary-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #007bff, #0056b3);
+    }
+    
+    .summary-card.completed::before {
+        background: linear-gradient(90deg, #28a745, #1e7e34);
+    }
+    
+    .summary-card.cancelled::before {
+        background: linear-gradient(90deg, #dc3545, #c82333);
+    }
+    
+    .summary-card.pending::before {
+        background: linear-gradient(90deg, #ffc107, #e0a800);
+    }
+    
+    .summary-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    }
+    
+    .card-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: white;
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    }
+    
+    .summary-card.completed .card-icon {
+        background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+    }
+    
+    .summary-card.cancelled .card-icon {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    }
+    
+    .summary-card.pending .card-icon {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+    }
+    
+    .card-content {
+        flex: 1;
+    }
+    
+    .card-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 5px;
+    }
+    
+    .card-label {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #6c757d;
+        margin-bottom: 3px;
+    }
+    
+    .card-sublabel {
+        font-size: 0.875rem;
+        color: #28a745;
+        font-weight: 600;
+    }
+    
+    /* Enhanced Table Container */
+    .enhanced-table-container {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e9ecef;
+        margin-top: 25px;
+    }
+    
+    .table-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 20px 25px;
+        border-bottom: 1px solid #dee2e6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .table-header h3 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+    
+    .table-header h3 i {
+        margin-right: 10px;
+        color: #007bff;
+    }
+    
+    .table-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .btn-export {
+        background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .btn-export:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+    }
+    
+    /* Enhanced Table */
+    .enhanced-table {
+        margin: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    
+    .enhanced-table thead th {
+        background: linear-gradient(135deg, #343a40 0%, #495057 100%);
+        color: white;
+        padding: 15px 12px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        border: none;
+        position: relative;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .enhanced-table thead th:hover {
+        background: linear-gradient(135deg, #495057 0%, #6c757d 100%);
+    }
+    
+    .enhanced-table thead th.sortable {
+        user-select: none;
+    }
+    
+    .sort-icon {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        opacity: 0.5;
+        transition: opacity 0.3s ease;
+    }
+    
+    .enhanced-table thead th:hover .sort-icon {
+        opacity: 1;
+    }
+    
+    .enhanced-table tbody tr {
+        transition: all 0.3s ease;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .enhanced-table tbody tr:hover {
+        background-color: #f8f9fa;
+        transform: scale(1.01);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .enhanced-table tbody td {
+        padding: 15px 12px;
+        vertical-align: middle;
+        border: none;
+    }
+    
+    /* Enhanced Cell Styles */
+    .order-id-cell {
+        font-family: 'Courier New', monospace;
+    }
+    
+    .order-id {
+        color: #007bff;
+        font-size: 1rem;
+    }
+    
+    .order-type {
+        display: block;
+        color: #6c757d;
+        font-size: 0.75rem;
+        margin-top: 2px;
+    }
+    
+    .customer-info {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .customer-name {
+        color: #2c3e50;
+        font-size: 0.9rem;
+    }
+    
+    .customer-phone {
+        color: #6c757d;
+        font-size: 0.75rem;
+        margin-top: 2px;
+    }
+    
+    .date-info {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .order-date {
+        color: #2c3e50;
+        font-size: 0.9rem;
+    }
+    
+    .order-time {
+        color: #6c757d;
+        font-size: 0.75rem;
+        margin-top: 2px;
+    }
+    
+    .enhanced-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .enhanced-status-badge.status-completed {
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .enhanced-status-badge.status-cancelled {
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    
+    .enhanced-status-badge.status-pending {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+    
+    .amount-cell {
+        text-align: right;
+    }
+    
+    .amount-value {
+        color: #28a745;
+        font-size: 1rem;
+    }
+    
+    .payment-method {
+        display: block;
+        color: #6c757d;
+        font-size: 0.75rem;
+        margin-top: 2px;
+    }
+    
+    .area-info {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .area-info i {
+        color: #dc3545;
+        font-size: 0.8rem;
+    }
+    
+    .area-name {
+        color: #2c3e50;
+        font-size: 0.9rem;
+    }
+    
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 5px;
+        justify-content: center;
+    }
+    
+    .btn-action {
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+    }
+    
+    .btn-action.view {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        color: white;
+    }
+    
+    .btn-action.edit {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+        color: #212529;
+    }
+    
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* No Data Message */
+    .no-data-cell {
+        text-align: center;
+        padding: 50px 20px;
+    }
+    
+    .no-data-message {
+        color: #6c757d;
+    }
+    
+    .no-data-message i {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        opacity: 0.5;
+    }
+    
+    .no-data-message h4 {
+        margin: 10px 0;
+        color: #495057;
+    }
+    
+    .no-data-message p {
+        margin: 0;
+        font-size: 0.9rem;
+    }
+    
+    /* Pagination */
+    .pagination-container {
+        background: #f8f9fa;
+        padding: 15px 25px;
+        border-top: 1px solid #dee2e6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .pagination-info {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .pagination-controls {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .btn-pagination {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .btn-pagination:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 10px rgba(108, 117, 125, 0.3);
+    }
+
+    @media (max-width: 768px) {
+        .small-chart-container {
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin: 0 10px;
+        }
+        
+        .small-chart-card {
+            padding: 15px;
+        }
+        
+        .small-chart-title {
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+        
+        .small-chart-content canvas {
+            max-width: 150px;
+            max-height: 150px;
+        }
+        
+        .filters-container {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .section-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 15px;
+        }
+        
+        .table-responsive {
+            font-size: 0.875rem;
+        }
+        
+        .progress {
+            height: 0.75rem;
+        }
+        
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+    }
+    
+    /* Enhanced Financial Table Styles */
+    .enhanced-financial-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border: 1px solid #333;
+        margin-bottom: 30px;
+    }
+    
+    .enhanced-financial-table thead {
+        background: #f8f9fa;
+        color: #333;
+        border-bottom: 2px solid #333;
+    }
+    
+    .enhanced-financial-table th {
+        padding: 12px 15px;
+        text-align: left;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.9rem;
+        border: 1px solid #333;
+    }
+    
+    .enhanced-financial-table th i {
+        margin-right: 8px;
+    }
+    
+    .enhanced-financial-table tbody tr {
+        transition: background-color 0.2s ease;
+        border-bottom: 1px solid #333;
+    }
+    
+    .enhanced-financial-table tbody tr:hover {
+        background-color: #f0f0f0;
+    }
+    
+    .enhanced-financial-table tbody tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+    
+    .enhanced-financial-table tbody tr:nth-child(even):hover {
+        background-color: #e9e9e9;
+    }
+    
+    .enhanced-financial-table td {
+        padding: 12px 15px;
+        vertical-align: middle;
+        border: 1px solid #333;
+    }
+    
+    .metric-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .metric-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.1rem;
+    }
+    
+    .revenue-row .metric-icon {
+        background: linear-gradient(135deg, #27ae60, #2ecc71);
+    }
+    
+    .average-row .metric-icon {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+    }
+    
+    .orders-row .metric-icon {
+        background: linear-gradient(135deg, #f39c12, #e67e22);
+    }
+    
+    .metric-name {
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 1rem;
+    }
+    
+    .financial-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+    
+    .description-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .description-text {
+        color: #7f8c8d;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+    
+    /* Column widths for financial table */
+    .metric-col { width: 40%; }
+    .value-col { width: 30%; }
+    .description-col { width: 30%; }
+    
+    /* Enhanced Delivery Table Styles */
+    .enhanced-delivery-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border: 1px solid #333;
+        margin-top: 20px;
+    }
+    
+    .enhanced-delivery-table thead {
+        background: #f8f9fa;
+        color: #333;
+        border-bottom: 2px solid #333;
+    }
+    
+    .enhanced-delivery-table th {
+        padding: 12px 15px;
+        text-align: left;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.9rem;
+        border: 1px solid #333;
+    }
+    
+    .enhanced-delivery-table th i {
+        margin-right: 8px;
+    }
+    
+    .enhanced-delivery-table tbody tr {
+        transition: background-color 0.2s ease;
+        border-bottom: 1px solid #333;
+    }
+    
+    .enhanced-delivery-table tbody tr:hover {
+        background-color: #f0f0f0;
+    }
+    
+    .enhanced-delivery-table tbody tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+    
+    .enhanced-delivery-table tbody tr:nth-child(even):hover {
+        background-color: #e9e9e9;
+    }
+    
+    .enhanced-delivery-table td {
+        padding: 12px 15px;
+        vertical-align: middle;
+        border: 1px solid #333;
+    }
+    
+    .area-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .area-icon {
+        width: 35px;
+        height: 35px;
+        background: linear-gradient(135deg, #27ae60, #2ecc71);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.9rem;
+    }
+    
+    .area-name {
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 1rem;
+    }
+    
+    .zone-type {
+        color: #7f8c8d;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+    
+    .order-count {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .count-number {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #27ae60;
+        line-height: 1;
+    }
+    
+    .count-label {
+        font-size: 0.75rem;
+        color: #7f8c8d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+        margin-top: 2px;
+    }
+    
+    .activity-progress {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .progress-container {
+        flex: 1;
+        height: 8px;
+        background: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    
+    .progress-container .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #27ae60, #2ecc71);
+        border-radius: 4px;
+        transition: width 0.6s ease;
+    }
+    
+    .progress-text {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #27ae60;
+        min-width: 35px;
+    }
+    
+    /* Column widths for delivery table */
+    .area-col { width: 30%; }
+    .zone-col { width: 25%; }
+    .orders-col { width: 20%; }
+    .activity-col { width: 25%; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="insights-container">
+    <!-- Header -->
+    <div class="insights-header">
+        <h1><i class="fas fa-chart-line"></i> Business Insights</h1>
+        <p>Comprehensive analytics and business intelligence dashboard</p>
+        <div class="header-actions">
+             <a href="{{ url_for('admin.download_business_insights_pdf') }}" class="btn-download">
+                 <i class="fas fa-download"></i> Download PDF Report
+             </a>
+             <a href="{{ url_for('admin.business_insights') }}" class="btn-refresh">
+                 <i class="fas fa-sync-alt"></i> Refresh Data
+             </a>
+         </div>
+    </div>
+
+    <!-- Order Filters and Summary Section -->
+    <div class="insights-section order-analytics-section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="fas fa-chart-bar"></i> Order Analytics
+                <span class="order-count-badge">{{ filtered_orders|length }} orders</span>
+            </h2>
+            
+            <!-- Filters -->
+            <form method="GET" class="mb-4">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>From Date</th>
+                                <th>To Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <select name="status" class="form-select">
+                                        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Orders</option>
+                                        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                                        <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="date" name="date_from" value="{{ date_from or '' }}" class="form-control" placeholder="dd/mm/yyyy">
+                                </td>
+                                <td>
+                                    <input type="date" name="date_to" value="{{ date_to or '' }}" class="form-control" placeholder="dd/mm/yyyy">
+                                </td>
+                                <td>
+                                    <input type="hidden" name="sort_reviews" value="{{ sort_reviews }}">
+                                    <button type="submit" class="btn btn-primary me-2">Apply Filters</button>
+                                    <a href="{{ url_for('admin.business_insights') }}" class="btn btn-outline-secondary">Reset</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Order Summary Table -->
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-chart-bar"></i> Status</th>
+                        <th><i class="fas fa-shopping-cart"></i> Orders</th>
+                        <th><i class="fas fa-rupee-sign"></i> Revenue</th>
+                        <th><i class="fas fa-percentage"></i> Percentage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set total_amount = filtered_orders | sum(attribute='total_amount') %}
+                    {% set completed_orders = filtered_orders | selectattr('status', 'equalto', 'completed') | list %}
+                    {% set cancelled_orders = filtered_orders | selectattr('status', 'equalto', 'cancelled') | list %}
+                    {% set pending_orders = filtered_orders | selectattr('status', 'equalto', 'pending') | list %}
+                    
+                    <tr>
+                        <td><i class="fas fa-shopping-cart text-primary"></i> Total Orders</td>
+                        <td><strong>{{ filtered_orders|length }}</strong></td>
+                        <td><strong>Rs. {{ "{:,.0f}".format(total_amount or 0) }}</strong></td>
+                        <td>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-primary" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+                                    100%
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><i class="fas fa-check-circle text-success"></i> Completed</td>
+                        <td><span class="badge bg-success">{{ completed_orders|length }}</span></td>
+                        <td><strong>Rs. {{ "{:,.0f}".format(completed_orders | sum(attribute='total_amount') or 0) }}</strong></td>
+                        <td>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-success" role="progressbar" 
+                                     style="width: {{ (completed_orders|length / filtered_orders|length * 100) if filtered_orders|length > 0 else 0 }}%"
+                                     aria-valuenow="{{ (completed_orders|length / filtered_orders|length * 100) if filtered_orders|length > 0 else 0 }}"
+                                     aria-valuemin="0" aria-valuemax="100">
+                                    {{ "%.1f"|format((completed_orders|length / filtered_orders|length * 100) if filtered_orders|length > 0 else 0) }}%
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><i class="fas fa-times-circle text-danger"></i> Cancelled</td>
+                        <td><span class="badge bg-danger">{{ cancelled_orders|length }}</span></td>
+                        <td><strong>Rs. {{ "{:,.0f}".format(cancelled_orders | sum(attribute='total_amount') or 0) }}</strong></td>
+                        <td>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-danger" role="progressbar" 
+                                     style="width: {{ (cancelled_orders|length / filtered_orders|length * 100) if filtered_orders|length > 0 else 0 }}%"
+                                     aria-valuenow="{{ (cancelled_orders|length / filtered_orders|length * 100) if filtered_orders|length > 0 else 0 }}"
+                                     aria-valuemin="0" aria-valuemax="100">
+                                    {{ "%.1f"|format((cancelled_orders|length / filtered_orders|length * 100) if filtered_orders|length > 0 else 0) }}%
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><i class="fas fa-clock text-warning"></i> Pending</td>
+                        <td><span class="badge bg-warning">{{ pending_orders|length }}</span></td>
+                        <td><strong>Rs. {{ "{:,.0f}".format(pending_orders | sum(attribute='total_amount') or 0) }}</strong></td>
+                        <td>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-warning" role="progressbar" 
+                                     style="width: {{ (pending_orders|length / filtered_orders|length * 100) if filtered_orders|length > 0 else 0 }}%"
+                                     aria-valuenow="{{ (pending_orders|length / filtered_orders|length * 100) if filtered_orders|length > 0 else 0 }}"
+                                     aria-valuemin="0" aria-valuemax="100">
+                                    {{ "%.1f"|format((pending_orders|length / filtered_orders|length * 100) if filtered_orders|length > 0 else 0) }}%
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Enhanced Orders Table -->
+    <div class="insights-section enhanced-orders-section">
+        <div class="enhanced-table-container">
+            <div class="table-header">
+                <h3><i class="fas fa-table"></i> Order Details</h3>
+                <div class="table-actions">
+                    <div class="selection-actions" id="selection-actions" style="display: none;">
+                        <span id="selectedCount" class="selected-count">0 selected</span>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                                <i class="fas fa-download"></i> Download Selected
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="downloadSelectedOrders('pdf')">
+                                    <i class="fas fa-file-pdf text-danger"></i> PDF Format
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="downloadSelectedOrders('csv')">
+                                    <i class="fas fa-file-csv text-success"></i> CSV Format
+                                </a></li>
+                            </ul>
+                        </div>
+                        <button class="btn btn-outline-secondary btn-sm ms-2" onclick="clearSelection()">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
+                    </div>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-download"></i> Export All
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="downloadAllOrders('pdf')">
+                                <i class="fas fa-file-pdf text-danger"></i> PDF Format
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="downloadAllOrders('csv')">
+                                <i class="fas fa-file-csv text-success"></i> CSV Format
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table enhanced-table" id="ordersTable">
+                    <thead>
+                        <tr>
+                            <th>
+                                <input type="checkbox" id="select-all" onchange="toggleSelectAll()">
+                            </th>
+                            <th><i class="fas fa-hashtag"></i> Order ID</th>
+                            <th><i class="fas fa-user"></i> Customer</th>
+                            <th><i class="fas fa-calendar"></i> Date & Time</th>
+                            <th><i class="fas fa-info-circle"></i> Status</th>
+                            <th><i class="fas fa-rupee-sign"></i> Total Amount</th>
+                            <th><i class="fas fa-map-marker-alt"></i> Delivery Area</th>
+                            <th><i class="fas fa-cog"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ordersTableBody">
+                        {% for order in filtered_orders %}
+                        <tr data-order-id="{{ order.order_id }}">
+                            <td>
+                                <input type="checkbox" class="order-checkbox" value="{{ order.order_id }}" onchange="toggleOrderSelection('{{ order.order_id }}')">
+                            </td>
+                            <td><strong>#{{ order.order_id }}</strong><br><small class="text-muted">{{ order.order_type or 'Regular' }}</small></td>
+                            <td>
+                                <strong>{{ order.customer_name or 'Guest Customer' }}</strong><br>
+                                <small class="text-muted">{{ order.customer_phone or 'N/A' }}</small>
+                            </td>
+                            <td>
+                                <strong>{{ order.order_date.strftime('%d/%m/%Y') if order.order_date else 'N/A' }}</strong><br>
+                                <small class="text-muted">{{ order.order_date.strftime('%H:%M') if order.order_date else 'N/A' }}</small>
+                            </td>
+                            <td>
+                                {% if order.status == 'completed' %}
+                                    <span class="badge bg-success"><i class="fas fa-check-circle"></i> {{ order.status.title() }}</span>
+                                {% elif order.status == 'cancelled' %}
+                                    <span class="badge bg-danger"><i class="fas fa-times-circle"></i> {{ order.status.title() }}</span>
+                                {% elif order.status == 'pending' %}
+                                    <span class="badge bg-warning"><i class="fas fa-clock"></i> {{ order.status.title() }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary"><i class="fas fa-question-circle"></i> {{ order.status.title() }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong>Rs. {{ "{:,.0f}".format(order.total_amount or 0) }}</strong><br>
+                                <small class="text-muted">{{ order.payment_method or 'Cash' }}</small>
+                            </td>
+                            <td><i class="fas fa-map-marker-alt text-primary"></i> {{ order.delivery_area or 'Not specified' }}</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="viewOrderDetails('{{ order.order_id }}')" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="editOrder('{{ order.order_id }}')" title="Edit Order">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-sm btn-outline-success dropdown-toggle" data-bs-toggle="dropdown" title="Download">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item" href="#" onclick="downloadSingleOrder('{{ order.order_id }}', 'pdf')">
+                                                <i class="fas fa-file-pdf text-danger"></i> Download PDF
+                                            </a></li>
+                                            <li><a class="dropdown-item" href="#" onclick="downloadSingleOrder('{{ order.order_id }}', 'csv')">
+                                                <i class="fas fa-file-csv text-success"></i> Download CSV
+                                            </a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr class="no-data-row">
+                            <td colspan="8" class="no-data-cell">
+                                <div class="no-data-message">
+                                    <i class="fas fa-inbox"></i>
+                                    <h4>No orders found</h4>
+                                    <p>Try adjusting your filters to see more results.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination info -->
+            {% if filtered_orders|length > 10 %}
+            <div class="pagination-container">
+                <div class="pagination-info">
+                    Showing {{ filtered_orders|length }} orders
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Delivery Statistics Table -->
+    <div class="insights-section">
+        <div class="section-header">
+            <h2 class="section-title"><i class="fas fa-truck"></i> Delivery Statistics Overview</h2>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-chart-bar"></i> Metric</th>
+                        <th><i class="fas fa-hashtag"></i> Count</th>
+                        <th><i class="fas fa-percentage"></i> Percentage</th>
+                        <th><i class="fas fa-rupee-sign"></i> Revenue Impact</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                <strong>Successful Deliveries</strong>
+                            </div>
+                        </td>
+                        <td><span class="badge bg-success">{{ delivery_stats.successful_deliveries }}</span></td>
+                        <td>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-success" role="progressbar" 
+                                     style="width: {{ delivery_stats.success_rate or 0 }}%">
+                                    {{ "{:.1f}".format(delivery_stats.success_rate or 0) }}%
+                                </div>
+                            </div>
+                        </td>
+                        <td><strong class="text-success">Rs. {{ "{:,.0f}".format(financial_summary.total_revenue or 0) }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-times-circle text-danger me-2"></i>
+                                <strong>Cancelled Deliveries</strong>
+                            </div>
+                        </td>
+                        <td><span class="badge bg-danger">{{ delivery_stats.canceled_orders }}</span></td>
+                        <td>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-danger" role="progressbar" 
+                                     style="width: {{ delivery_stats.cancellation_rate or 0 }}%">
+                                    {{ "{:.1f}".format(delivery_stats.cancellation_rate or 0) }}%
+                                </div>
+                            </div>
+                        </td>
+                        <td><strong class="text-danger">Rs. 0</strong></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-clock text-warning me-2"></i>
+                                <strong>Pending Orders</strong>
+                            </div>
+                        </td>
+                        <td><span class="badge bg-warning">{{ delivery_stats.pending_orders }}</span></td>
+                        <td>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-warning" role="progressbar" 
+                                     style="width: {{ "{:.1f}".format((delivery_stats.pending_orders / delivery_stats.total_orders * 100) if delivery_stats.total_orders > 0 else 0) }}%">
+                                    {{ "{:.1f}".format((delivery_stats.pending_orders / delivery_stats.total_orders * 100) if delivery_stats.total_orders > 0 else 0) }}%
+                                </div>
+                            </div>
+                        </td>
+                        <td><strong class="text-warning">Pending</strong></td>
+                    </tr>
+                    <tr class="table-info">
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-calculator text-primary me-2"></i>
+                                <strong>Total Orders</strong>
+                            </div>
+                        </td>
+                        <td><span class="badge bg-primary">{{ delivery_stats.total_orders }}</span></td>
+                        <td>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-primary" role="progressbar" style="width: 100%">
+                                    100%
+                                </div>
+                            </div>
+                        </td>
+                        <td><strong class="text-primary">Rs. {{ "{:,.0f}".format(financial_summary.total_revenue or 0) }}</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Small Charts Section -->
+    <div class="small-charts-section">
+        <div class="small-chart-container">
+            <div class="small-chart-card">
+                <h4 class="small-chart-title">
+                    <i class="fas fa-chart-pie"></i> Delivery Status
+                </h4>
+                <div class="small-chart-content">
+                    <canvas id="deliveryPieChart" width="200" height="200"></canvas>
+                </div>
+            </div>
+            
+            <div class="small-chart-card">
+                <h4 class="small-chart-title">
+                    <i class="fas fa-chart-line"></i> Revenue Trend
+                </h4>
+                <div class="small-chart-content">
+                    <canvas id="revenueLineChart" width="200" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Customer Reviews Section -->
+    <div class="insights-section">
+        <div class="section-header">
+            <h2 class="section-title"><i class="fas fa-star"></i> Customer Reviews</h2>
+            <form method="GET" class="filters-container">
+                <div class="filter-group">
+                    <label class="filter-label">Sort By</label>
+                    <select name="sort_reviews" class="filter-input" onchange="this.form.submit()">
+                        <option value="date" {% if sort_reviews == 'date' %}selected{% endif %}>Latest First</option>
+                        <option value="rating" {% if sort_reviews == 'rating' %}selected{% endif %}>Highest Rating</option>
+                    </select>
+                </div>
+                
+                <input type="hidden" name="status" value="{{ status_filter }}">
+                <input type="hidden" name="date_from" value="{{ date_from or '' }}">
+                <input type="hidden" name="date_to" value="{{ date_to or '' }}">
+            </form>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-user"></i> Customer</th>
+                        <th><i class="fas fa-box"></i> Product</th>
+                        <th><i class="fas fa-star"></i> Rating</th>
+                        <th><i class="fas fa-comment"></i> Review</th>
+                        <th><i class="fas fa-calendar-alt"></i> Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for review in customer_reviews %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-user text-primary me-2"></i>
+                                <strong>{{ review.customer_name }}</strong>
+                            </div>
+                        </td>
+                        <td><strong>{{ review.product_name }}</strong></td>
+                        <td>
+                            <span class="text-warning">
+                                {% for i in range(review.rating) %}★{% endfor %}
+                                {% for i in range(5 - review.rating) %}☆{% endfor %}
+                            </span>
+                            <small class="text-muted">({{ review.rating }}/5)</small>
+                        </td>
+                        <td>{{ review.review_text }}</td>
+                        <td><strong>{{ review.review_date.strftime('%B %d, %Y') if review.review_date else 'N/A' }}</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Financial Summary Section -->
+    <div class="insights-section">
+        <div class="section-header">
+            <h2 class="section-title"><i class="fas fa-chart-bar"></i> Financial Summary</h2>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-chart-line"></i> Metric</th>
+                        <th><i class="fas fa-calculator"></i> Value</th>
+                        <th><i class="fas fa-info-circle"></i> Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><i class="fas fa-dollar-sign text-success"></i> Total Revenue</td>
+                        <td><strong>Rs. {{ "{:,.0f}".format(financial_summary.total_revenue or 0) }}</strong></td>
+                        <td><span class="badge bg-success">This Period</span></td>
+                    </tr>
+                    <tr>
+                        <td><i class="fas fa-calculator text-primary"></i> Average Order Value</td>
+                        <td><strong>Rs. {{ "{:,.0f}".format(financial_summary.average_order_value or 0) }}</strong></td>
+                        <td><span class="badge bg-primary">Per Order</span></td>
+                    </tr>
+                    <tr>
+                        <td><i class="fas fa-shopping-cart text-warning"></i> Total Orders</td>
+                        <td><strong>{{ financial_summary.total_orders }}</strong></td>
+                        <td><span class="badge bg-warning">Completed</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="delivery-areas-section">
+            <div class="section-header">
+                <h4 class="section-title"><i class="fas fa-map-marker-alt"></i> Most Active Delivery Areas</h4>
+                <div class="areas-summary">
+                    <span class="areas-count">{{ financial_summary.top_delivery_areas|length }} Active Areas</span>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-map-marker-alt"></i> Delivery Area</th>
+                            <th><i class="fas fa-location-dot"></i> Zone Type</th>
+                            <th><i class="fas fa-shopping-cart"></i> Orders</th>
+                            <th><i class="fas fa-chart-bar"></i> Activity Level</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for area in financial_summary.top_delivery_areas %}
+                        <tr>
+                            <td><i class="fas fa-location-dot text-primary"></i> {{ area.area }}</td>
+                            <td><span class="badge bg-secondary">Delivery Zone</span></td>
+                            <td><strong>{{ area.order_count }}</strong> Orders</td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                         style="width: {{ (area.order_count / (financial_summary.top_delivery_areas[0].order_count if financial_summary.top_delivery_areas else 1)) * 100 }}%"
+                                         aria-valuenow="{{ (area.order_count / (financial_summary.top_delivery_areas[0].order_count if financial_summary.top_delivery_areas else 1)) * 100 }}"
+                                         aria-valuemin="0" aria-valuemax="100">
+                                        {{ "%.0f"|format((area.order_count / (financial_summary.top_delivery_areas[0].order_count if financial_summary.top_delivery_areas else 1)) * 100) }}%
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Small Charts Initialization
+function initializeSmallCharts() {
+    // Initialize Delivery Status Pie Chart
+    const deliveryCtx = document.getElementById('deliveryPieChart');
+    if (deliveryCtx) {
+        const deliveryData = {
+            labels: ['Completed', 'Cancelled', 'Pending'],
+            datasets: [{
+                data: [
+                    {{ delivery_stats.successful_deliveries|default(0) }},
+                    {{ delivery_stats.canceled_orders|default(0) }},
+                    {{ delivery_stats.pending_orders|default(0) }}
+                ],
+                backgroundColor: [
+                    '#28a745',
+                    '#dc3545', 
+                    '#ffc107'
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        };
+        
+        new Chart(deliveryCtx, {
+            type: 'pie',
+            data: deliveryData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: 10
+                            },
+                            padding: 10
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Initialize Revenue Trend Line Chart
+    const revenueCtx = document.getElementById('revenueLineChart');
+    if (revenueCtx) {
+        {% set trends = monthly_trends.trends|default([]) %}
+        const revenueData = {
+            labels: [
+                {% if trends %}
+                    {% for trend in trends[-6:] %}
+                        '{{ trend.month }}'{% if not loop.last %},{% endif %}
+                    {% endfor %}
+                {% else %}
+                    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'
+                {% endif %}
+            ],
+            datasets: [{
+                label: 'Revenue (Rs.)',
+                data: [
+                    {% if trends %}
+                        {% for trend in trends[-6:] %}
+                            {{ trend.revenue|default(0) }}{% if not loop.last %},{% endif %}
+                        {% endfor %}
+                    {% else %}
+                        0, 0, 0, 0, 0, 0
+                    {% endif %}
+                ],
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        };
+        
+        new Chart(revenueCtx, {
+            type: 'line',
+            data: revenueData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            font: {
+                                size: 10
+                            }
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: {
+                                size: 10
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+}
+
+
+
+
+
+// Order Analytics JavaScript Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize small charts
+    initializeSmallCharts();
+    
+    // Initialize order analytics
+    initializeOrderAnalytics();
+    
+    // Update summary cards
+    updateOrderSummaryCards();
+    
+    // Initialize table sorting
+    initializeTableSorting();
+    
+    // Initialize pagination
+    initializePagination();
+});
+
+function initializeOrderAnalytics() {
+    // Reset filters button
+    const resetBtn = document.querySelector('.reset-filters-btn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+            document.getElementById('status-filter').value = '';
+            document.getElementById('from-date').value = '';
+            document.getElementById('to-date').value = '';
+            // Trigger filter update
+            applyFilters();
+        });
+    }
+    
+    // Filter form submission
+    const filterForm = document.querySelector('.filter-form');
+    if (filterForm) {
+        filterForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            applyFilters();
+        });
+    }
+    
+    // Real-time filter updates
+    const filterInputs = document.querySelectorAll('#status-filter, #from-date, #to-date');
+    filterInputs.forEach(input => {
+        input.addEventListener('change', applyFilters);
+    });
+}
+
+function updateOrderSummaryCards() {
+    const orders = {{ filtered_orders|tojson|safe }};
+    
+    // Calculate summary statistics
+    const totalOrders = orders.length;
+    const completedOrders = orders.filter(order => order.status === 'Delivered' || order.status === 'Completed').length;
+    const cancelledOrders = orders.filter(order => order.status === 'Cancelled').length;
+    const pendingOrders = orders.filter(order => order.status === 'Pending' || order.status === 'Processing').length;
+    
+    // Calculate total amounts
+    const totalAmount = orders.reduce((sum, order) => sum + (parseFloat(order.total_amount) || 0), 0);
+    const completedAmount = orders.filter(order => order.status === 'Delivered' || order.status === 'Completed')
+                                  .reduce((sum, order) => sum + (parseFloat(order.total_amount) || 0), 0);
+    const cancelledAmount = orders.filter(order => order.status === 'Cancelled')
+                                  .reduce((sum, order) => sum + (parseFloat(order.total_amount) || 0), 0);
+    const pendingAmount = orders.filter(order => order.status === 'Pending' || order.status === 'Processing')
+                                .reduce((sum, order) => sum + (parseFloat(order.total_amount) || 0), 0);
+    
+    // Update summary cards
+    updateSummaryCard('total-orders', totalOrders, totalAmount);
+    updateSummaryCard('completed-orders', completedOrders, completedAmount);
+    updateSummaryCard('cancelled-orders', cancelledOrders, cancelledAmount);
+    updateSummaryCard('pending-orders', pendingOrders, pendingAmount);
+    
+    // Update order count badge
+    const orderCountBadge = document.querySelector('.order-count-badge');
+    if (orderCountBadge) {
+        orderCountBadge.textContent = `${totalOrders} Orders`;
+    }
+}
+
+function updateSummaryCard(cardId, count, amount) {
+    const card = document.getElementById(cardId);
+    if (card) {
+        const countElement = card.querySelector('.summary-count');
+        const amountElement = card.querySelector('.summary-amount');
+        
+        if (countElement) countElement.textContent = count;
+        if (amountElement) amountElement.textContent = `Rs. ${amount.toLocaleString()}`;
+    }
+}
+
+function initializeTableSorting() {
+    const sortableHeaders = document.querySelectorAll('.sortable');
+    sortableHeaders.forEach(header => {
+        header.addEventListener('click', function() {
+            const column = this.dataset.column;
+            const currentSort = this.dataset.sort || 'asc';
+            const newSort = currentSort === 'asc' ? 'desc' : 'asc';
+            
+            // Reset all other headers
+            sortableHeaders.forEach(h => {
+                h.classList.remove('sort-asc', 'sort-desc');
+                h.dataset.sort = '';
+            });
+            
+            // Set current header
+            this.dataset.sort = newSort;
+            this.classList.add(`sort-${newSort}`);
+            
+            // Sort table
+            sortTable(column, newSort);
+        });
+    });
+}
+
+function sortTable(column, direction) {
+    const tbody = document.querySelector('#orders-table tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    
+    rows.sort((a, b) => {
+        let aVal, bVal;
+        
+        switch(column) {
+            case 'order_id':
+                aVal = a.cells[0].textContent.trim();
+                bVal = b.cells[0].textContent.trim();
+                break;
+            case 'customer':
+                aVal = a.cells[1].textContent.trim();
+                bVal = b.cells[1].textContent.trim();
+                break;
+            case 'date':
+                aVal = new Date(a.cells[2].textContent.trim());
+                bVal = new Date(b.cells[2].textContent.trim());
+                break;
+            case 'status':
+                aVal = a.cells[3].textContent.trim();
+                bVal = b.cells[3].textContent.trim();
+                break;
+            case 'amount':
+                aVal = parseFloat(a.cells[4].textContent.replace(/[^\d.-]/g, ''));
+                bVal = parseFloat(b.cells[4].textContent.replace(/[^\d.-]/g, ''));
+                break;
+            case 'area':
+                aVal = a.cells[5].textContent.trim();
+                bVal = b.cells[5].textContent.trim();
+                break;
+            default:
+                return 0;
+        }
+        
+        if (direction === 'asc') {
+            return aVal > bVal ? 1 : -1;
+        } else {
+            return aVal < bVal ? 1 : -1;
+        }
+    });
+    
+    // Re-append sorted rows
+    rows.forEach(row => tbody.appendChild(row));
+}
+
+function initializePagination() {
+    const paginationContainer = document.querySelector('.pagination-controls');
+    if (paginationContainer) {
+        const prevBtn = paginationContainer.querySelector('.prev-page');
+        const nextBtn = paginationContainer.querySelector('.next-page');
+        
+        if (prevBtn) {
+            prevBtn.addEventListener('click', function() {
+                changePage(-1);
+            });
+        }
+        
+        if (nextBtn) {
+            nextBtn.addEventListener('click', function() {
+                changePage(1);
+            });
+        }
+    }
+}
+
+function changePage(direction) {
+    // This would typically involve AJAX calls to the server
+    // For now, we'll just show a message
+    console.log(`Changing page by ${direction}`);
+    // In a real implementation, you would make an AJAX call here
+}
+
+function applyFilters() {
+    const status = document.getElementById('status-filter').value;
+    const fromDate = document.getElementById('from-date').value;
+    const toDate = document.getElementById('to-date').value;
+    
+    // Build query parameters
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    if (fromDate) params.append('from_date', fromDate);
+    if (toDate) params.append('to_date', toDate);
+    
+    // Reload page with filters
+    const currentUrl = window.location.pathname;
+    const newUrl = params.toString() ? `${currentUrl}?${params.toString()}` : currentUrl;
+    window.location.href = newUrl;
+}
+
+// View order details
+function viewOrder(orderId) {
+    window.open(`/admin/orders/${orderId}`, '_blank');
+}
+
+// View order details
+function viewOrderDetails(orderId) {
+    window.location.href = `/admin/orders/${orderId}`;
+}
+
+// Edit order
+function editOrder(orderId) {
+    window.location.href = `/admin/orders/${orderId}`;
+}
+
+// Mini charts are now simple HTML displays without Chart.js
+
+// Order selection and download functionality
+let selectedOrders = new Set();
+
+function toggleSelectAll() {
+    const selectAllCheckbox = document.getElementById('select-all');
+    const orderCheckboxes = document.querySelectorAll('.order-checkbox');
+    
+    orderCheckboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+        if (selectAllCheckbox.checked) {
+            selectedOrders.add(checkbox.value);
+        } else {
+            selectedOrders.delete(checkbox.value);
+        }
+    });
+    
+    updateDownloadButtons();
+}
+
+function toggleOrderSelection(orderId) {
+    if (selectedOrders.has(orderId)) {
+        selectedOrders.delete(orderId);
+    } else {
+        selectedOrders.add(orderId);
+    }
+    
+    // Update select all checkbox
+    const orderCheckboxes = document.querySelectorAll('.order-checkbox');
+    const selectAllCheckbox = document.getElementById('select-all');
+    const checkedCount = document.querySelectorAll('.order-checkbox:checked').length;
+    
+    selectAllCheckbox.checked = checkedCount === orderCheckboxes.length;
+    selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < orderCheckboxes.length;
+    
+    updateDownloadButtons();
+}
+
+function updateDownloadButtons() {
+    const selectionActions = document.getElementById('selection-actions');
+    const selectedCount = document.getElementById('selectedCount');
+    
+    const hasSelection = selectedOrders.size > 0;
+    
+    // Show/hide selection actions
+    if (selectionActions) {
+        selectionActions.style.display = hasSelection ? 'block' : 'none';
+    }
+    
+    // Update selected count
+    if (selectedCount) {
+        selectedCount.textContent = `${selectedOrders.size} selected`;
+    }
+}
+
+function clearSelection() {
+    selectedOrders.clear();
+    
+    // Uncheck all checkboxes
+    const selectAllCheckbox = document.getElementById('select-all');
+    const orderCheckboxes = document.querySelectorAll('.order-checkbox');
+    
+    if (selectAllCheckbox) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+    }
+    
+    orderCheckboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    
+    updateDownloadButtons();
+}
+
+function downloadSelectedOrders(format = 'csv') {
+    if (selectedOrders.size === 0) {
+        alert('Please select at least one order to download.');
+        return;
+    }
+    
+    const orderIds = Array.from(selectedOrders);
+    
+    if (format === 'pdf') {
+        downloadOrdersPDF(orderIds);
+    } else {
+        downloadOrdersCSV(orderIds);
+    }
+}
+
+function downloadAllOrders(format = 'csv') {
+    if (format === 'pdf') {
+        downloadOrdersPDF([], true);  // Pass empty array and export_all=true
+    } else {
+        downloadOrdersCSV([], true);  // Pass empty array and export_all=true
+    }
+}
+
+function downloadOrdersCSV(orderIds, exportAll = false) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/admin/download-orders-csv';
+    form.style.display = 'none';
+    
+    // Add CSRF token if available
+    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+    if (csrfToken) {
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = csrfToken.getAttribute('content');
+        form.appendChild(csrfInput);
+    }
+    
+    // Add export_all parameter if needed
+    if (exportAll) {
+        const exportAllInput = document.createElement('input');
+        exportAllInput.type = 'hidden';
+        exportAllInput.name = 'export_all';
+        exportAllInput.value = 'true';
+        form.appendChild(exportAllInput);
+    } else {
+        // Add order IDs
+        orderIds.forEach(orderId => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'order_ids';
+            input.value = orderId;
+            form.appendChild(input);
+        });
+    }
+    
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+}
+
+function downloadOrdersPDF(orderIds, exportAll = false) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/admin/download-orders-pdf';
+    form.style.display = 'none';
+    
+    // Add CSRF token if available
+    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+    if (csrfToken) {
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = csrfToken.getAttribute('content');
+        form.appendChild(csrfInput);
+    }
+    
+    // Add export_all parameter if needed
+    if (exportAll) {
+        const exportAllInput = document.createElement('input');
+        exportAllInput.type = 'hidden';
+        exportAllInput.name = 'export_all';
+        exportAllInput.value = 'true';
+        form.appendChild(exportAllInput);
+    } else {
+        // Add order IDs
+        orderIds.forEach(orderId => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'order_ids';
+            input.value = orderId;
+            form.appendChild(input);
+        });
+    }
+    
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+}
+
+function downloadSingleOrder(orderId, format = 'pdf') {
+    if (format === 'pdf') {
+        downloadOrdersPDF([orderId]);
+    } else {
+        downloadOrdersCSV([orderId]);
+    }
+}
+
+// Initialize order selection functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize existing functionality
+    initializeOrderAnalytics();
+    initializeSmallCharts();
+    initializeTableSorting();
+    initializePagination();
+    
+    // Initialize order selection
+    const selectAllCheckbox = document.getElementById('select-all');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', toggleSelectAll);
+    }
+    
+    const orderCheckboxes = document.querySelectorAll('.order-checkbox');
+    orderCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            toggleOrderSelection(this.value);
+        });
+    });
+    
+    // Initialize download buttons
+    updateDownloadButtons();
+});
+</script>
+
+
+{% endblock %}

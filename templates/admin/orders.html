@@ -15,10 +15,20 @@
                     <i class="fas fa-sync-alt me-2"></i>
                     Refresh
                 </button>
-                <button type="button" class="btn btn-outline-success" onclick="exportOrders()">
-                    <i class="fas fa-download me-2"></i>
-                    Export
-                </button>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-download me-2"></i>
+                        Export
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="exportOrdersPDF()">
+                            <i class="fas fa-file-pdf me-2 text-danger"></i>Export as PDF
+                        </a></li>
+                        <li><a class="dropdown-item" href="#" onclick="exportOrdersCSV()">
+                            <i class="fas fa-file-csv me-2 text-success"></i>Export as CSV
+                        </a></li>
+                    </ul>
+                </div>
             </div>
         </div>
         
@@ -88,7 +98,7 @@
                     </thead>
                     <tbody>
                         {% for order in orders %}
-                        <tr data-status="{{ order.status }}" data-date="{{ order.created_at.isoformat() }}">
+                        <tr data-status="{{ order.status }}" data-date="{{ order.created_at.isoformat() if order.created_at else '' }}">
                             <td>
                                 <strong>#{{ order.order_number }}</strong>
                                 {% if order.special_instructions %}
@@ -101,9 +111,9 @@
                             
                             <td>
                                 <div>
-                                    <strong>{{ order.customer.full_name }}</strong>
+                                    <strong>{{ order.user.full_name }}</strong>
                                     <br>
-                                    <small class="text-muted">{{ order.customer.email }}</small>
+                                    <small class="text-muted">{{ order.user.email }}</small>
                                     <br>
                                     <small class="text-muted">
                                         <i class="fas fa-phone me-1"></i>{{ order.delivery_phone }}
@@ -130,7 +140,7 @@
                             
                             <td>
                                 <select class="form-select form-select-sm status-select" 
-                                        data-order-id="{{ order.id }}" 
+                                        data-order-id="{{ order._id }}" 
                                         onchange="updateOrderStatus(this)">
                                     <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
                                     <option value="confirmed" {% if order.status == 'confirmed' %}selected{% endif %}>Confirmed</option>
@@ -149,27 +159,27 @@
                             
                             <td>
                                 <div>
-                                    {{ order.created_at.strftime('%b %d') }}
-                                    <br>
-                                    <small class="text-muted">{{ order.created_at.strftime('%I:%M %p') }}</small>
+                                    {{ order.created_at.strftime('%b %d') if order.created_at else 'N/A' }}
+                            <br>
+                            <small class="text-muted">{{ order.created_at.strftime('%I:%M %p') if order.created_at else '' }}</small>
                                 </div>
                             </td>
                             
                             <td>
                                 <div class="btn-group" role="group">
-                                    <a href="{{ url_for('order_detail', order_id=order.id) }}" 
+                                    <a href="{{ url_for('admin.order_detail', order_id=order._id) }}" 
                                        class="btn btn-outline-primary btn-sm" title="View Details">
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     
                                     <button class="btn btn-outline-info btn-sm" 
-                                            title="Print Order" onclick="printOrder({{ order.id }})">
+                                            title="Print Order" onclick="printOrder('{{ order._id }}')">
                                         <i class="fas fa-print"></i>
                                     </button>
                                     
                                     {% if order.status not in ['delivered', 'cancelled'] %}
                                     <button class="btn btn-outline-success btn-sm" 
-                                            title="Send Notification" onclick="sendNotification({{ order.id }})">
+                                            title="Send Notification" onclick="sendNotification('{{ order._id }}')">
                                         <i class="fas fa-bell"></i>
                                     </button>
                                     {% endif %}
@@ -198,21 +208,47 @@ function updateOrderStatus(selectElement) {
     const newStatus = selectElement.value;
     const oldStatus = selectElement.dataset.oldStatus || 'pending';
     
-    if (confirm(`Update order status to "${newStatus}"?`)) {
-        // Implement status update API call
-        console.log(`Updating order ${orderId} from ${oldStatus} to ${newStatus}`);
-        
-        // Store old status for potential rollback
-        selectElement.dataset.oldStatus = newStatus;
-        
-        // Update row styling based on status
-        const row = selectElement.closest('tr');
-        row.setAttribute('data-status', newStatus);
-        
-        // Show success message
-        showToast('Order status updated successfully!', 'success');
+    if (confirm(`Update order status to "${newStatus.replace('_', ' ').toUpperCase()}"?`)) {
+        fetch(`/admin/orders/${orderId}/update-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Store new status for future reference
+                selectElement.dataset.oldStatus = newStatus;
+                
+                // Update row styling based on status
+                const row = selectElement.closest('tr');
+                row.setAttribute('data-status', newStatus);
+                
+                // Update status badge
+                const statusBadge = row.querySelector('.badge');
+                if (statusBadge) {
+                    statusBadge.textContent = newStatus.replace('_', ' ').toUpperCase();
+                    statusBadge.className = `badge bg-${getStatusColor(newStatus)}`;
+                }
+                
+                showToast(data.message, 'success');
+            } else {
+                // Revert selection on error
+                selectElement.value = oldStatus;
+                showToast(data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Revert selection on error
+            selectElement.value = oldStatus;
+            showToast('Error updating order status', 'danger');
+        });
     } else {
-        // Revert selection
+        // Revert selection if user cancels
         selectElement.value = oldStatus;
     }
 }
@@ -271,20 +307,105 @@ function refreshOrders() {
     location.reload();
 }
 
+function exportOrdersPDF() {
+    // Show loading state
+    showToast('Generating PDF export...', 'info');
+    
+    // Get current status filter if any
+    const statusFilter = document.getElementById('statusFilter').value;
+    let exportUrl = '{{ url_for("admin.export_orders") }}';
+    if (statusFilter) {
+        exportUrl += '?status=' + encodeURIComponent(statusFilter);
+    }
+    
+    // Create a temporary link to trigger download
+    const link = document.createElement('a');
+    link.href = exportUrl;
+    link.download = '';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Show success message after a short delay
+    setTimeout(() => {
+        showToast('PDF export completed!', 'success');
+    }, 1000);
+}
+
+function exportOrdersCSV() {
+    // Show loading state
+    showToast('Generating CSV export...', 'info');
+    
+    // Get current status filter if any
+    const statusFilter = document.getElementById('statusFilter').value;
+    let exportUrl = '{{ url_for("admin.export_orders_csv") }}';
+    if (statusFilter) {
+        exportUrl += '?status=' + encodeURIComponent(statusFilter);
+    }
+    
+    // Create a temporary link to trigger download
+    const link = document.createElement('a');
+    link.href = exportUrl;
+    link.download = '';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Show success message after a short delay
+    setTimeout(() => {
+        showToast('CSV export completed!', 'success');
+    }, 1000);
+}
+
+// Legacy function for backward compatibility
 function exportOrders() {
-    alert('Export functionality would be implemented here');
+    exportOrdersPDF();
 }
 
 function printOrder(orderId) {
-    // Open order detail page in new window for printing
-    window.open(`/order/${orderId}`, '_blank');
+    // Open admin order detail page in new window for printing
+    window.open(`/admin/orders/${orderId}`, '_blank');
 }
 
 function sendNotification(orderId) {
     if (confirm('Send status update notification to customer?')) {
-        alert(`Notification sending for order ${orderId} would be implemented here`);
-        showToast('Notification sent!', 'success');
+        fetch(`/admin/orders/${orderId}/send-notification`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message, 'success');
+            } else {
+                showToast(data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error sending notification', 'danger');
+        });
     }
+}
+
+function getCSRFToken() {
+    const token = document.querySelector('meta[name="csrf-token"]');
+    return token ? token.getAttribute('content') : '';
+}
+
+function getStatusColor(status) {
+    const statusColors = {
+        'pending': 'warning',
+        'confirmed': 'info',
+        'processing': 'primary',
+        'out_for_delivery': 'secondary',
+        'delivered': 'success',
+        'cancelled': 'danger'
+    };
+    return statusColors[status] || 'secondary';
 }
 
 function showToast(message, type = 'info') {

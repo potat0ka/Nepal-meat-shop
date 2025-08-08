@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Invoice - {{ invoice.invoice_number }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="invoice-container" id="invoice">
+        <!-- Invoice Header -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h2 class="text-primary">मासु पसल / Meat Shop</h2>
+                <p class="mb-1">Fresh Meat Delivery Service</p>
+                <p class="mb-1">Kathmandu, Nepal</p>
+                <p class="mb-1">Phone: +977-1-4444444</p>
+                <p class="mb-0">Email: info@meatshop.com</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <h3 class="text-primary">INVOICE</h3>
+                <p class="mb-1"><strong>Invoice #:</strong> {{ invoice.invoice_number }}</p>
+                <p class="mb-1"><strong>Date:</strong> {{ invoice.invoice_date.strftime('%Y-%m-%d') }}</p>
+                <p class="mb-0"><strong>Order #:</strong> {{ order.order_number }}</p>
+            </div>
+        </div>
+
+        <!-- Customer Information -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h5>Bill To:</h5>
+                <p class="mb-1"><strong>{{ order.user.full_name }}</strong></p>
+                <p class="mb-1" style="white-space: pre-line;">{{ order.formatted_delivery_address }}</p>
+                <p class="mb-0">Phone: {{ order.delivery_phone }}</p>
+            </div>
+            <div class="col-md-6">
+                <h5>Order Details:</h5>
+                <p class="mb-1"><strong>Status:</strong> {{ order.get_status_nepali() }}</p>
+                <p class="mb-1"><strong>Payment Method:</strong> {{ order.payment_method.upper() }}</p>
+                <p class="mb-0"><strong>Payment Status:</strong> {{ order.payment_status.title() }}</p>
+            </div>
+        </div>
+
+        <!-- Order Items -->
+        <div class="table-responsive mb-4">
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th>Item</th>
+                        <th>Quantity (kg)</th>
+                        <th>Price per kg</th>
+                        <th class="text-end">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in order.order_items %}
+                    <tr>
+                        <td>
+                            <strong>{{ item.product.name }}</strong><br>
+                            <small class="text-muted">{{ item.product.name_nepali }}</small>
+                        </td>
+                        <td>{{ "%.2f"|format(item.quantity_kg) }} kg</td>
+                        <td>रू {{ "%.2f"|format(item.price_per_kg) }}</td>
+                        <td class="text-end">रू {{ "%.2f"|format(item.total_price) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Invoice Totals -->
+        <div class="row">
+            <div class="col-md-6">
+                {% if order.special_instructions %}
+                <h6>Special Instructions:</h6>
+                <p class="text-muted">{{ order.special_instructions }}</p>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <table class="table table-sm">
+                    <tr>
+                        <td><strong>Subtotal:</strong></td>
+                        <td class="text-end">रू {{ "%.2f"|format(invoice.subtotal) }}</td>
+                    </tr>
+                    {% if invoice.tax_amount > 0 %}
+                    <tr>
+                        <td><strong>Tax:</strong></td>
+                        <td class="text-end">रू {{ "%.2f"|format(invoice.tax_amount) }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if invoice.delivery_charge > 0 %}
+                    <tr>
+                        <td><strong>Delivery Charge:</strong></td>
+                        <td class="text-end">रू {{ "%.2f"|format(invoice.delivery_charge) }}</td>
+                    </tr>
+                    {% endif %}
+                    <tr class="table-primary">
+                        <td><strong>Total Amount:</strong></td>
+                        <td class="text-end"><strong>रू {{ "%.2f"|format(invoice.total_amount) }}</strong></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <hr>
+                <p class="text-center text-muted">
+                    <small>
+                        Thank you for your business! / व्यापारको लागि धन्यवाद!<br>
+                        For any queries, please contact us at info@meatshop.com or +977-1-4444444
+                    </small>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row mt-4 no-print">
+        <div class="col-12 text-center">
+            <button onclick="window.print()" class="btn btn-primary me-2">
+                <i class="fas fa-print"></i> Print Invoice
+            </button>
+            <a href="{{ url_for('order_detail', order_id=order.id) }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Order
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .invoice-container {
+        margin: 0;
+        padding: 20px;
+    }
+    
+    body {
+        font-size: 12px;
+    }
+    
+    .container {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+    }
+}
+
+.invoice-container {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.text-primary {
+    color: #dc3545 !important;
+}
+</style>
+{% endblock %}

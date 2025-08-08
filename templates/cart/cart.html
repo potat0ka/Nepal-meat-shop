@@ -15,12 +15,12 @@
             <div class="col-md-8">
                 <!-- Cart Items -->
                 {% for item in cart_items %}
-                <div class="card mb-3">
+                <div class="card mb-3 cart-item">
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col-md-2">
                                 {% if item.product.image_url %}
-                                <img src="{{ url_for('uploaded_file', filename=item.product.image_url) }}" 
+                                <img src="{{ url_for('main.uploaded_file', filename=item.product.image_url) }}" 
                                      class="img-fluid rounded" alt="{{ item.product.name }}">
                                 {% else %}
                                 <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 80px;">
@@ -30,32 +30,31 @@
                             </div>
 
                             <div class="col-md-4">
-                                <h6 class="mb-1">{{ item.product.name }}</h6>
+                                <h6 class="mb-1 product-name">{{ item.product.name }}</h6>
                                 <p class="mb-1 small text-muted">{{ item.product.name_nepali }}</p>
                                 <div class="mb-1">
                                     <span class="badge bg-info">{{ item.product.get_freshness_label() }}</span>
                                     <span class="badge bg-secondary">{{ item.product.meat_type.title() }}</span>
                                 </div>
                                 <p class="mb-0 small">
-                                    <span class="text-primary fw-bold">रू {{ "%.0f"|format(item.product.price) }}</span> /kg
+                                    <span class="text-primary fw-bold" data-price="{{ item.product.price }}">रू {{ "%.0f"|format(item.product.price) }}</span> /kg
                                 </p>
                             </div>
 
                             <div class="col-md-3">
-                                <form method="POST" action="{{ url_for('update_cart') }}" style="display: inline;">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <form method="POST" action="{{ url_for('orders.update_cart') }}" style="display: inline;" class="quantity-form">
                                     <input type="hidden" name="product_id" value="{{ item.product.id }}"/>
                                     <div class="input-group">
-                                        <button class="btn btn-outline-secondary" type="button" onclick="decreaseQuantity({{ loop.index0 }})">-</button>
-                                        <input type="number" class="form-control text-center" 
+                                        <button class="btn btn-outline-secondary decrease-btn" type="button" data-index="{{ loop.index0 }}">-</button>
+                                        <input type="number" class="form-control text-center quantity-input" 
                                                name="quantity"
                                                value="{{ item.quantity }}" 
                                                min="{{ item.product.min_order_kg }}" 
                                                max="{{ item.product.stock_kg }}"
                                                step="0.1"
                                                id="quantity_{{ loop.index0 }}"
-                                               onchange="this.form.submit()">
-                                        <button class="btn btn-outline-secondary" type="button" onclick="increaseQuantity({{ loop.index0 }})">+</button>
+                                               data-index="{{ loop.index0 }}">
+                                        <button class="btn btn-outline-secondary increase-btn" type="button" data-index="{{ loop.index0 }}">+</button>
                                     </div>
                                 </form>
                                 <small class="text-muted d-block mt-1">
@@ -64,12 +63,10 @@
                             </div>
 
                             <div class="col-md-2 text-end">
-                                <p class="mb-2 fw-bold">रू {{ "%.0f"|format(item.total) }}</p>
-                                <form method="POST" action="{{ url_for('remove_from_cart') }}" class="d-inline">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <p class="mb-2 fw-bold total-price">रू {{ "%.0f"|format(item.total) }}</p>
+                                <form method="POST" action="{{ url_for('orders.remove_from_cart') }}" class="d-inline">
                                     <input type="hidden" name="product_id" value="{{ item.product.id }}">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm" 
-                                            onclick="return confirm('Remove this item from cart?')">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
@@ -100,12 +97,12 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between mb-2">
                             <span>Subtotal:</span>
-                            <span class="fw-bold">रू {{ "%.0f"|format(total) }}</span>
+                            <span class="fw-bold cart-subtotal">रू {{ "%.0f"|format(total) }}</span>
                         </div>
 
                         <div class="d-flex justify-content-between mb-2">
                             <span>Delivery Charge:</span>
-                            <span>
+                            <span class="delivery-charge">
                                 {% if total >= 2000 %}
                                 <span class="text-success">FREE</span>
                                 {% elif total >= 1000 %}
@@ -120,7 +117,7 @@
 
                         <div class="d-flex justify-content-between mb-3">
                             <span class="fw-bold">Total:</span>
-                            <span class="fw-bold text-primary h5">
+                            <span class="fw-bold text-primary h5 cart-total">
                                 रू {{ "%.0f"|format(total + (0 if total >= 2000 else (25 if total >= 1000 else 50))) }}
                             </span>
                         </div>
@@ -134,12 +131,12 @@
                         </div>
                         {% endif %}
 
-                        <a href="{{ url_for('checkout') }}" class="btn btn-primary w-100 mb-2">
-                            <i class="fas fa-credit-card me-2"></i>
-                            Proceed to Checkout
-                        </a>
-
-                        <a href="{{ url_for('product_list') }}" class="btn btn-outline-secondary w-100">
+                        <a href="{{ url_for('orders.checkout') }}" class="btn btn-primary w-100 mb-2">
+                        <i class="fas fa-credit-card me-2"></i>
+                        Proceed to Checkout / चेकआउट गर्नुहोस्
+                    </a>
+                    
+                    <a href="{{ url_for('products.list') }}" class="btn btn-outline-secondary w-100">
                             <i class="fas fa-arrow-left me-2"></i>
                             Continue Shopping
                         </a>
@@ -169,7 +166,7 @@
             <i class="fas fa-shopping-cart fa-5x text-muted mb-4"></i>
             <h4>Your cart is empty</h4>
             <p class="text-muted mb-4">तपाईंको कार्ट खाली छ</p>
-            <a href="{{ url_for('product_list') }}" class="btn btn-primary">
+            <a href="{{ url_for('products.list') }}" class="btn btn-primary">
                 <i class="fas fa-shopping-bag me-2"></i>
                 Start Shopping
             </a>

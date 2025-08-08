@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}Upload QR Code - Nepal Meat Shop Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-upload me-2"></i>
+                        Upload QR Code for {{ payment_method_display }}
+                    </h4>
+                    <p class="mb-0 mt-2">
+                        <small>Upload a QR code image for {{ payment_method_display }} payments</small>
+                    </p>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data" id="qrUploadForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Payment Method (Hidden) -->
+                        {{ form.payment_method() }}
+                        
+                        <!-- QR Code Image Upload -->
+                        <div class="mb-4">
+                            {{ form.qr_image.label(class="form-label fw-bold") }}
+                            <div class="input-group">
+                                {{ form.qr_image(class="form-control", accept="image/*", id="qrImageInput") }}
+                                <label class="input-group-text" for="qrImageInput">
+                                    <i class="fas fa-image"></i>
+                                </label>
+                            </div>
+                            {% if form.qr_image.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.qr_image.errors %}
+                                        <small>{{ error }}</small><br>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Supported formats: JPG, JPEG, PNG, GIF. Maximum size: 5MB
+                            </div>
+                        </div>
+                        
+                        <!-- Image Preview -->
+                        <div class="mb-4" id="imagePreview" style="display: none;">
+                            <label class="form-label fw-bold">Preview:</label>
+                            <div class="text-center">
+                                <img id="previewImg" src="" alt="QR Code Preview" 
+                                     class="img-fluid rounded border" 
+                                     style="max-width: 300px; max-height: 300px;">
+                            </div>
+                        </div>
+                        
+                        <!-- Description -->
+                        <div class="mb-4">
+                            {{ form.description.label(class="form-label fw-bold") }}
+                            {{ form.description(class="form-control", rows="3", placeholder="Enter a description for this QR code (optional)") }}
+                            {% if form.description.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.description.errors %}
+                                        <small>{{ error }}</small><br>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Optional description to help identify this QR code
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('admin.admin_qr_codes') }}" class="btn btn-secondary qr-upload-btn">
+                                <i class="fas fa-arrow-left me-1"></i>
+                                Back to QR Codes
+                            </a>
+                            <button type="submit" class="btn btn-primary qr-upload-btn" id="submitBtn">
+                                <i class="fas fa-upload me-1"></i>
+                                Upload QR Code
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const imageInput = document.getElementById('qrImageInput');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    const submitBtn = document.getElementById('submitBtn');
+    const form = document.getElementById('qrUploadForm');
+    
+    // Image preview functionality
+    imageInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Validate file type
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+            if (!validTypes.includes(file.type)) {
+                alert('Please select a valid image file (JPG, JPEG, PNG, or GIF)');
+                imageInput.value = '';
+                imagePreview.style.display = 'none';
+                return;
+            }
+            
+            // Validate file size (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('File size must be less than 5MB');
+                imageInput.value = '';
+                imagePreview.style.display = 'none';
+                return;
+            }
+            
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                imagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            imagePreview.style.display = 'none';
+        }
+    });
+    
+    // Form submission with loading state
+    form.addEventListener('submit', function(e) {
+        if (!imageInput.files[0]) {
+            e.preventDefault();
+            alert('Please select an image file to upload');
+            return;
+        }
+        
+        // Show loading state
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Uploading...';
+    });
+});
+</script>
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.qr-upload-btn {
+    transition: all 0.2s ease-in-out;
+    position: relative;
+    overflow: hidden;
+}
+
+.qr-upload-btn:hover {
+    transform: none !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.qr-upload-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.3s ease;
+}
+
+.qr-upload-btn:hover::before {
+    left: 100%;
+}
+
+#previewImg {
+    transition: transform 0.2s ease-in-out;
+    cursor: pointer;
+}
+
+#previewImg:hover {
+    transform: scale(1.05);
+}
+
+.input-group-text {
+    background-color: #f8f9fa;
+    border-color: #ced4da;
+}
+</style>
+{% endblock %}

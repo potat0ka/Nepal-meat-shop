@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Payment Status - Nepal Meat Shop{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-lg">
+                <div class="card-body text-center p-5">
+                    {% if status == 'success' %}
+                        <div class="text-success mb-4">
+                            <i class="fas fa-check-circle fa-5x"></i>
+                        </div>
+                        <h2 class="text-success mb-3">Payment Successful!</h2>
+                        <p class="lead mb-4">भुक्तानी सफल भयो!</p>
+                        <div class="alert alert-success">
+                            <strong>Transaction ID:</strong> {{ transaction_id }}<br>
+                            <strong>Amount:</strong> Rs. {{ amount }}<br>
+                            <strong>Gateway:</strong> {{ gateway|title }}
+                        </div>
+                        <p class="text-muted mb-4">
+                            Your order has been confirmed and payment has been processed successfully.
+                            You will receive a confirmation email shortly.
+                        </p>
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('orders.my_orders') }}" class="btn btn-success btn-lg">
+                                <i class="fas fa-list-alt me-2"></i>View My Orders
+                            </a>
+                            <a href="{{ url_for('main.index') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-home me-2"></i>Continue Shopping
+                            </a>
+                        </div>
+                    
+                    {% elif status == 'failed' %}
+                        <div class="text-danger mb-4">
+                            <i class="fas fa-times-circle fa-5x"></i>
+                        </div>
+                        <h2 class="text-danger mb-3">Payment Failed</h2>
+                        <p class="lead mb-4">भुक्तानी असफल भयो!</p>
+                        <div class="alert alert-danger">
+                            {% if error_message %}
+                                <strong>Error:</strong> {{ error_message }}
+                            {% else %}
+                                Payment could not be processed. Please try again.
+                            {% endif %}
+                        </div>
+                        <p class="text-muted mb-4">
+                            Don't worry! Your order is still pending. You can try the payment again or choose a different payment method.
+                        </p>
+                        <div class="d-grid gap-2">
+                            {% if order_id %}
+                                <a href="{{ url_for('payment_callbacks.retry_payment', order_id=order_id) }}" class="btn btn-danger btn-lg">
+                                    <i class="fas fa-redo me-2"></i>Retry Payment
+                                </a>
+                            {% endif %}
+                            <a href="{{ url_for('orders.checkout') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-shopping-cart me-2"></i>Back to Checkout
+                            </a>
+                            <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-home me-2"></i>Continue Shopping
+                            </a>
+                        </div>
+                    
+                    {% elif status == 'pending' %}
+                        <div class="text-warning mb-4">
+                            <i class="fas fa-clock fa-5x"></i>
+                        </div>
+                        <h2 class="text-warning mb-3">Payment Pending</h2>
+                        <p class="lead mb-4">भुक्तानी प्रक्रियामा छ!</p>
+                        <div class="alert alert-warning">
+                            <strong>Transaction ID:</strong> {{ transaction_id }}<br>
+                            <strong>Gateway:</strong> {{ gateway|title }}
+                        </div>
+                        <p class="text-muted mb-4">
+                            Your payment is being processed. This may take a few minutes.
+                            Please do not refresh this page or go back.
+                        </p>
+                        <div class="d-grid gap-2">
+                            <button id="check-status-btn" class="btn btn-warning btn-lg" onclick="checkPaymentStatus()">
+                                <i class="fas fa-sync me-2"></i>Check Status
+                            </button>
+                            <a href="{{ url_for('orders.my_orders') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-list-alt me-2"></i>View My Orders
+                            </a>
+                        </div>
+                    
+                    {% else %}
+                        <div class="text-muted mb-4">
+                            <i class="fas fa-question-circle fa-5x"></i>
+                        </div>
+                        <h2 class="text-muted mb-3">Unknown Status</h2>
+                        <p class="lead mb-4">स्थिति अज्ञात छ!</p>
+                        <div class="alert alert-secondary">
+                            Payment status could not be determined. Please contact support.
+                        </div>
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('orders.my_orders') }}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-list-alt me-2"></i>View My Orders
+                            </a>
+                            <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-home me-2"></i>Continue Shopping
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if status == 'pending' %}
+<script>
+let checkCount = 0;
+const maxChecks = 10;
+
+async function checkPaymentStatus() {
+    if (checkCount >= maxChecks) {
+        document.getElementById('check-status-btn').innerHTML = '<i class="fas fa-times me-2"></i>Max Attempts Reached';
+        document.getElementById('check-status-btn').disabled = true;
+        return;
+    }
+    
+    checkCount++;
+    const btn = document.getElementById('check-status-btn');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Checking...';
+    btn.disabled = true;
+    
+    try {
+        const response = await fetch(`/api/payment/status/{{ gateway }}?transaction_id={{ transaction_id }}`);
+        const data = await response.json();
+        
+        if (data.status === 'completed') {
+            window.location.href = `/payment/status?status=success&transaction_id={{ transaction_id }}&gateway={{ gateway }}&amount={{ amount }}`;
+        } else if (data.status === 'failed') {
+            window.location.href = `/payment/status?status=failed&transaction_id={{ transaction_id }}&gateway={{ gateway }}`;
+        } else {
+            // Still pending, enable button for another check
+            btn.innerHTML = `<i class="fas fa-sync me-2"></i>Check Status (${checkCount}/${maxChecks})`;
+            btn.disabled = false;
+        }
+    } catch (error) {
+        console.error('Error checking payment status:', error);
+        btn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Check Failed';
+        setTimeout(() => {
+            btn.innerHTML = `<i class="fas fa-sync me-2"></i>Check Status (${checkCount}/${maxChecks})`;
+            btn.disabled = false;
+        }, 2000);
+    }
+}
+
+// Auto-check status every 10 seconds for the first 5 minutes
+let autoCheckInterval = setInterval(() => {
+    if (checkCount < 5) {
+        checkPaymentStatus();
+    } else {
+        clearInterval(autoCheckInterval);
+    }
+}, 10000);
+</script>
+{% endif %}
+{% endblock %}

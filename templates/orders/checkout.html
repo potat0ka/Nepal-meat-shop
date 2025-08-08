@@ -2,199 +2,2161 @@
 
 {% block title %}Checkout - Nepal Meat Shop{% endblock %}
 
-{% block content %}
-<div class="row">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-credit-card me-2"></i>
-                    Checkout / चेकआउट
-                </h5>
-            </div>
-            <div class="card-body">
-                <form method="POST">
-                    {{ form.hidden_tag() }}
-                    
-                    <!-- Delivery Information -->
-                    <h6 class="mb-3">
-                        <i class="fas fa-truck me-2"></i>
-                        Delivery Information / डेलिभरी जानकारी
-                    </h6>
-                    
-                    <div class="mb-3">
-                        {{ form.delivery_address.label(class="form-label") }}
-                        {{ form.delivery_address(class="form-control" + (" is-invalid" if form.delivery_address.errors else "")) }}
-                        {% if form.delivery_address.errors %}
-                            <div class="invalid-feedback">
-                                {% for error in form.delivery_address.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                        <div class="form-text">
-                            Please provide complete address with landmarks
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        {{ form.delivery_phone.label(class="form-label") }}
-                        {{ form.delivery_phone(class="form-control" + (" is-invalid" if form.delivery_phone.errors else "")) }}
-                        {% if form.delivery_phone.errors %}
-                            <div class="invalid-feedback">
-                                {% for error in form.delivery_phone.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                        <div class="form-text">
-                            Contact number for delivery coordination
-                        </div>
-                    </div>
-                    
-                    <!-- Payment Method -->
-                    <h6 class="mb-3 mt-4">
-                        <i class="fas fa-credit-card me-2"></i>
-                        Payment Method / भुक्तानी विधि
-                    </h6>
-                    
-                    <div class="mb-3">
-                        {% for choice in form.payment_method.choices %}
-                        <div class="form-check mb-2">
-                            <input class="form-check-input" type="radio" name="payment_method" 
-                                   value="{{ choice[0] }}" id="payment_{{ choice[0] }}"
-                                   {% if form.payment_method.data == choice[0] %}checked{% endif %}>
-                            <label class="form-check-label" for="payment_{{ choice[0] }}">
-                                {% if choice[0] == 'cod' %}
-                                <i class="fas fa-money-bill-wave me-2"></i>
-                                {% elif choice[0] == 'esewa' %}
-                                <i class="fas fa-mobile-alt me-2"></i>
-                                {% elif choice[0] == 'khalti' %}
-                                <i class="fas fa-mobile-alt me-2"></i>
-                                {% elif choice[0] == 'bank' %}
-                                <i class="fas fa-university me-2"></i>
-                                {% endif %}
-                                {{ choice[1] }}
-                            </label>
-                        </div>
-                        {% endfor %}
-                        {% if form.payment_method.errors %}
-                            <div class="text-danger small">
-                                {% for error in form.payment_method.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Special Instructions -->
-                    <h6 class="mb-3 mt-4">
-                        <i class="fas fa-comment me-2"></i>
-                        Special Instructions / विशेष निर्देशन
-                    </h6>
-                    
-                    <div class="mb-4">
-                        {{ form.special_instructions(class="form-control", rows="3", placeholder="Any special instructions for cutting, packaging, or delivery...") }}
-                        {% if form.special_instructions.errors %}
-                            <div class="text-danger small">
-                                {% for error in form.special_instructions.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Submit Button -->
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <a href="{{ url_for('cart') }}" class="btn btn-outline-secondary me-md-2">
-                            <i class="fas fa-arrow-left me-2"></i>
-                            Back to Cart
-                        </a>
-                        {{ form.submit(class="btn btn-primary btn-lg") }}
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+{% block head %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""/>
+
+<style>
+    .order-summary {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
     
-    <!-- Order Summary -->
-    <div class="col-md-4">
-        <div class="card sticky-top">
-            <div class="card-header">
-                <h6 class="mb-0">
-                    <i class="fas fa-receipt me-2"></i>
-                    Order Summary
-                </h6>
-            </div>
-            <div class="card-body">
-                <!-- Cart items will be populated from session -->
-                {% if session.cart %}
-                {% for product_id, item in session.cart.items() %}
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <div>
-                        <h6 class="mb-0 small">{{ item.name }}</h6>
-                        <small class="text-muted">{{ item.quantity }}kg × रू {{ "%.0f"|format(item.price) }}</small>
-                    </div>
-                    <span class="fw-bold">रू {{ "%.0f"|format(item.quantity * item.price) }}</span>
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        padding: 5px 0;
+    }
+    
+    .summary-total {
+        border-top: 2px solid #28a745;
+        padding-top: 10px;
+        font-weight: bold;
+        font-size: 1.1em;
+    }
+    
+    .btn-success {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        border: none;
+        padding: 12px 30px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+    }
+    
+    .form-control:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+    
+    .card {
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        margin-bottom: 15px;
+    }
+    
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    }
+    
+    .card-header {
+        border-bottom: 1px solid #e9ecef;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+    
+    .form-check-input:checked {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
+    
+    .form-check-input:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25);
+    }
+    
+    .form-check-label {
+        cursor: pointer;
+        padding: 8px 12px;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        display: block;
+        margin-bottom: 0;
+    }
+    
+    .form-check-label:hover {
+        background-color: #f8f9fa;
+        transform: translateX(5px);
+    }
+    
+    .form-check {
+        margin-bottom: 8px;
+    }
+    
+    .text-purple {
+        color: #6f42c1 !important;
+    }
+    
+    /* Payment method specific styling */
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    }
+
+    .payment-category {
+        border-bottom: 1px solid #e9ecef;
+        padding-bottom: 20px;
+    }
+
+    .payment-category:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .payment-category-title {
+        color: #495057;
+        font-weight: 600;
+        margin-bottom: 15px;
+        font-size: 1rem;
+    }
+
+    .payment-option-modern {
+        position: relative;
+        margin-bottom: 10px;
+    }
+
+    .payment-radio-modern {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .payment-label-modern {
+        display: flex;
+        align-items: center;
+        padding: 20px;
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #fff;
+        margin: 0;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .payment-label-modern:hover {
+        border-color: #007bff;
+        box-shadow: 0 8px 25px rgba(0, 123, 255, 0.15);
+        transform: translateY(-3px);
+    }
+
+    .payment-radio-modern:checked + .payment-label-modern {
+        border-color: #28a745;
+        background: linear-gradient(135deg, #f8fff9 0%, #e8f5e8 100%);
+        box-shadow: 0 8px 25px rgba(40, 167, 69, 0.2);
+    }
+
+    .payment-radio-modern:checked + .payment-label-modern .payment-check {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    .payment-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        background: #f8f9fa;
+        color: #6c757d;
+        font-size: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .payment-icon.esewa-color {
+        background: linear-gradient(135deg, #60b347 0%, #4a9b3a 100%);
+        color: white;
+    }
+
+    .payment-icon.khalti-color {
+        background: linear-gradient(135deg, #5c2d91 0%, #4a1f7a 100%);
+        color: white;
+    }
+
+    .payment-icon.ime-color {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+    }
+
+    .payment-icon.fonepay-color {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        color: white;
+    }
+
+    .payment-icon.banking-color {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+        color: white;
+    }
+
+    .payment-info {
+        flex: 1;
+        text-align: left;
+    }
+
+    .payment-name {
+        font-weight: 600;
+        color: #333;
+        font-size: 16px;
+        margin-bottom: 4px;
+    }
+
+    .payment-desc {
+        color: #6c757d;
+        font-size: 13px;
+    }
+
+    .payment-check {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #28a745;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transform: scale(0);
+        transition: all 0.3s ease;
+    }
+    
+    /* QR Code enhanced styling */
+    .qr-code-container {
+        text-align: center;
+    }
+    
+    .qr-header h5 {
+        color: #333;
+        font-weight: 600;
+    }
+
+    .qr-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 25px;
+    }
+    
+    .qr-image-wrapper {
+        background: white;
+        padding: 25px;
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        border: 3px solid #f8f9fa;
+        position: relative;
+        cursor: pointer;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .qr-image-wrapper:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .qr-image {
+        max-width: 300px;
+        width: 100%;
+        height: auto;
+        border-radius: 15px;
+        transition: transform 0.3s ease;
+        display: block;
+        margin: 0 auto;
+    }
+
+    .qr-image:hover {
+        transform: scale(1.05);
+    }
+
+    .qr-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        border-radius: 20px;
+    }
+
+    .qr-image-wrapper:hover .qr-overlay {
+        opacity: 1;
+    }
+
+    .qr-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .qr-action-btn {
+        border-radius: 50%;
+        width: 45px;
+        height: 45px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .qr-action-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+
+    .qr-modal-wrapper {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        display: inline-block;
+    }
+
+    .qr-modal-image {
+        max-width: 400px;
+        width: 100%;
+        height: auto;
+        border-radius: 10px;
+    }
+
+    .qr-instructions {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        max-width: 300px;
+    }
+
+    .instruction-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 20px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .instruction-item i {
+        font-size: 18px;
+    }
+    
+    /* Map Styles */
+    #map-container {
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        min-height: 400px;
+    }
+    
+    #delivery-map {
+        height: 400px;
+        width: 100%;
+        border-radius: 8px;
+        background: #f8f9fa;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .map-loading {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 400px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 8px;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 2;
+    }
+    
+    .map-error {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 400px;
+        background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+        border-radius: 8px;
+        border: 2px dashed #fc8181;
+        text-align: center;
+        padding: 20px;
+    }
+    
+    .spinner-border {
+        width: 3rem;
+        height: 3rem;
+        color: #28a745;
+    }
+    
+    .current-location-btn {
+        background: linear-gradient(45deg, #007bff, #0056b3);
+        border: none;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        margin-bottom: 15px;
+    }
+    
+    .current-location-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 123, 255, 0.4);
+        background: linear-gradient(45deg, #0056b3, #004085);
+    }
+    
+    .current-location-btn:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+    
+    #address-search {
+        border-radius: 8px;
+        border: 2px solid #e9ecef;
+        padding: 12px 16px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        margin-bottom: 15px;
+    }
+    
+    #address-search:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+    
+    .search-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+    }
+
+    .search-result-item {
+        padding: 12px 15px;
+        border-bottom: 1px solid #f1f3f4;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .search-result-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .selected-address {
+        background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+        border: 2px solid #17a2b8;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        display: none;
+    }
+    
+    .alert-custom {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        max-width: 400px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    /* QR Code Styles */
+    .qr-code-display {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 20px;
+        padding: 30px;
+        border: 2px solid #dee2e6;
+        animation: fadeInUp 0.5s ease;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes loading {
+        0% {
+            background-position: 200% 0;
+        }
+        100% {
+            background-position: -200% 0;
+        }
+    }
+    
+    /* Custom marker styles */
+    .custom-marker {
+        background: transparent;
+        border: none;
+    }
+    
+    /* Leaflet popup improvements */
+    .leaflet-popup-content-wrapper {
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .leaflet-popup-content {
+        margin: 12px 16px;
+        line-height: 1.4;
+    }
+    
+    /* Map controls positioning */
+    .leaflet-control-zoom {
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .leaflet-control-zoom a {
+        border-radius: 4px;
+        border: 1px solid #ddd;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+        #delivery-map {
+            height: 350px; /* Increased height for mobile */
+            min-height: 350px;
+        }
+        
+        .current-location-btn {
+            width: 100%;
+            margin-bottom: 10px;
+            font-size: 12px;
+            padding: 8px 12px;
+        }
+        
+        #address-search {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .search-results {
+            max-height: 200px;
+            font-size: 14px;
+        }
+        
+        .search-result-item {
+            padding: 12px;
+        }
+        
+        /* Improve map controls on mobile */
+        .leaflet-control-zoom {
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+        
+        .leaflet-control-zoom a {
+            width: 35px;
+            height: 35px;
+            line-height: 35px;
+            font-size: 16px;
+        }
+        
+        .payment-label-modern {
+            padding: 15px;
+        }
+        
+        .payment-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 16px;
+            margin-right: 12px;
+        }
+        
+        .payment-name {
+            font-size: 14px;
+        }
+        
+        .payment-desc {
+            font-size: 12px;
+        }
+        
+        .qr-content {
+            flex-direction: column;
+        }
+        
+        .qr-instructions {
+            max-width: 100%;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        #delivery-map {
+            height: 300px;
+            min-height: 300px;
+        }
+        
+        .current-location-btn {
+            font-size: 11px;
+            padding: 6px 10px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-4">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-shopping-cart"></i> Checkout</h4>
                 </div>
-                {% endfor %}
-                
-                <hr>
-                
-                {% set subtotal = session.cart.values() | map('list') | sum %}
-                <div class="d-flex justify-content-between mb-2">
-                    <span>Subtotal:</span>
-                    <span>रू {{ "%.0f"|format(subtotal) }}</span>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('orders.checkout') }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Delivery Information -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-map-marker-alt"></i> Delivery Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- Current Location Button -->
+                                <button type="button" id="current-location-btn" class="btn current-location-btn">
+                                    <i class="fas fa-location-arrow"></i> Use Current Location
+                                </button>
+                                
+                                <!-- Address Search -->
+                                <div class="position-relative">
+                                    <input type="text" id="address-search" class="form-control" 
+                                           placeholder="🔍 Search for an address..." autocomplete="off">
+                                    <div id="search-results" class="search-results"></div>
+                                </div>
+                                
+                                <!-- Map Container -->
+                                <div id="map-container">
+                                    <div id="map-loading" class="map-loading">
+                                        <div class="spinner-border" role="status"></div>
+                                        <p class="mt-3 text-muted">Loading map...</p>
+                                        <small class="text-muted">📍 Click on the map to select delivery location</small>
+                                    </div>
+                                    <div id="delivery-map" style="display: none;"></div>
+                                </div>
+                                
+                                <!-- Selected Address Display -->
+                                <div id="selected-address" class="selected-address">
+                                    <h6><i class="fas fa-map-pin"></i> Selected Location:</h6>
+                                    <p id="selected-address-text">No location selected</p>
+                                    <button type="button" id="use-selected-location" class="btn btn-success btn-sm">
+                                        <i class="fas fa-check"></i> Use This Location
+                                    </button>
+                                </div>
+                                
+                                <!-- Manual Address Input -->
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        {{ form.delivery_address.label(class="form-label") }}
+                                        {{ form.delivery_address(class="form-control") }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ form.delivery_phone.label(class="form-label") }}
+                                        {{ form.delivery_phone(class="form-control") }}
+                                    </div>
+                                </div>
+                                
+                                <!-- Hidden fields for coordinates -->
+                                <input type="hidden" id="latitude" name="latitude">
+                                <input type="hidden" id="longitude" name="longitude">
+                            </div>
+                        </div>
+                        
+                        <!-- Payment Method -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-gradient-primary">
+                                <h5 class="mb-0 text-white"><i class="fas fa-credit-card me-2"></i> Choose Payment Method</h5>
+                                <small class="text-white-50">Select your preferred payment option</small>
+                            </div>
+                            <div class="card-body p-4">
+                                <!-- Cash on Delivery -->
+                                <div class="payment-category mb-4">
+                                    <h6 class="payment-category-title"><i class="fas fa-money-bill-wave me-2"></i>Cash Payment</h6>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="payment-option-modern" data-payment="cod">
+                                                <input type="radio" name="payment_method" value="cod" id="payment_cod" class="payment-radio-modern">
+                                                <label for="payment_cod" class="payment-label-modern">
+                                                    <div class="payment-icon">
+                                                        <i class="fas fa-hand-holding-usd"></i>
+                                                    </div>
+                                                    <div class="payment-info">
+                                                        <div class="payment-name">Cash on Delivery</div>
+                                                        <div class="payment-desc">घरमा पैसा तिर्ने</div>
+                                                    </div>
+                                                    <div class="payment-check">
+                                                        <i class="fas fa-check"></i>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Digital Wallets -->
+                                <div class="payment-category mb-4">
+                                    <h6 class="payment-category-title"><i class="fas fa-mobile-alt me-2"></i>Digital Wallets</h6>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <div class="payment-option-modern" data-payment="esewa">
+                                                <input type="radio" name="payment_method" value="esewa" id="payment_esewa" class="payment-radio-modern">
+                                                <label for="payment_esewa" class="payment-label-modern">
+                                                    <div class="payment-icon esewa-color">
+                                                        <i class="fas fa-wallet"></i>
+                                                    </div>
+                                                    <div class="payment-info">
+                                                        <div class="payment-name">eSewa</div>
+                                                        <div class="payment-desc">ईसेवा डिजिटल वालेट</div>
+                                                    </div>
+                                                    <div class="payment-check">
+                                                        <i class="fas fa-check"></i>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <div class="payment-option-modern" data-payment="khalti">
+                                                <input type="radio" name="payment_method" value="khalti" id="payment_khalti" class="payment-radio-modern">
+                                                <label for="payment_khalti" class="payment-label-modern">
+                                                    <div class="payment-icon khalti-color">
+                                                        <i class="fas fa-mobile-alt"></i>
+                                                    </div>
+                                                    <div class="payment-info">
+                                                        <div class="payment-name">Khalti</div>
+                                                        <div class="payment-desc">खल्ती डिजिटल वालेट</div>
+                                                    </div>
+                                                    <div class="payment-check">
+                                                        <i class="fas fa-check"></i>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <div class="payment-option-modern" data-payment="ime_pay">
+                                                <input type="radio" name="payment_method" value="ime_pay" id="payment_ime_pay" class="payment-radio-modern">
+                                                <label for="payment_ime_pay" class="payment-label-modern">
+                                                    <div class="payment-icon ime-color">
+                                                        <i class="fas fa-credit-card"></i>
+                                                    </div>
+                                                    <div class="payment-info">
+                                                        <div class="payment-name">IME Pay</div>
+                                                        <div class="payment-desc">आईएमई पे</div>
+                                                    </div>
+                                                    <div class="payment-check">
+                                                        <i class="fas fa-check"></i>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <div class="payment-option-modern" data-payment="fonepay">
+                                                <input type="radio" name="payment_method" value="fonepay" id="payment_fonepay" class="payment-radio-modern">
+                                                <label for="payment_fonepay" class="payment-label-modern">
+                                                    <div class="payment-icon fonepay-color">
+                                                        <i class="fas fa-phone"></i>
+                                                    </div>
+                                                    <div class="payment-info">
+                                                        <div class="payment-name">FonePay</div>
+                                                        <div class="payment-desc">फोनपे</div>
+                                                    </div>
+                                                    <div class="payment-check">
+                                                        <i class="fas fa-check"></i>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Banking -->
+                                <div class="payment-category mb-4">
+                                    <h6 class="payment-category-title"><i class="fas fa-university me-2"></i>Banking</h6>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <div class="payment-option-modern" data-payment="mobile_banking">
+                                                <input type="radio" name="payment_method" value="mobile_banking" id="payment_mobile_banking" class="payment-radio-modern">
+                                                <label for="payment_mobile_banking" class="payment-label-modern">
+                                                    <div class="payment-icon banking-color">
+                                                        <i class="fas fa-mobile-alt"></i>
+                                                    </div>
+                                                    <div class="payment-info">
+                                                        <div class="payment-name">Mobile Banking</div>
+                                                        <div class="payment-desc">मोबाइल बैंकिङ</div>
+                                                    </div>
+                                                    <div class="payment-check">
+                                                        <i class="fas fa-check"></i>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <div class="payment-option-modern" data-payment="bank_transfer">
+                                                <input type="radio" name="payment_method" value="bank_transfer" id="payment_bank_transfer" class="payment-radio-modern">
+                                                <label for="payment_bank_transfer" class="payment-label-modern">
+                                                    <div class="payment-icon banking-color">
+                                                        <i class="fas fa-university"></i>
+                                                    </div>
+                                                    <div class="payment-info">
+                                                        <div class="payment-name">Bank Transfer</div>
+                                                        <div class="payment-desc">बैंक ट्रान्सफर</div>
+                                                    </div>
+                                                    <div class="payment-check">
+                                                        <i class="fas fa-check"></i>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- QR Code Display -->
+                                <div id="qr-code-display" class="qr-code-display mt-4" style="display: none;">
+                                    <div class="qr-code-container">
+                                        <div class="qr-header">
+                                            <h5 class="mb-0"><i class="fas fa-qrcode me-2"></i><span id="qr-payment-name">Scan QR Code</span></h5>
+                                            <p class="text-muted mb-3">Scan with your mobile app to complete payment</p>
+                                        </div>
+                                        <div class="qr-content">
+                                            <div class="qr-image-wrapper" id="qr-image-wrapper">
+                                                <img id="qr-code-image" src="" alt="QR Code" class="qr-image" title="Click to enlarge">
+                                                <div class="qr-overlay">
+                                                    <div class="qr-actions">
+                                                        <button type="button" class="btn btn-light btn-sm qr-action-btn" onclick="enlargeQRCode()" title="Enlarge QR Code">
+                                                            <i class="fas fa-expand-arrows-alt"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-primary btn-sm qr-action-btn" onclick="downloadQRCode()" title="Download QR Code">
+                                                            <i class="fas fa-download"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="qr-instructions" id="qr-instructions">
+                                                <div class="instruction-item">
+                                                    <i class="fas fa-mobile-alt text-primary"></i>
+                                                    <span id="instruction-1">Open your mobile banking app</span>
+                                                </div>
+                                                <div class="instruction-item">
+                                                    <i class="fas fa-qrcode text-success"></i>
+                                                    <span id="instruction-2">Scan this QR code</span>
+                                                </div>
+                                                <div class="instruction-item">
+                                                    <i class="fas fa-check-circle text-info"></i>
+                                                    <span id="instruction-3">Complete the payment</span>
+                                                </div>
+                                                <div class="instruction-item">
+                                                    <i class="fas fa-expand-arrows-alt text-warning"></i>
+                                                    <span>Click QR code to enlarge or download</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- QR Code Modal -->
+                                <div class="modal fade" id="qrCodeModal" tabindex="-1" aria-labelledby="qrCodeModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="qrCodeModalLabel">
+                                                    <i class="fas fa-qrcode me-2"></i><span id="modal-payment-name">QR Code</span>
+                                                </h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body text-center">
+                                                <div class="qr-modal-wrapper">
+                                                    <img id="modal-qr-image" src="" alt="QR Code" class="qr-modal-image">
+                                                </div>
+                                                <p class="text-muted mt-3">Scan this QR code with your mobile banking app</p>
+                                            </div>
+                                            <div class="modal-footer justify-content-center">
+                                                <button type="button" class="btn btn-primary" onclick="downloadQRCodeFromModal()">
+                                                    <i class="fas fa-download me-2"></i>Download QR Code
+                                                </button>
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                    <i class="fas fa-times me-2"></i>Close
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-check-circle"></i> Place Order
+                            </button>
+                        </div>
+                    </form>
                 </div>
-                
-                <div class="d-flex justify-content-between mb-2">
-                    <span>Delivery:</span>
-                    <span>
-                        {% if subtotal >= 2000 %}
-                        FREE
-                        {% elif subtotal >= 1000 %}
-                        रू 25
-                        {% else %}
-                        रू 50
-                        {% endif %}
-                    </span>
-                </div>
-                
-                <hr>
-                
-                <div class="d-flex justify-content-between">
-                    <span class="fw-bold">Total:</span>
-                    <span class="fw-bold text-primary h5">
-                        रू {{ "%.0f"|format(subtotal + (0 if subtotal >= 2000 else (25 if subtotal >= 1000 else 50))) }}
-                    </span>
-                </div>
-                {% endif %}
             </div>
         </div>
         
-        <!-- Delivery Information -->
-        <div class="card mt-3">
-            <div class="card-body">
-                <h6 class="card-title">
-                    <i class="fas fa-truck me-2"></i>
-                    Delivery Info
-                </h6>
-                <ul class="list-unstyled mb-0 small">
-                    <li class="mb-1">
-                        <i class="fas fa-clock me-2"></i>
-                        Same day delivery available
-                    </li>
-                    <li class="mb-1">
-                        <i class="fas fa-map-marker-alt me-2"></i>
-                        Kathmandu Valley coverage
-                    </li>
-                    <li class="mb-0">
-                        <i class="fas fa-phone me-2"></i>
-                        Call confirmation before delivery
-                    </li>
-                </ul>
+        <!-- Order Summary -->
+        <div class="col-lg-4">
+            <div class="order-summary">
+                <h5 class="mb-3"><i class="fas fa-receipt"></i> Order Summary</h5>
+                {% for item in cart_items %}
+                    <div class="summary-item">
+                        <span>{{ item.product.name }} ({{ item.quantity }}x)</span>
+                        <span>Rs. {{ "%.2f"|format(item.product.price * item.quantity) }}</span>
+                    </div>
+                {% endfor %}
+                <hr>
+                <div class="summary-item">
+                    <span>Subtotal:</span>
+                    <span>Rs. {{ "%.2f"|format(total) }}</span>
+                </div>
+                <div class="summary-item">
+                    <span>Delivery:</span>
+                    <span>Rs. 50.00</span>
+                </div>
+                <div class="summary-item summary-total">
+                    <span>Total:</span>
+                    <span>Rs. {{ "%.2f"|format(total + 50) }}</span>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Leaflet JavaScript -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+
+<script>
+/**
+ * Nepal Meat Shop - Map and Geolocation Module
+ * Handles map display, geolocation, and address search functionality
+ */
+
+// Global variables
+let map = null;
+let marker = null;
+let searchTimeout = null;
+let isMapInitialized = false;
+let mapRetryCount = 0;
+const MAX_RETRY_COUNT = 3;
+
+// Default location (Kathmandu, Nepal)
+const DEFAULT_LOCATION = {
+    lat: 27.7172,
+    lng: 85.3240,
+    name: 'Kathmandu, Nepal'
+};
+
+// Initialize everything when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Initializing checkout page...');
+    
+    // Wait for page to be fully loaded before initializing map
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeComponents);
+    } else {
+        initializeComponents();
+    }
+});
+
+// Initialize all components
+function initializeComponents() {
+    setupEventListeners();
+    setupPaymentMethodHandlers();
+    
+    // Initialize map with a small delay to ensure DOM is ready
+    setTimeout(() => {
+        initMap();
+    }, 100);
+}
+
+/**
+ * initMap() — loads and displays the map
+ * Initializes the Leaflet map with OpenStreetMap tiles and sets up event handlers
+ */
+function initMap() {
+    console.log('🗺️ Initializing map...');
+    
+    const mapContainer = document.getElementById('delivery-map');
+    const loadingElement = document.getElementById('map-loading');
+    
+    if (!mapContainer) {
+        console.error('❌ Map container not found');
+        showMapError('Map container not found. Please refresh the page.');
+        return;
+    }
+    
+    // Check if Leaflet is loaded
+    if (typeof L === 'undefined') {
+        console.error('❌ Leaflet library not loaded');
+        if (mapRetryCount < MAX_RETRY_COUNT) {
+            mapRetryCount++;
+            console.log(`🔄 Retrying map initialization (${mapRetryCount}/${MAX_RETRY_COUNT})...`);
+            setTimeout(initMap, 1000);
+            return;
+        }
+        showMapError('Map library failed to load. Please check your internet connection and refresh the page.');
+        return;
+    }
+    
+    try {
+        // Show map container and hide loading
+        if (loadingElement) {
+            loadingElement.style.display = 'none';
+        }
+        mapContainer.style.display = 'block';
+        
+        // Force container to have proper dimensions
+        mapContainer.style.height = '400px';
+        mapContainer.style.width = '100%';
+        
+        // Initialize map centered on Kathmandu, Nepal with mobile-optimized settings
+        map = L.map('delivery-map', {
+            center: [DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng],
+            zoom: 13,
+            zoomControl: true,
+            scrollWheelZoom: true,
+            doubleClickZoom: true,
+            boxZoom: true,
+            keyboard: true,
+            dragging: true,
+            touchZoom: true,
+            tap: true, // Enable tap for mobile
+            tapTolerance: 15, // Increase tap tolerance for mobile
+            zoomSnap: 0.5, // Allow half-zoom levels for better mobile experience
+            zoomDelta: 0.5, // Smaller zoom increments
+            wheelPxPerZoomLevel: 60, // Smoother wheel zooming
+            maxBounds: [[-90, -180], [90, 180]], // Prevent infinite panning
+            maxBoundsViscosity: 1.0 // Strong boundary enforcement
+        });
+        
+        // Add tile layer with error handling
+        const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19,
+            minZoom: 3,
+            errorTileUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjU2IiBoZWlnaHQ9IjI1NiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjU2IiBoZWlnaHQ9IjI1NiIgZmlsbD0iI2Y4ZjlmYSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2Yzc1N2QiPk1hcCBUaWxlIEVycm9yPC90ZXh0Pjwvc3ZnPg=='
+        });
+        
+        tileLayer.addTo(map);
+        
+        // Handle tile loading errors
+        tileLayer.on('tileerror', function(e) {
+            console.warn('⚠️ Tile loading error:', e);
+        });
+        
+        // Add click handler for location selection
+        map.on('click', function(e) {
+            selectLocation(e.latlng.lat, e.latlng.lng);
+        });
+        
+        // Handle map load event
+        map.whenReady(function() {
+            console.log('✅ Map loaded and ready');
+            isMapInitialized = true;
+            
+            // Invalidate size to ensure proper rendering
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 100);
+            
+            showAlert('Map loaded successfully! Click anywhere to select delivery location.', 'success');
+        });
+        
+        // Handle map errors
+        map.on('error', function(e) {
+            console.error('❌ Map error:', e);
+            showMapError('Map encountered an error. Please refresh the page.');
+        });
+        
+        console.log('✅ Map initialized successfully');
+        
+    } catch (error) {
+        console.error('❌ Map initialization error:', error);
+        showMapError('Failed to initialize map. Please refresh the page and check your internet connection.');
+    }
+}
+
+// Setup event listeners
+function setupEventListeners() {
+    // Current location button
+    const currentLocationBtn = document.getElementById('current-location-btn');
+    if (currentLocationBtn) {
+        currentLocationBtn.addEventListener('click', detectUserLocation);
+    }
+    
+    // Address search
+    const addressSearch = document.getElementById('address-search');
+    if (addressSearch) {
+        addressSearch.addEventListener('input', handleAddressSearch);
+        addressSearch.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+            }
+        });
+    }
+    
+    // Use selected location button
+    const useLocationBtn = document.getElementById('use-selected-location');
+    if (useLocationBtn) {
+        useLocationBtn.addEventListener('click', useSelectedLocation);
+    }
+    
+    // QR Code click to enlarge
+    const qrImageWrapper = document.getElementById('qr-image-wrapper');
+    if (qrImageWrapper) {
+        qrImageWrapper.addEventListener('click', function(e) {
+            // Only enlarge if not clicking on action buttons
+            if (!e.target.closest('.qr-action-btn')) {
+                enlargeQRCode();
+            }
+        });
+    }
+    
+    // Form submission handler
+    const checkoutForm = document.querySelector('form[action*="checkout"]');
+    if (checkoutForm) {
+        checkoutForm.addEventListener('submit', handleFormSubmission);
+    }
+}
+
+/**
+ * detectUserLocation() — handles current location logic
+ * Uses HTML5 Geolocation API to detect user's location with comprehensive error handling
+ * On success, centers map and adds marker labeled "Your Location"
+ * On failure, shows error and defaults to Kathmandu, Nepal
+ * Ensures geolocation works only over HTTPS (except localhost)
+ */
+function detectUserLocation() {
+    console.log('📍 Getting current location...');
+    
+    // Check if geolocation is supported
+    if (!navigator.geolocation) {
+        console.error('❌ Geolocation not supported');
+        showAlert('Geolocation is not supported by this browser. Using default location.', 'warning');
+        fallbackToDefaultLocation();
+        return;
+    }
+    
+    // Check if map is ready
+    if (!isMapInitialized) {
+        showAlert('Map is not ready yet. Please wait a moment and try again.', 'warning');
+        return;
+    }
+    
+    // Check if we're on HTTPS (required for geolocation except on localhost)
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        console.warn('⚠️ Geolocation requires HTTPS');
+        showAlert('Location services require a secure connection. Using default location.', 'warning');
+        fallbackToDefaultLocation();
+        return;
+    }
+    
+    // Show loading state
+    const btn = document.getElementById('current-location-btn');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting location...';
+    }
+    
+    // Enhanced geolocation options
+    const options = {
+        enableHighAccuracy: true,
+        timeout: 15000, // 15 seconds timeout
+        maximumAge: 300000 // 5 minutes cache
+    };
+    
+    // Create a promise wrapper for better error handling
+    const getLocationPromise = new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, options);
+    });
+    
+    // Add a timeout fallback
+    const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Location request timed out')), options.timeout + 1000);
+    });
+    
+    Promise.race([getLocationPromise, timeoutPromise])
+        .then(function(position) {
+            console.log('✅ Location found:', position.coords);
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            const accuracy = position.coords.accuracy;
+            
+            console.log(`📍 Coordinates: ${lat}, ${lng} (accuracy: ${accuracy}m)`);
+            
+            // Validate coordinates (basic sanity check)
+            if (isValidCoordinates(lat, lng)) {
+                // Center map on user location with appropriate zoom based on accuracy
+                const zoom = getZoomFromAccuracy(accuracy);
+                selectLocation(lat, lng, "Your Location");
+                map.setView([lat, lng], zoom);
+                
+                const accuracyText = accuracy < 100 ? 'high accuracy' : 
+                                   accuracy < 1000 ? 'medium accuracy' : 'low accuracy';
+                showAlert(`Location found with ${accuracyText}!`, 'success');
+            } else {
+                console.error('❌ Invalid coordinates received');
+                showAlert('Invalid location data received. Using default location.', 'warning');
+                fallbackToDefaultLocation();
+            }
+        })
+        .catch(function(error) {
+            console.error('❌ Geolocation error:', error);
+            handleGeolocationError(error);
+        })
+        .finally(function() {
+            // Reset button state
+            resetLocationButton();
+        });
+}
+
+// Handle geolocation errors with specific messages and fallbacks
+function handleGeolocationError(error) {
+    let message = 'Unable to get your location. ';
+    let shouldFallback = true;
+    
+    if (error.code !== undefined) {
+        // Standard GeolocationPositionError
+        switch(error.code) {
+            case error.PERMISSION_DENIED:
+                message += 'Location access was denied. Please enable location services in your browser settings and try again.';
+                showAlert(message, 'warning');
+                shouldFallback = true;
+                break;
+            case error.POSITION_UNAVAILABLE:
+                message += 'Location information is unavailable. Please check your GPS/network connection and try again.';
+                showAlert(message, 'warning');
+                shouldFallback = true;
+                break;
+            case error.TIMEOUT:
+                message += 'Location request timed out. Please try again or select location manually on the map.';
+                showAlert(message, 'warning');
+                shouldFallback = false; // Don't auto-fallback on timeout, let user try again
+                break;
+            default:
+                message += 'An unknown error occurred while getting your location.';
+                showAlert(message, 'error');
+                break;
+        }
+    } else {
+        // Custom error (like timeout)
+        message += error.message || 'Please try again or select location manually on the map.';
+        showAlert(message, 'warning');
+    }
+    
+    if (shouldFallback) {
+        setTimeout(() => {
+            fallbackToDefaultLocation();
+        }, 3000); // Increased delay to give user time to read the message
+    }
+}
+
+// Fallback to default location (Kathmandu, Nepal)
+function fallbackToDefaultLocation() {
+    console.log('🏠 Using default location:', DEFAULT_LOCATION.name);
+    
+    if (map && isMapInitialized) {
+        map.setView([DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng], 13);
+        selectLocation(DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng);
+        showAlert(`Using default location: ${DEFAULT_LOCATION.name}`, 'info');
+    }
+}
+
+// Validate coordinates
+function isValidCoordinates(lat, lng) {
+    return !isNaN(lat) && !isNaN(lng) && 
+           lat >= -90 && lat <= 90 && 
+           lng >= -180 && lng <= 180 &&
+           lat !== 0 && lng !== 0; // Exclude null island
+}
+
+// Get appropriate zoom level based on GPS accuracy
+function getZoomFromAccuracy(accuracy) {
+    if (accuracy < 50) return 18;      // Very accurate - street level
+    if (accuracy < 100) return 17;     // Accurate - building level
+    if (accuracy < 500) return 16;     // Good - neighborhood level
+    if (accuracy < 1000) return 15;    // Fair - area level
+    return 14;                         // Poor - city level
+}
+
+// Reset location button to default state
+function resetLocationButton() {
+    const btn = document.getElementById('current-location-btn');
+    if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-location-arrow"></i> Use Current Location';
+    }
+}
+
+// Select location on map with improved marker handling
+function selectLocation(lat, lng, label = null) {
+    if (!isMapInitialized) {
+        console.error('❌ Map not initialized');
+        return;
+    }
+    
+    console.log(`📍 Selecting location: ${lat}, ${lng}`);
+    
+    // Validate coordinates
+    if (!isValidCoordinates(lat, lng)) {
+        console.error('❌ Invalid coordinates provided to selectLocation');
+        showAlert('Invalid location coordinates', 'error');
+        return;
+    }
+    
+    // Remove existing marker
+    if (marker) {
+        map.removeLayer(marker);
+        marker = null;
+    }
+    
+    // Create custom marker icon for better visibility
+    const customIcon = L.divIcon({
+        className: 'custom-marker',
+        html: '<div style="background-color: #e74c3c; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+    });
+    
+    // Add new marker with custom icon
+    marker = L.marker([lat, lng], { icon: customIcon }).addTo(map);
+    
+    // Update coordinates in hidden inputs
+    const latInput = document.getElementById('latitude');
+    const lngInput = document.getElementById('longitude');
+    if (latInput) latInput.value = lat;
+    if (lngInput) lngInput.value = lng;
+    
+    // Get address for this location
+    reverseGeocode(lat, lng, label);
+    
+    // Show selected address section
+    const selectedAddressDiv = document.getElementById('selected-address');
+    if (selectedAddressDiv) {
+        selectedAddressDiv.style.display = 'block';
+    }
+}
+
+// Reverse geocoding with improved error handling and custom labels
+function reverseGeocode(lat, lng, customLabel = null) {
+    // If we have a custom label, use it immediately
+    if (customLabel) {
+        updateLocationDisplay(customLabel, lat, lng);
+        return;
+    }
+    
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+    
+    // Show loading state
+    const addressTextElement = document.getElementById('selected-address-text');
+    if (addressTextElement) {
+        addressTextElement.textContent = 'Getting address...';
+    }
+    
+    // Add timeout to the fetch request
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
+    fetch(url, { signal: controller.signal })
+        .then(response => {
+            clearTimeout(timeoutId);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            let address = 'Unknown location';
+            
+            if (data && data.display_name) {
+                address = data.display_name;
+                
+                // Try to get a more readable address format
+                if (data.address) {
+                    const parts = [];
+                    if (data.address.house_number) parts.push(data.address.house_number);
+                    if (data.address.road) parts.push(data.address.road);
+                    if (data.address.neighbourhood) parts.push(data.address.neighbourhood);
+                    if (data.address.suburb) parts.push(data.address.suburb);
+                    if (data.address.city || data.address.town || data.address.village) {
+                        parts.push(data.address.city || data.address.town || data.address.village);
+                    }
+                    
+                    if (parts.length > 0) {
+                        address = parts.join(', ');
+                    }
+                }
+            }
+            
+            updateLocationDisplay(address, lat, lng);
+        })
+        .catch(error => {
+            clearTimeout(timeoutId);
+            console.error('❌ Reverse geocoding error:', error);
+            
+            let fallbackAddress = `Location: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            if (error.name === 'AbortError') {
+                fallbackAddress = `Address lookup timed out - ${fallbackAddress}`;
+            }
+            
+            updateLocationDisplay(fallbackAddress, lat, lng);
+        });
+}
+
+// Update location display with address and marker popup
+function updateLocationDisplay(address, lat, lng) {
+    // Update address text
+    const addressTextElement = document.getElementById('selected-address-text');
+    if (addressTextElement) {
+        addressTextElement.textContent = address;
+    }
+    
+    // Update marker popup
+    if (marker) {
+        const popupContent = `
+            <div class="text-center" style="min-width: 200px;">
+                <h6 style="margin-bottom: 8px; color: #2c3e50;">📍 Selected Location</h6>
+                <p style="margin-bottom: 6px; font-size: 13px; line-height: 1.3;">${address}</p>
+                <p style="margin: 0; font-size: 11px; color: #7f8c8d;">
+                    Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}
+                </p>
+            </div>
+        `;
+        marker.bindPopup(popupContent).openPopup();
+    }
+}
+
+// Handle address search input with debouncing
+function handleAddressSearch(e) {
+    const query = e.target.value.trim();
+    
+    // Clear previous timeout
+    if (searchTimeout) {
+        clearTimeout(searchTimeout);
+    }
+    
+    // Hide results if query is empty
+    if (query.length < 3) {
+        document.getElementById('search-results').style.display = 'none';
+        return;
+    }
+    
+    // Set new timeout
+    searchTimeout = setTimeout(() => {
+        searchLocation(query);
+    }, 500);
+}
+
+/**
+ * searchLocation() — handles search and map centering
+ * Uses Nominatim (free geocoding API) to search for locations
+ * When user searches, centers map on found coordinates and places marker
+ * Shows "Location not found" message if no results found
+ */
+function searchLocation(query) {
+    console.log('🔍 Searching for:', query);
+    
+    // Show loading state
+    const searchInput = document.getElementById('address-search');
+    const resultsContainer = document.getElementById('search-results');
+    
+    if (searchInput) {
+        searchInput.style.background = 'linear-gradient(90deg, #f8f9fa 0%, #e9ecef 50%, #f8f9fa 100%)';
+        searchInput.style.backgroundSize = '200% 100%';
+        searchInput.style.animation = 'loading 1.5s ease-in-out infinite';
+    }
+    
+    // Show loading in results
+    resultsContainer.innerHTML = '<div class="search-result-item"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
+    resultsContainer.style.display = 'block';
+    
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&countrycodes=np&addressdetails=1`;
+    
+    // Add timeout to the fetch request
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+    
+    fetch(url, { signal: controller.signal })
+        .then(response => {
+            clearTimeout(timeoutId);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data || data.length === 0) {
+                console.log('📍 No results found for query:', query);
+                showAlert('Location not found. Please try a different search term or use the map to select a location.', 'warning');
+                showSearchResults([]);
+            } else {
+                console.log(`📍 Found ${data.length} results for:`, query);
+                showSearchResults(data);
+            }
+        })
+        .catch(error => {
+            clearTimeout(timeoutId);
+            console.error('❌ Address search error:', error);
+            
+            let errorMessage = 'Search failed. ';
+            if (error.name === 'AbortError') {
+                errorMessage += 'Search timed out. Please try again with a shorter search term.';
+            } else {
+                errorMessage += 'Please check your internet connection and try again.';
+            }
+            
+            showAlert(errorMessage, 'error');
+            showSearchResults([]);
+        })
+        .finally(() => {
+            // Reset search input styling
+            const searchInput = document.getElementById('address-search');
+            if (searchInput) {
+                searchInput.style.background = '';
+                searchInput.style.backgroundSize = '';
+                searchInput.style.animation = '';
+            }
+        });
+}
+
+// Show search results
+function showSearchResults(results) {
+    const resultsContainer = document.getElementById('search-results');
+    resultsContainer.innerHTML = '';
+    
+    if (results.length === 0) {
+        resultsContainer.innerHTML = '<div class="search-result-item">No results found</div>';
+    } else {
+        results.forEach(result => {
+            const item = document.createElement('div');
+            item.className = 'search-result-item';
+            item.textContent = result.display_name;
+            item.addEventListener('click', () => {
+                selectSearchResult(result);
+            });
+            resultsContainer.appendChild(item);
+        });
+    }
+    
+    resultsContainer.style.display = 'block';
+}
+
+// Select search result and center map
+function selectSearchResult(result) {
+    const lat = parseFloat(result.lat);
+    const lng = parseFloat(result.lon);
+    
+    if (!isValidCoordinates(lat, lng)) {
+        showAlert('Invalid coordinates in search result', 'error');
+        return;
+    }
+    
+    // Center map on selected location
+    if (map && isMapInitialized) {
+        map.setView([lat, lng], 16); // Zoom to street level for searched locations
+    }
+    
+    // Select the location and add marker
+    selectLocation(lat, lng, result.display_name);
+    
+    // Update search input with a shorter, cleaner name if possible
+    const searchInput = document.getElementById('address-search');
+    if (searchInput) {
+        // Try to get a shorter name from the display_name
+        let shortName = result.display_name;
+        const parts = result.display_name.split(',');
+        if (parts.length > 2) {
+            shortName = parts.slice(0, 2).join(',').trim();
+        }
+        searchInput.value = shortName;
+    }
+    
+    // Hide search results
+    document.getElementById('search-results').style.display = 'none';
+    
+    // Show success message
+    showAlert('Location found and selected!', 'success');
+}
+
+// Get current map center coordinates
+function getCurrentMapCenter() {
+    if (!map || !isMapInitialized) {
+        return null;
+    }
+    
+    const center = map.getCenter();
+    return {
+        lat: center.lat,
+        lng: center.lng
+    };
+}
+
+/**
+ * useSelectedLocation() — sends or saves chosen coordinates
+ * Gets current center of map (or last searched location) coordinates
+ * Stores them in hidden input fields and updates delivery address
+ * Shows confirmation message with coordinates
+ */
+function useSelectedLocation() {
+    console.log('📍 Using selected location...');
+    
+    const addressTextElement = document.getElementById('selected-address-text');
+    const addressText = addressTextElement ? addressTextElement.textContent : 'No location selected';
+    const deliveryAddressField = document.querySelector('input[name="delivery_address"]');
+    
+    // Get coordinates from hidden inputs
+    const latInput = document.getElementById('latitude');
+    const lngInput = document.getElementById('longitude');
+    
+    let lat, lng;
+    
+    // If no specific location selected, use map center
+    if (addressText === 'No location selected' || !latInput || !lngInput || !latInput.value || !lngInput.value) {
+        const mapCenter = getCurrentMapCenter();
+        if (!mapCenter) {
+            showAlert('Map not ready. Please wait for the map to load and try again.', 'warning');
+            return;
+        }
+        
+        lat = mapCenter.lat;
+        lng = mapCenter.lng;
+        
+        // Validate map center coordinates
+        if (!isValidCoordinates(lat, lng)) {
+            showAlert('Invalid map center coordinates. Please select a location manually.', 'error');
+            return;
+        }
+        
+        // Select the map center location
+        selectLocation(lat, lng, 'Map Center Location');
+        showAlert('Using map center as selected location. You can now proceed with your order.', 'info');
+        return; // Let the selectLocation function handle the rest
+    } else {
+        // Use existing coordinates
+        lat = parseFloat(latInput.value);
+        lng = parseFloat(lngInput.value);
+        
+        // Validate coordinates
+        if (!isValidCoordinates(lat, lng)) {
+            showAlert('Invalid location coordinates. Please select a new location.', 'error');
+            return;
+        }
+    }
+    
+    // Update delivery address field with the selected address
+    if (deliveryAddressField && addressText !== 'No location selected') {
+        deliveryAddressField.value = addressText;
+        console.log('✅ Updated delivery address field:', addressText);
+    }
+    
+    // Update hidden coordinate fields
+    if (latInput) latInput.value = lat;
+    if (lngInput) lngInput.value = lng;
+    
+    // Show confirmation with coordinates and address
+    const shortCoords = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    showAlert(`✅ Location confirmed! Address: ${addressText.substring(0, 50)}${addressText.length > 50 ? '...' : ''} (${shortCoords})`, 'success');
+    
+    console.log('📍 Location data saved:', {
+        address: addressText,
+        latitude: lat,
+        longitude: lng
+    });
+    
+    // Optional: Send coordinates to backend via AJAX/fetch
+    // This can be uncommented and customized based on backend requirements
+    /*
+    fetch('/api/save-location', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrf_token]').value
+        },
+        body: JSON.stringify({
+            latitude: lat,
+            longitude: lng,
+            address: addressText
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('✅ Location saved to backend:', data);
+        showAlert('Location saved successfully!', 'success');
+    })
+    .catch(error => {
+        console.error('❌ Error saving location:', error);
+        showAlert('Location selected but failed to save to server. You can still proceed.', 'warning');
+    });
+    */
+}
+
+// Show map error
+function showMapError(message) {
+    const mapContainer = document.getElementById('map-container');
+    mapContainer.innerHTML = `
+        <div class="map-loading">
+            <div class="text-center">
+                <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                <h5>Map Unavailable</h5>
+                <p>${message}</p>
+                <button type="button" class="btn btn-primary" onclick="location.reload()">
+                    <i class="fas fa-refresh"></i> Refresh Page
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Show alert
+function showAlert(message, type = 'info') {
+    const alertTypes = {
+        'success': 'alert-success',
+        'error': 'alert-danger',
+        'warning': 'alert-warning',
+        'info': 'alert-info'
+    };
+    
+    const alertClass = alertTypes[type] || 'alert-info';
+    
+    const alert = document.createElement('div');
+    alert.className = `alert ${alertClass} alert-custom alert-dismissible fade show`;
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alert);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+// Setup payment method handlers
+function setupPaymentMethodHandlers() {
+    const paymentMethods = document.querySelectorAll('.payment-radio-modern');
+    
+    paymentMethods.forEach(method => {
+        method.addEventListener('change', function() {
+            // Remove selected class from all options
+            document.querySelectorAll('.payment-option-modern').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            // Add selected class to current option
+            if (this.checked) {
+                this.closest('.payment-option-modern').classList.add('selected');
+                
+                // Check if this is a QR payment method (including eSewa and Khalti)
+                const qrPaymentMethods = [
+                    'esewa', 'khalti', 'ime_pay', 'fonepay', 'prabhu_pay', 'cell_pay', 'mobile_banking', 'bank_transfer'
+                ];
+                
+                if (qrPaymentMethods.includes(this.value)) {
+                    showQRCode(this.value);
+                } else {
+                    hideQRCode();
+                }
+            }
+        });
+    });
+}
+
+// Show QR code
+function showQRCode(paymentMethod) {
+    const qrDisplay = document.getElementById('qr-code-display');
+    const qrImage = document.getElementById('qr-code-image');
+    const qrPaymentName = document.getElementById('qr-payment-name');
+    
+    // Get QR codes from backend data
+    const qrCodes = {{ qr_codes|tojson }};
+    
+    // Map frontend payment method names to backend payment method names
+    const paymentMethodMapping = {
+        'esewa': 'esewa',
+        'khalti': 'khalti',
+        'ime_pay': 'ime_pay',
+        'fonepay': 'fonepay',
+        'prabhu_pay': 'prabhupay',
+        'cell_pay': 'cellpay',
+        'mobile_banking': 'bank',
+        'bank_transfer': 'bank'
+    };
+    
+    // Get the backend payment method name
+    const backendPaymentMethod = paymentMethodMapping[paymentMethod] || paymentMethod;
+    
+    // Check if QR code exists for this payment method
+    if (qrCodes && qrCodes[backendPaymentMethod]) {
+        const qrData = qrCodes[backendPaymentMethod];
+        qrImage.src = `{{ url_for('main.uploaded_file', filename='') }}${qrData.image_filename}`;
+        
+        // Use display name from database or fallback to formatted payment method name
+        const displayName = qrData.display_name || paymentMethod.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+        qrPaymentName.textContent = `Scan QR Code for ${displayName}`;
+        
+        // Update instructions based on payment method
+        updateQRInstructions(paymentMethod, displayName);
+        
+        qrDisplay.style.display = 'block';
+        
+        // Add animation
+        qrDisplay.style.opacity = '0';
+        qrDisplay.style.transform = 'translateY(30px)';
+        setTimeout(() => {
+            qrDisplay.style.transition = 'all 0.5s ease';
+            qrDisplay.style.opacity = '1';
+            qrDisplay.style.transform = 'translateY(0)';
+        }, 10);
+    } else {
+        // Hide QR code if no QR code is available for this payment method
+        console.log(`No QR code available for payment method: ${paymentMethod}`);
+        hideQRCode();
+        
+        // Show a message to the user
+        showAlert(`QR code for ${paymentMethod.replace('_', ' ')} is not available. Please contact admin.`, 'warning');
+    }
+}
+
+// Update QR instructions based on payment method
+function updateQRInstructions(paymentMethod, displayName) {
+    const instruction1 = document.getElementById('instruction-1');
+    const instruction2 = document.getElementById('instruction-2');
+    const instruction3 = document.getElementById('instruction-3');
+    
+    if (paymentMethod === 'esewa') {
+        instruction1.textContent = 'Open eSewa mobile app';
+        instruction2.textContent = 'Scan this QR code with eSewa';
+        instruction3.textContent = 'Complete payment in eSewa app';
+    } else if (paymentMethod === 'khalti') {
+        instruction1.textContent = 'Open Khalti mobile app';
+        instruction2.textContent = 'Scan this QR code with Khalti';
+        instruction3.textContent = 'Complete payment in Khalti app';
+    } else if (paymentMethod === 'ime_pay') {
+        instruction1.textContent = 'Open IME Pay mobile app';
+        instruction2.textContent = 'Scan this QR code with IME Pay';
+        instruction3.textContent = 'Complete payment in IME Pay app';
+    } else if (paymentMethod === 'fonepay') {
+        instruction1.textContent = 'Open FonePay mobile app';
+        instruction2.textContent = 'Scan this QR code with FonePay';
+        instruction3.textContent = 'Complete payment in FonePay app';
+    } else {
+        // Default instructions for other payment methods
+        instruction1.textContent = `Open your ${displayName} app`;
+        instruction2.textContent = 'Scan this QR code';
+        instruction3.textContent = 'Complete the payment';
+    }
+}
+
+// Hide QR code
+function hideQRCode() {
+    const qrDisplay = document.getElementById('qr-code-display');
+    
+    if (qrDisplay.style.display !== 'none') {
+        qrDisplay.style.transition = 'all 0.3s ease';
+        qrDisplay.style.opacity = '0';
+        qrDisplay.style.transform = 'translateY(-20px)';
+        
+        setTimeout(() => {
+            qrDisplay.style.display = 'none';
+        }, 300);
+    }
+}
+
+// QR Code enlargement and download functions
+function enlargeQRCode() {
+    const qrImage = document.getElementById('qr-code-image');
+    const modalImage = document.getElementById('modal-qr-image');
+    const modalPaymentName = document.getElementById('modal-payment-name');
+    const paymentName = document.getElementById('qr-payment-name');
+    
+    if (qrImage && modalImage) {
+        modalImage.src = qrImage.src;
+        modalImage.alt = qrImage.alt;
+        modalPaymentName.textContent = paymentName.textContent;
+        
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('qrCodeModal'));
+        modal.show();
+    }
+}
+
+function downloadQRCode() {
+    const qrImage = document.getElementById('qr-code-image');
+    const paymentName = document.getElementById('qr-payment-name').textContent;
+    
+    if (qrImage && qrImage.src) {
+        downloadImage(qrImage.src, `${paymentName.replace(/\s+/g, '_').toLowerCase()}_qr_code`);
+    }
+}
+
+function downloadQRCodeFromModal() {
+    const modalImage = document.getElementById('modal-qr-image');
+    const modalPaymentName = document.getElementById('modal-payment-name').textContent;
+    
+    if (modalImage && modalImage.src) {
+        downloadImage(modalImage.src, `${modalPaymentName.replace(/\s+/g, '_').toLowerCase()}_qr_code`);
+    }
+}
+
+function downloadImage(imageSrc, filename) {
+    // Create a temporary anchor element
+    const link = document.createElement('a');
+    link.href = imageSrc;
+    link.download = filename;
+    
+    // Append to body, click, and remove
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Hide search results when clicking outside
+document.addEventListener('click', function(e) {
+    const searchResults = document.getElementById('search-results');
+    const addressSearch = document.getElementById('address-search');
+    
+    if (!addressSearch.contains(e.target) && !searchResults.contains(e.target)) {
+        searchResults.style.display = 'none';
+    }
+});
+
+// Payment processing functions
+async function handleFormSubmission(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const paymentMethod = formData.get('payment_method');
+    
+    if (!paymentMethod) {
+        showAlert('Please select a payment method.', 'error');
+        return;
+    }
+    
+    // Show loading state
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    
+    try {
+        if (paymentMethod === 'cod') {
+            // Handle Cash on Delivery - submit form normally
+            await handleCODPayment(formData);
+        } else {
+            // Handle all other payments as QR code payments (including eSewa, Khalti, IME Pay, FonePay, etc.)
+            await handleQRPayment(paymentMethod, formData);
+        }
+    } catch (error) {
+        console.error('Payment processing error:', error);
+        showAlert('Payment processing failed. Please try again.', 'error');
+    } finally {
+        // Restore button state
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    }
+}
+
+async function handleCODPayment(formData) {
+    try {
+        const response = await fetch('{{ url_for("orders.checkout") }}', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            // Redirect to success page or reload
+            window.location.reload();
+        } else {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to place order');
+        }
+    } catch (error) {
+        throw new Error('Failed to process COD payment: ' + error.message);
+    }
+}
+
+async function handleDigitalPayment(gateway, formData) {
+    try {
+        // First, create the order
+        const orderResponse = await fetch('{{ url_for("orders.checkout") }}', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!orderResponse.ok) {
+            throw new Error('Failed to create order');
+        }
+        
+        const orderData = await orderResponse.json();
+        const orderId = orderData.order_id;
+        
+        // Calculate total amount (including delivery)
+        const total = {{ total + 50 }};
+        
+        // Initiate payment with the gateway
+        const paymentData = {
+            gateway: gateway,
+            amount: total * 100, // Convert to paisa for Nepali gateways
+            order_id: orderId,
+            return_url: window.location.origin + '/payment/callback/' + gateway + '/success',
+            website_url: window.location.origin
+        };
+        
+        const paymentResponse = await fetch('/api/payment/initiate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(paymentData)
+        });
+        
+        if (!paymentResponse.ok) {
+            throw new Error('Failed to initiate payment');
+        }
+        
+        const paymentResult = await paymentResponse.json();
+        
+        if (gateway === 'khalti') {
+            // Redirect to Khalti payment page
+            window.location.href = paymentResult.payment_url;
+        } else if (gateway === 'esewa') {
+            // Submit eSewa form
+            document.body.insertAdjacentHTML('beforeend', paymentResult.payment_form);
+            document.getElementById('esewaForm').submit();
+        }
+        
+    } catch (error) {
+        throw new Error('Failed to process digital payment: ' + error.message);
+    }
+}
+
+async function handleQRPayment(paymentMethod, formData) {
+    try {
+        // For QR payments, we create the order and show instructions
+        const response = await fetch('{{ url_for("orders.checkout") }}', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            showAlert('Order placed successfully! Please complete payment using the QR code above.', 'success');
+            // You might want to redirect to an order confirmation page
+            setTimeout(() => {
+                window.location.href = '/orders/my-orders';
+            }, 3000);
+        } else {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to place order');
+        }
+    } catch (error) {
+        throw new Error('Failed to process QR payment: ' + error.message);
+    }
+}
+
+// Payment status checking (for digital payments)
+async function checkPaymentStatus(orderId, gateway) {
+    try {
+        const response = await fetch(`/api/payment/status/${gateway}?order_id=${orderId}`);
+        const data = await response.json();
+        
+        if (data.status === 'completed') {
+            showAlert('Payment completed successfully!', 'success');
+            window.location.href = '/orders/my-orders';
+        } else if (data.status === 'failed') {
+            showAlert('Payment failed. Please try again.', 'error');
+        }
+        
+        return data.status;
+    } catch (error) {
+        console.error('Error checking payment status:', error);
+        return 'unknown';
+    }
+}
+
+// Load available payment gateways on page load
+async function loadAvailableGateways() {
+    try {
+        const response = await fetch('/api/payment/gateways');
+        const gateways = await response.json();
+        
+        // Update UI to show only available gateways
+        gateways.forEach(gateway => {
+            const element = document.getElementById(`payment_${gateway.name}`);
+            if (element) {
+                element.closest('.payment-option-modern').style.display = 'block';
+            }
+        });
+        
+        // Hide unavailable gateways
+        const allPaymentOptions = document.querySelectorAll('.payment-option-modern[data-payment]');
+        allPaymentOptions.forEach(option => {
+            const paymentType = option.dataset.payment;
+            const isAvailable = gateways.some(g => g.name === paymentType);
+            
+            if (!isAvailable && paymentType !== 'cod') {
+                option.style.display = 'none';
+            }
+        });
+        
+    } catch (error) {
+        console.error('Failed to load available gateways:', error);
+    }
+}
+
+// Initialize payment gateways when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadAvailableGateways();
+});
+
+console.log('✅ Checkout page scripts loaded successfully');
+</script>
 {% endblock %}

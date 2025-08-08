@@ -23,11 +23,11 @@
                                     Order #{{ order.order_number }}
                                 </h6>
                                 <small class="text-muted">
-                                    Placed on {{ order.created_at.strftime('%B %d, %Y') }}
+                                    Placed on {{ order.created_at.strftime('%B %d, %Y') if order.created_at else 'N/A' }}
                                 </small>
                             </div>
                             <div class="col-md-3 text-center">
-                                <span class="badge bg-{{ 'success' if order.status == 'delivered' else ('primary' if order.status == 'processing' else ('warning' if order.status == 'pending' else 'secondary')) }} fs-6">
+                                <span class="badge bg-{{ 'success' if order.status == 'delivered' else ('primary' if order.status == 'processing' else ('warning' if order.status == 'pending' else ('danger' if order.status == 'cancelled' else 'secondary'))) }} fs-6">
                                     {{ order.get_status_nepali() }}
                                 </span>
                             </div>
@@ -45,7 +45,7 @@
                                 {% for item in order.order_items[:3] %}
                                 <div class="d-flex align-items-center mb-2">
                                     {% if item.product.image_url %}
-                                    <img src="{{ url_for('uploaded_file', filename=item.product.image_url) }}" 
+                                    <img src="{{ url_for('main.uploaded_file', filename=item.product.image_url) }}" 
                                          class="rounded me-2" style="width: 40px; height: 40px; object-fit: cover;" 
                                          alt="{{ item.product.name }}">
                                     {% else %}
@@ -72,7 +72,7 @@
                                 <h6 class="mb-2">Delivery Info:</h6>
                                 <p class="mb-1 small">
                                     <i class="fas fa-map-marker-alt me-2"></i>
-                                    {{ order.delivery_address[:50] }}...
+                                    {{ order.formatted_delivery_address[:50] }}...
                                 </p>
                                 <p class="mb-1 small">
                                     <i class="fas fa-phone me-2"></i>
@@ -97,13 +97,13 @@
                                 
                                 {% if order.status == 'delivered' %}
                                 <button class="btn btn-outline-success btn-sm w-100" 
-                                        onclick="showReviewModal({{ order.id }})">
+                                        onclick="showReviewModal('{{ order.id }}')">
                                     <i class="fas fa-star me-1"></i>
                                     Review
                                 </button>
                                 {% elif order.status == 'pending' %}
                                 <button class="btn btn-outline-danger btn-sm w-100" 
-                                        onclick="cancelOrder({{ order.id }})">
+                                        onclick="cancelOrder('{{ order.id }}')">
                                     <i class="fas fa-times me-1"></i>
                                     Cancel
                                 </button>
@@ -124,7 +124,7 @@
             <i class="fas fa-box-open fa-5x text-muted mb-4"></i>
             <h4>No orders yet</h4>
             <p class="text-muted mb-4">तपाईंले अहिलेसम्म कुनै अर्डर गर्नुभएको छैन</p>
-            <a href="{{ url_for('product_list') }}" class="btn btn-primary">
+            <a href="{{ url_for('products.list') }}" class="btn btn-primary">
                 <i class="fas fa-shopping-bag me-2"></i>
                 Start Shopping
             </a>
@@ -153,9 +153,56 @@
 
 <script>
 function cancelOrder(orderId) {
-    if (confirm('Are you sure you want to cancel this order?')) {
-        // Implement order cancellation logic
-        alert('Order cancellation feature will be implemented');
+    if (confirm('के तपाईं यो अर्डर रद्द गर्न चाहनुहुन्छ? / Are you sure you want to cancel this order?')) {
+        // Show loading state
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Cancelling...';
+        button.disabled = true;
+        
+        // Make AJAX request to cancel order
+        fetch(`/cancel_order/${orderId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                if (window.MeatShop && window.MeatShop.showToast) {
+                    window.MeatShop.showToast(data.message, 'success');
+                } else {
+                    alert(data.message);
+                }
+                // Reload the page to show updated status
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                // Show error message
+                if (window.MeatShop && window.MeatShop.showToast) {
+                    window.MeatShop.showToast(data.message, 'error');
+                } else {
+                    alert(data.message);
+                }
+                // Restore button state
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (window.MeatShop && window.MeatShop.showToast) {
+                window.MeatShop.showToast('अर्डर रद्द गर्न सकिएन / Failed to cancel order', 'error');
+            } else {
+                alert('अर्डर रद्द गर्न सकिएन / Failed to cancel order');
+            }
+            // Restore button state
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
     }
 }
 

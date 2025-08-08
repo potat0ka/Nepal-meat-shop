@@ -21,12 +21,31 @@
         font-size: 1.1rem;
     }
 
-    .hero-section h1 {
-        font-size: 1.8rem;
+    .hero-section {
+        min-height: 80vh;
+        padding: 2rem 0;
     }
 
-    .hero-section p {
-        font-size: 0.9rem;
+    .hero-section .display-3 {
+        font-size: 2.5rem;
+    }
+
+    .hero-section .fs-4 {
+        font-size: 1.1rem !important;
+    }
+
+    .hero-section .fs-5 {
+        font-size: 1rem !important;
+    }
+
+    .hero-buttons .btn {
+        display: block;
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    .hero-buttons .btn:last-child {
+        margin-bottom: 0;
     }
 
     .card-title {
@@ -34,8 +53,12 @@
     }
 
     .btn-lg {
-        padding: 0.5rem 1rem;
+        padding: 0.75rem 1.5rem;
         font-size: 1rem;
+    }
+
+    .feature-icon i {
+        font-size: 3rem !important;
     }
 
     .category-icon {
@@ -53,6 +76,14 @@
     .container-fluid {
         padding-left: 10px;
         padding-right: 10px;
+    }
+
+    .cta-section .display-6 {
+        font-size: 1.8rem;
+    }
+
+    .stat-item h4 {
+        font-size: 2rem;
     }
 }
 
@@ -76,11 +107,16 @@
 }
 
 /* Global Styles */
+html {
+    scroll-behavior: smooth;
+}
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;
     color: var(--dark-color);
     background-color: #fafafa;
+    overflow-x: hidden;
 }
 
 /* Navigation Enhancements */
@@ -108,13 +144,15 @@ body {
 
 /* Hero Section */
 .hero-section {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
     background: linear-gradient(135deg, var(--nepal-red) 0%, var(--danger-color) 50%, var(--nepal-blue) 100%);
     position: relative;
     overflow: hidden;
 }
 
-.hero-section::before {
-    content: '';
+.hero-background {
     position: absolute;
     top: 0;
     left: 0;
@@ -124,9 +162,60 @@ body {
     opacity: 0.3;
 }
 
-.hero-section .container {
+.hero-content {
+    animation: fadeInUp 1s ease-out;
+}
+
+.hero-icon {
+    animation: bounce 2s infinite;
+}
+
+.hero-title {
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    animation: fadeInUp 1s ease-out 0.2s both;
+}
+
+.hero-buttons {
+    animation: fadeInUp 1s ease-out 0.4s both;
+}
+
+.hero-wave {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    overflow: hidden;
+    line-height: 0;
+}
+
+.hero-wave svg {
     position: relative;
-    z-index: 2;
+    display: block;
+    width: calc(100% + 1.3px);
+    height: 60px;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
 }
 
 /* Card Enhancements */
@@ -144,9 +233,13 @@ body {
 }
 
 .card-header {
-    background: linear-gradient(135deg, var(--light-color) 0%, #e9ecef 100%);
     border-bottom: 1px solid #dee2e6;
     font-weight: 600;
+}
+
+/* Default card header background for cards without specific background classes */
+.card-header:not([class*="bg-"]) {
+    background: linear-gradient(135deg, var(--light-color) 0%, #e9ecef 100%);
 }
 
 /* Product Cards */
@@ -166,6 +259,47 @@ body {
 
 .product-card:hover .card-img-top {
     transform: scale(1.05);
+}
+
+/* Feature Cards */
+.feature-card {
+    transition: all 0.4s ease;
+    border: none;
+    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    transition: left 0.5s;
+}
+
+.feature-card:hover::before {
+    left: 100%;
+}
+
+.feature-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2) !important;
+}
+
+.feature-icon {
+    transition: all 0.4s ease;
+}
+
+.feature-card:hover .feature-icon {
+    transform: scale(1.2) rotate(5deg);
+}
+
+.feature-badge {
+    margin-top: 1rem;
 }
 
 /* Category Cards */
@@ -190,6 +324,76 @@ body {
 
 .category-card:hover .category-icon i {
     color: var(--primary-color) !important;
+}
+
+/* CTA Section */
+.cta-section {
+    background: linear-gradient(135deg, var(--nepal-red) 0%, var(--danger-color) 50%, var(--nepal-blue) 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.cta-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M20 20c0 4.4-3.6 8-8 8s-8-3.6-8-8 3.6-8 8-8 8 3.6 8 8zm0-20c0 4.4-3.6 8-8 8s-8-3.6-8-8 3.6-8 8-8 8 3.6 8 8z'/%3E%3C/g%3E%3C/svg%3E") repeat;
+}
+
+.cta-content {
+    animation: fadeInUp 1s ease-out;
+}
+
+.cta-buttons .btn {
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.cta-buttons .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+.stat-item {
+    padding: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.stat-item:hover {
+    transform: scale(1.05);
+}
+
+.stat-item h4 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Custom Badge Colors */
+.bg-purple {
+    background-color: #6f42c1 !important;
+}
+
+.badge.bg-purple {
+    background-color: #6f42c1 !important;
+    color: white !important;
+}
+
+.btn-outline-purple {
+    color: #6f42c1;
+    border-color: #6f42c1;
+}
+
+.btn-outline-purple:hover {
+    background-color: #6f42c1;
+    border-color: #6f42c1;
+    color: white;
+}
+
+.card.bg-purple {
+    background-color: #6f42c1 !important;
+    color: white !important;
 }
 
 /* Badges */
@@ -659,4 +863,202 @@ footer a:hover {
     background-clip: text;
     -webkit-text-fill-color: transparent;
     font-weight: bold;
+}
+
+/* Quantity Selector Styles */
+.quantity-selector {
+    display: flex;
+    align-items: center;
+    max-width: 200px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.quantity-selector:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.quantity-btn {
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0.5rem 0.75rem;
+    background: #f8f9fa;
+    color: var(--dark-color);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 38px;
+}
+
+.quantity-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: scale(1.05);
+}
+
+.quantity-btn:active {
+    transform: scale(0.95);
+}
+
+.quantity-btn:disabled {
+    background: #e9ecef;
+    color: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.quantity-btn:disabled:hover {
+    background: #e9ecef;
+    color: #6c757d;
+    transform: none;
+}
+
+.quantity-input {
+    border: none !important;
+    border-radius: 0 !important;
+    text-align: center;
+    font-weight: 600;
+    font-size: 1rem;
+    background: white;
+    flex: 1;
+    min-width: 60px;
+    box-shadow: none !important;
+    cursor: default;
+}
+
+.quantity-input:focus {
+    outline: none;
+    box-shadow: none !important;
+}
+
+/* Mobile responsive for quantity selector */
+@media (max-width: 576px) {
+    .quantity-selector {
+        max-width: 160px;
+    }
+    
+    .quantity-btn {
+        min-width: 35px;
+        height: 35px;
+        padding: 0.375rem 0.5rem;
+    }
+    
+    .quantity-input {
+        font-size: 0.9rem;
+        min-width: 50px;
+    }
+}
+
+/* Dynamic Price Display Styles */
+.price-display {
+    padding: 1rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    border: 1px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.price-display:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+.unit-price {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+.total-price-section {
+    padding-top: 0.75rem;
+    border-top: 1px solid #dee2e6;
+    animation: fadeInUp 0.3s ease;
+}
+
+.total-price {
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.total-price.updating {
+    transform: scale(1.05);
+    color: var(--primary-color) !important;
+}
+
+.quantity-display {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes priceUpdate {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.price-update-animation {
+    animation: priceUpdate 0.3s ease;
+}
+
+/* Mobile responsive for price display */
+@media (max-width: 576px) {
+    .price-display {
+        padding: 0.75rem;
+    }
+    
+    .unit-price .h4 {
+        font-size: 1.25rem;
+    }
+    
+    .total-price {
+        font-size: 1.5rem !important;
+    }
+}
+
+/* Business Insights Gradient Button Styles */
+.btn-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-gradient-primary:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-gradient-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.bg-gradient-primary:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
 }

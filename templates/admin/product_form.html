@@ -215,6 +215,20 @@
                         Product Image
                     </h6>
 
+                    <!-- Current Image Display (for editing) -->
+                    {% if product and product.image_url %}
+                    <div class="mb-3">
+                        <label class="form-label">Current Image:</label>
+                        <div>
+                            <img src="{{ url_for('main.uploaded_file', filename=product.image_url) }}" 
+                                 alt="{{ product.name }}" 
+                                 class="img-thumbnail" 
+                                 style="max-width: 200px;">
+                        </div>
+                        <div class="form-text text-muted">Upload a new image to replace the current one</div>
+                    </div>
+                    {% endif %}
+
                     <div class="mb-3">
                         {{ form.image.label(class="form-label") }}
                         {{ form.image(class="form-control" + (" is-invalid" if form.image.errors else "")) }}
@@ -238,7 +252,7 @@
 
                     <!-- Form Actions -->
                     <div class="d-flex justify-content-between mt-4">
-                        <a href="{{ url_for('admin_products') }}" class="btn btn-outline-secondary">
+                        <a href="{{ url_for('admin.admin_products') }}" class="btn btn-outline-secondary">
                             <i class="fas fa-arrow-left me-2"></i>
                             Cancel
                         </a>
@@ -309,60 +323,186 @@ document.getElementById('freshness_hours').addEventListener('change', function()
     console.log('Freshness label:', label);
 });
 
-// Nepali transliteration mapping
+// English to Nepali meaningful translation mapping
 const englishToNepali = {
-    // Common meat terms
-    'sungur': 'सुँगुर',
+    // Animals and meat types
     'pork': 'सुँगुरको मासु',
+    'pig': 'सुँगुर',
+    'sungur': 'सुँगुर',
+    'buffalo': 'भैंसीको मासु',
     'buff': 'भैंसी',
-    'buffalo': 'भैंसी',
+    'goat': 'बाख्राको मासु',
     'khasi': 'खसी',
-    'goat': 'बाख्रा',
-    'chicken': 'कुखुरा',
-    'fish': 'माछा',
     'mutton': 'खसीको मासु',
+    'chicken': 'कुखुराको मासु',
+    'duck': 'हाँसको मासु',
+    'fish': 'माछा',
+    'lamb': 'भेडाको मासु',
+    'beef': 'गाईको मासु',
+    'turkey': 'टर्कीको मासु',
 
-    // Meat cuts
-    'chop': 'चप',
+    // Body parts and cuts (meaningful translations)
     'leg': 'खुट्टा',
+    'thigh': 'तिघ्रा',
     'shoulder': 'काँध',
-    'ribs': 'करङ',
-    'belly': 'पेट',
     'neck': 'घाँटी',
     'back': 'ढाड',
-    'thigh': 'तिघ्रा',
+    'belly': 'पेट',
+    'chest': 'छाती',
     'breast': 'छाती',
     'wing': 'पखेटा',
+    'ribs': 'करङ',
+    'tail': 'पुच्छर',
+    'head': 'टाउको',
+    'liver': 'कलेजो',
+    'kidney': 'मिर्गौला',
+    'heart': 'मुटु',
+    'tongue': 'जिब्रो',
+    'brain': 'दिमाग',
+    'feet': 'खुट्टा',
+    'hand': 'हात',
+    'arm': 'हात',
+    'foreleg': 'अगाडिको खुट्टा',
+    'hind leg': 'पछाडिको खुट्टा',
+    'front leg': 'अगाडिको खुट्टा',
+    'back leg': 'पछाडिको खुट्टा',
 
-    // Common words
+    // Preparation and cooking terms
     'fresh': 'ताजा',
-    'meat': 'मासु',
-    'bone': 'हड्डी',
-    'boneless': 'हड्डीरहित',
-    'with': 'सहित',
-    'without': 'बिना',
-    'kg': 'केजी',
-    'gram': 'ग्राम',
-    'piece': 'टुक्रा',
-    'cut': 'काटिएको',
+    'frozen': 'जमेको',
+    'dried': 'सुकेको',
+    'smoked': 'धुवाँमा पकाएको',
+    'grilled': 'ग्रिल गरिएको',
+    'roasted': 'भुटेको',
+    'fried': 'भुटेको',
+    'boiled': 'उमालेको',
+    'steamed': 'बाफमा पकाएको',
+    'raw': 'काँचो',
+    'cooked': 'पकाएको',
+    'marinated': 'मसलामा राखेको',
+    'seasoned': 'मसला हालेको',
+    'spiced': 'मसलेदार',
+    'tender': 'नरम',
+    'tough': 'कडा',
+    'lean': 'बोसो नभएको',
+    'fatty': 'बोसो भएको',
+
+    // Cuts and preparation styles
+    'chop': 'चप',
+    'steak': 'स्टेक',
+    'fillet': 'फिलेट',
+    'slice': 'टुक्रा',
+    'chunk': 'ठूलो टुक्रा',
+    'mince': 'किमा',
+    'ground': 'पिसेको',
+    'diced': 'साना टुक्रामा काटिएको',
+    'cubed': 'घनाकार काटिएको',
+    'strips': 'लामो टुक्रा',
     'whole': 'पूरो',
     'half': 'आधा',
     'quarter': 'चौथाई',
+    'boneless': 'हड्डीरहित',
+    'with bone': 'हड्डी सहित',
+    'bone in': 'हड्डी सहित',
+    'skinless': 'छाला नभएको',
+    'with skin': 'छाला सहित',
 
-    // Basic characters
-    'a': 'अ', 'aa': 'आ', 'i': 'इ', 'ii': 'ई', 'u': 'उ', 'uu': 'ऊ',
-    'e': 'ए', 'ai': 'ऐ', 'o': 'ओ', 'au': 'औ',
-    'ka': 'क', 'kha': 'ख', 'ga': 'ग', 'gha': 'घ', 'nga': 'ङ',
-    'cha': 'च', 'chha': 'छ', 'ja': 'ज', 'jha': 'झ', 'nya': 'ञ',
-    'ta': 'ट', 'tha': 'ठ', 'da': 'ड', 'dha': 'ढ', 'na': 'ण',
-    'taa': 'त', 'thaa': 'थ', 'daa': 'द', 'dhaa': 'ध', 'naa': 'न',
-    'pa': 'प', 'pha': 'फ', 'ba': 'ब', 'bha': 'भ', 'ma': 'म',
-    'ya': 'य', 'ra': 'र', 'la': 'ल', 'wa': 'व', 'sha': 'श',
-    'shha': 'ष', 'sa': 'स', 'ha': 'ह'
+    // Quality and freshness
+    'premium': 'उत्कृष्ट',
+    'quality': 'गुणस्तर',
+    'organic': 'जैविक',
+    'local': 'स्थानीय',
+    'imported': 'आयातित',
+    'farm': 'फार्म',
+    'free range': 'खुला चरन',
+    'grass fed': 'घाँस खाएको',
+    'natural': 'प्राकृतिक',
+    'healthy': 'स्वस्थ',
+    'nutritious': 'पोषक',
+
+    // Common descriptive words
+    'meat': 'मासु',
+    'food': 'खाना',
+    'protein': 'प्रोटिन',
+    'bone': 'हड्डी',
+    'fat': 'बोसो',
+    'skin': 'छाला',
+    'blood': 'रगत',
+    'juice': 'रस',
+    'gravy': 'झोल',
+    'curry': 'तरकारी',
+    'soup': 'सूप',
+    'stew': 'स्ट्यू',
+
+    // Measurements and quantities
+    'kg': 'केजी',
+    'kilogram': 'किलोग्राम',
+    'gram': 'ग्राम',
+    'pound': 'पाउन्ड',
+    'ounce': 'आउन्स',
+    'piece': 'टुक्रा',
+    'pieces': 'टुक्राहरू',
+    'pack': 'प्याकेट',
+    'packet': 'प्याकेट',
+    'box': 'बक्स',
+    'bag': 'झोला',
+
+    // Common adjectives
+    'big': 'ठूलो',
+    'small': 'सानो',
+    'large': 'ठूलो',
+    'medium': 'मध्यम',
+    'thick': 'बाक्लो',
+    'thin': 'पातलो',
+    'long': 'लामो',
+    'short': 'छोटो',
+    'wide': 'चौडा',
+    'narrow': 'साँघुरो',
+    'hot': 'तातो',
+    'cold': 'चिसो',
+    'warm': 'न्यानो',
+    'cool': 'चिसो',
+    'spicy': 'तीतो',
+    'mild': 'हल्का',
+    'sweet': 'मिठो',
+    'sour': 'अमिलो',
+    'bitter': 'तितो',
+    'salty': 'नुनिलो',
+
+    // Prepositions and connectors
+    'with': 'सहित',
+    'without': 'बिना',
+    'and': 'र',
+    'or': 'वा',
+    'of': 'को',
+    'in': 'मा',
+    'on': 'मा',
+    'for': 'को लागि',
+    'from': 'बाट',
+    'to': 'लाई',
+
+    // Special meat shop terms
+    'special': 'विशेष',
+    'today': 'आज',
+    'daily': 'दैनिक',
+    'weekly': 'साप्ताहिक',
+    'monthly': 'मासिक',
+    'offer': 'अफर',
+    'discount': 'छुट',
+    'sale': 'बिक्री',
+    'price': 'मूल्य',
+    'cost': 'लागत',
+    'cheap': 'सस्तो',
+    'expensive': 'महँगो',
+    'affordable': 'किफायती',
+    'best': 'सबैभन्दा राम्रो',
+    'good': 'राम्रो',
+    'excellent': 'उत्कृष्ट',
+    'perfect': 'उत्तम'
 };
 
 function translateToNepali() {
-    const englishName = document.getElementById('name').value.toLowerCase();
+    const englishName = document.getElementById('name').value.toLowerCase().trim();
     const nepaliField = document.getElementById('name_nepali');
 
     if (!englishName) {
@@ -372,31 +512,84 @@ function translateToNepali() {
 
     let translated = englishName;
 
-    // Replace whole words first (longer matches first)
+    // Sort keys by length (longer phrases first) to handle multi-word translations
     const sortedKeys = Object.keys(englishToNepali).sort((a, b) => b.length - a.length);
 
+    // Replace phrases and words with their Nepali equivalents
     for (const english of sortedKeys) {
-        const regex = new RegExp('\\b' + english + '\\b', 'gi');
+        // Create regex that matches whole words/phrases with word boundaries
+        const escapedEnglish = english.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp('\\b' + escapedEnglish + '\\b', 'gi');
         translated = translated.replace(regex, englishToNepali[english]);
     }
 
-    nepaliField.value = translated;
-}
+    // Clean up extra spaces and format properly
+    translated = translated.replace(/\s+/g, ' ').trim();
 
-// Auto-transliterate on typing
-document.getElementById('name_nepali').addEventListener('input', function(e) {
-    const input = e.target.value.toLowerCase();
-    let translated = input;
-
-    // Replace as user types
-    for (const [english, nepali] of Object.entries(englishToNepali)) {
-        if (input.includes(english)) {
-            translated = translated.replace(new RegExp(english, 'g'), nepali);
-        }
+    // Capitalize first letter if it's English
+    if (translated && /^[a-zA-Z]/.test(translated)) {
+        translated = translated.charAt(0).toUpperCase() + translated.slice(1);
     }
 
-    if (translated !== input) {
-        e.target.value = translated;
+    nepaliField.value = translated;
+
+    // Show success message
+    if (translated !== englishName) {
+        // Temporarily show success feedback
+        const button = event.target;
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check text-success"></i>';
+        button.classList.add('btn-success');
+        button.classList.remove('btn-outline-secondary');
+        
+        setTimeout(() => {
+            button.innerHTML = originalHTML;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-secondary');
+        }, 1500);
+    } else {
+        // Show that no translation was found
+        const button = event.target;
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-question text-warning"></i>';
+        button.classList.add('btn-warning');
+        button.classList.remove('btn-outline-secondary');
+        
+        setTimeout(() => {
+            button.innerHTML = originalHTML;
+            button.classList.remove('btn-warning');
+            button.classList.add('btn-outline-secondary');
+        }, 1500);
+    }
+}
+
+// Auto-transliterate on typing (only for complete words)
+document.getElementById('name_nepali').addEventListener('input', function(e) {
+    const input = e.target.value;
+    const words = input.toLowerCase().split(/\s+/);
+    let translated = input;
+    let hasTranslation = false;
+
+    // Only translate if the user has finished typing a word (ends with space or common punctuation)
+    if (input.endsWith(' ') || input.endsWith(',') || input.endsWith('.')) {
+        // Sort keys by length (longer phrases first)
+        const sortedKeys = Object.keys(englishToNepali).sort((a, b) => b.length - a.length);
+        
+        for (const english of sortedKeys) {
+            // Only replace complete words with word boundaries
+            const escapedEnglish = english.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp('\\b' + escapedEnglish + '\\b', 'gi');
+            if (regex.test(translated.toLowerCase())) {
+                translated = translated.replace(regex, englishToNepali[english]);
+                hasTranslation = true;
+            }
+        }
+
+        if (hasTranslation) {
+            // Clean up extra spaces
+            translated = translated.replace(/\s+/g, ' ');
+            e.target.value = translated;
+        }
     }
 });
 </script>

@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}Payment Gateways - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-credit-card me-2"></i>Payment Gateway Management
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <!-- Gateway Status Overview -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5>Gateway Status Overview</h5>
+                            <div class="row" id="gateway-status">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Available Gateways -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h5>Available Payment Gateways</h5>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Gateway</th>
+                                            <th>Status</th>
+                                            <th>Environment</th>
+                                            <th>Configuration</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="gateways-table">
+                                        <!-- Will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Configuration Instructions -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>Configuration Instructions</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="accordion" id="configAccordion">
+                                        <!-- Khalti Configuration -->
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header" id="khaltiHeading">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#khaltiCollapse">
+                                                    <i class="fas fa-mobile-alt me-2"></i>Khalti Configuration
+                                                </button>
+                                            </h2>
+                                            <div id="khaltiCollapse" class="accordion-collapse collapse" data-bs-parent="#configAccordion">
+                                                <div class="accordion-body">
+                                                    <h6>Environment Variables Required:</h6>
+                                                    <ul>
+                                                        <li><code>KHALTI_ENABLED</code> - Set to 'true' to enable</li>
+                                                        <li><code>KHALTI_ENVIRONMENT</code> - 'sandbox' or 'production'</li>
+                                                        <li><code>KHALTI_PUBLIC_KEY</code> - Your Khalti public key</li>
+                                                        <li><code>KHALTI_SECRET_KEY</code> - Your Khalti secret key</li>
+                                                    </ul>
+                                                    <h6>Sandbox Credentials:</h6>
+                                                    <p>For testing, you can use Khalti's sandbox environment. Get your credentials from <a href="https://khalti.com" target="_blank">Khalti Dashboard</a>.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- eSewa Configuration -->
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header" id="esewaHeading">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#esewaCollapse">
+                                                    <i class="fas fa-wallet me-2"></i>eSewa Configuration
+                                                </button>
+                                            </h2>
+                                            <div id="esewaCollapse" class="accordion-collapse collapse" data-bs-parent="#configAccordion">
+                                                <div class="accordion-body">
+                                                    <h6>Environment Variables Required:</h6>
+                                                    <ul>
+                                                        <li><code>ESEWA_ENABLED</code> - Set to 'true' to enable</li>
+                                                        <li><code>ESEWA_ENVIRONMENT</code> - 'sandbox' or 'production'</li>
+                                                        <li><code>ESEWA_MERCHANT_CODE</code> - Your eSewa merchant code</li>
+                                                        <li><code>ESEWA_SECRET_KEY</code> - Your eSewa secret key</li>
+                                                        <li><code>ESEWA_CLIENT_ID</code> - Your eSewa client ID</li>
+                                                        <li><code>ESEWA_CLIENT_SECRET</code> - Your eSewa client secret</li>
+                                                    </ul>
+                                                    <h6>Sandbox Credentials (for testing):</h6>
+                                                    <ul>
+                                                        <li>Merchant Code: EPAYTEST</li>
+                                                        <li>Secret Key: 8gBm/:&EnhH.1/q</li>
+                                                        <li>Test IDs: 9806800001 to 9806800005</li>
+                                                        <li>Password: Nepal@123</li>
+                                                        <li>MPIN: 1122</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Future Gateways -->
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header" id="futureHeading">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#futureCollapse">
+                                                    <i class="fas fa-plus-circle me-2"></i>Future Payment Gateways
+                                                </button>
+                                            </h2>
+                                            <div id="futureCollapse" class="accordion-collapse collapse" data-bs-parent="#configAccordion">
+                                                <div class="accordion-body">
+                                                    <p>The following payment gateways are planned for future implementation:</p>
+                                                    <ul>
+                                                        <li><strong>IME Pay</strong> - Digital wallet service</li>
+                                                        <li><strong>ConnectIPS</strong> - Interbank payment system</li>
+                                                        <li><strong>PrabhuPay</strong> - Digital payment platform</li>
+                                                        <li><strong>FonePay</strong> - Mobile payment service</li>
+                                                    </ul>
+                                                    <p>Environment variables for these gateways are already prepared in the configuration.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load gateway status on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadGatewayStatus();
+    loadGatewayDetails();
+});
+
+async function loadGatewayStatus() {
+    try {
+        const response = await fetch('/api/payment/status');
+        const gateways = await response.json();
+        
+        const statusContainer = document.getElementById('gateway-status');
+        statusContainer.innerHTML = '';
+        
+        gateways.forEach(gateway => {
+            const statusCard = `
+                <div class="col-md-3 mb-3">
+                    <div class="card ${gateway.configured ? 'border-success' : 'border-warning'}">
+                        <div class="card-body text-center">
+                            <i class="fas fa-${getGatewayIcon(gateway.name)} fa-2x mb-2 ${gateway.configured ? 'text-success' : 'text-warning'}"></i>
+                            <h6>${gateway.display_name}</h6>
+                            <span class="badge ${gateway.configured ? 'bg-success' : 'bg-warning'}">
+                                ${gateway.configured ? 'Configured' : 'Not Configured'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            statusContainer.insertAdjacentHTML('beforeend', statusCard);
+        });
+    } catch (error) {
+        console.error('Failed to load gateway status:', error);
+    }
+}
+
+async function loadGatewayDetails() {
+    try {
+        const response = await fetch('/api/payment/gateways');
+        const gateways = await response.json();
+        
+        const tableBody = document.getElementById('gateways-table');
+        tableBody.innerHTML = '';
+        
+        // Add all supported gateways (including future ones)
+        const allGateways = [
+            { name: 'khalti', display_name: 'Khalti', description: 'Digital wallet payment' },
+            { name: 'esewa', display_name: 'eSewa', description: 'Digital wallet payment' },
+            { name: 'ime_pay', display_name: 'IME Pay', description: 'Coming soon' },
+            { name: 'connectips', display_name: 'ConnectIPS', description: 'Coming soon' },
+            { name: 'prabhupay', display_name: 'PrabhuPay', description: 'Coming soon' }
+        ];
+        
+        allGateways.forEach(gateway => {
+            const isConfigured = gateways.some(g => g.name === gateway.name);
+            const isAvailable = gateways.some(g => g.name === gateway.name);
+            
+            const row = `
+                <tr>
+                    <td>
+                        <i class="fas fa-${getGatewayIcon(gateway.name)} me-2"></i>
+                        ${gateway.display_name}
+                        <br><small class="text-muted">${gateway.description}</small>
+                    </td>
+                    <td>
+                        <span class="badge ${isAvailable ? 'bg-success' : 'bg-secondary'}">
+                            ${isAvailable ? 'Available' : 'Unavailable'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge bg-info">
+                            ${isConfigured ? 'Sandbox' : 'Not Set'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge ${isConfigured ? 'bg-success' : 'bg-warning'}">
+                            ${isConfigured ? 'Configured' : 'Needs Setup'}
+                        </span>
+                    </td>
+                    <td>
+                        ${isAvailable ? 
+                            '<button class="btn btn-sm btn-primary" onclick="testGateway(\'' + gateway.name + '\')">Test</button>' :
+                            '<span class="text-muted">Coming Soon</span>'
+                        }
+                    </td>
+                </tr>
+            `;
+            tableBody.insertAdjacentHTML('beforeend', row);
+        });
+    } catch (error) {
+        console.error('Failed to load gateway details:', error);
+    }
+}
+
+function getGatewayIcon(gatewayName) {
+    const icons = {
+        'khalti': 'mobile-alt',
+        'esewa': 'wallet',
+        'ime_pay': 'credit-card',
+        'connectips': 'university',
+        'prabhupay': 'money-check-alt'
+    };
+    return icons[gatewayName] || 'credit-card';
+}
+
+async function testGateway(gatewayName) {
+    try {
+        const response = await fetch(`/api/payment/status/${gatewayName}`);
+        const data = await response.json();
+        
+        if (data.configured) {
+            alert(`${gatewayName.toUpperCase()} is properly configured and ready to use!`);
+        } else {
+            alert(`${gatewayName.toUpperCase()} is not properly configured. Please check your environment variables.`);
+        }
+    } catch (error) {
+        alert(`Failed to test ${gatewayName.toUpperCase()}: ${error.message}`);
+    }
+}
+</script>
+{% endblock %}

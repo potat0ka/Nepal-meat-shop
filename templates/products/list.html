@@ -21,8 +21,8 @@
                         <select name="category" class="form-select" onchange="this.form.submit()">
                             <option value="">All Categories</option>
                             {% for category in categories %}
-                            <option value="{{ category.id }}" 
-                                    {% if current_category == category.id %}selected{% endif %}>
+                            <option value="{{ category.name }}" 
+                                    {% if current_category == category.name %}selected{% endif %}>
                                 {{ category.name }}
                             </option>
                             {% endfor %}
@@ -54,15 +54,14 @@
                         <label class="form-label">Preparation</label>
                         <select name="preparation_type" class="form-select" onchange="this.form.submit()">
                             <option value="">All Preparations</option>
-                            <option value="fresh" {% if current_preparation_type == 'fresh' %}selected{% endif %}>
-                                Fresh
+                            {% for prep_type in preparation_types %}
+                            {% if prep_type %}
+                            <option value="{{ prep_type }}" 
+                                    {% if current_preparation_type == prep_type %}selected{% endif %}>
+                                {{ prep_type.title() }}
                             </option>
-                            <option value="processed" {% if current_preparation_type == 'processed' %}selected{% endif %}>
-                                Processed
-                            </option>
-                            <option value="marinated" {% if current_preparation_type == 'marinated' %}selected{% endif %}>
-                                Marinated
-                            </option>
+                            {% endif %}
+                            {% endfor %}
                         </select>
                     </div>
 
@@ -85,7 +84,7 @@
                         </select>
                     </div>
 
-                    <a href="{{ url_for('product_list') }}" class="btn btn-outline-secondary btn-sm w-100">
+                    <a href="{{ url_for('products.list') }}" class="btn btn-outline-secondary btn-sm w-100">
                         Clear Filters
                     </a>
                 </form>
@@ -100,16 +99,16 @@
                 <i class="fas fa-store me-2"></i>
                 Products / उत्पादनहरू
             </h2>
-            <span class="text-muted">{{ products|length }} products found</span>
+            <span class="text-muted">{{ products.total }} products found</span>
         </div>
 
-        {% if products %}
+        {% if products.items %}
         <div class="row">
-            {% for product in products %}
+            {% for product in products.items %}
             <div class="col-md-6 col-lg-4 mb-4">
                 <div class="card h-100 shadow-sm product-card">
                     {% if product.image_url %}
-                    <img src="{{ url_for('uploaded_file', filename=product.image_url) }}" 
+                    <img src="{{ url_for('main.uploaded_file', filename=product.image_url) }}" 
                          class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
                     {% else %}
                     <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
@@ -161,7 +160,7 @@
                     </div>
 
                     <div class="card-footer bg-transparent">
-                        <a href="{{ url_for('product_detail', product_id=product.id) }}" 
+                        <a href="{{ url_for('products.detail', product_id=product._id) }}" 
                            class="btn btn-primary btn-sm w-100">
                             <i class="fas fa-eye me-1"></i>View Details
                         </a>
@@ -175,7 +174,7 @@
             <i class="fas fa-search fa-3x text-muted mb-3"></i>
             <h5>No products found</h5>
             <p class="text-muted">कुनै उत्पादन फेला परेन</p>
-            <a href="{{ url_for('product_list') }}" class="btn btn-outline-primary">
+            <a href="{{ url_for('products.list') }}" class="btn btn-outline-primary">
                 View All Products
             </a>
         </div>
@@ -183,4 +182,3 @@
     </div>
 </div>
 {% endblock %}
-`

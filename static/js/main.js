@@ -10,6 +10,7 @@ let notificationTimeout;
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
+    initializeCartButtons();
 });
 
 /**
@@ -25,6 +26,7 @@ function initializeApp() {
     initializeModals();
     initializeTooltips();
     initializeAnimations();
+    initializeQuantitySelector();
     
     // Set up event listeners
     setupEventListeners();
@@ -138,6 +140,134 @@ function initializeCart() {
                 }
             });
         });
+    });
+}
+
+/**
+ * Initialize quantity selector functionality
+ */
+function initializeQuantitySelector() {
+    const quantitySelectors = document.querySelectorAll('.quantity-selector');
+    
+    quantitySelectors.forEach(selector => {
+        const input = selector.querySelector('.quantity-input');
+        const decreaseBtn = selector.querySelector('[data-action="decrease"]');
+        const increaseBtn = selector.querySelector('[data-action="increase"]');
+        
+        if (!input || !decreaseBtn || !increaseBtn) return;
+        
+        const min = parseFloat(input.getAttribute('min')) || 0.5;
+        const max = parseFloat(input.getAttribute('max')) || 999;
+        const step = parseFloat(input.getAttribute('step')) || 0.5;
+        
+        // Get price elements
+        const totalPriceElement = document.querySelector('.total-price');
+        const quantityDisplayElement = document.querySelector('.quantity-display');
+        const totalPriceSection = document.querySelector('.total-price-section');
+        
+        let unitPrice = 0;
+        if (totalPriceElement) {
+            unitPrice = parseFloat(totalPriceElement.getAttribute('data-unit-price')) || 0;
+        }
+        
+        // Set initial value if empty
+        if (!input.value || parseFloat(input.value) < min) {
+            input.value = min.toFixed(1);
+        }
+        
+        // Update price display
+        function updatePriceDisplay() {
+            if (!totalPriceElement || !quantityDisplayElement || !totalPriceSection) return;
+            
+            const quantity = parseFloat(input.value) || min;
+            const totalPrice = unitPrice * quantity;
+            
+            // Show total price section when quantity selector is used
+            if (totalPriceSection.style.display === 'none') {
+                totalPriceSection.style.display = 'block';
+            }
+            
+            // Add animation class
+            totalPriceElement.classList.add('updating');
+            
+            // Update values
+            totalPriceElement.textContent = `रू ${Math.round(totalPrice).toLocaleString('en-IN')}`;
+            quantityDisplayElement.textContent = quantity.toFixed(1);
+            
+            // Add price update animation
+            totalPriceElement.classList.add('price-update-animation');
+            
+            // Remove animation classes after animation completes
+            setTimeout(() => {
+                totalPriceElement.classList.remove('updating', 'price-update-animation');
+            }, 300);
+        }
+        
+        // Update button states
+        function updateButtonStates() {
+            const currentValue = parseFloat(input.value) || min;
+            decreaseBtn.disabled = currentValue <= min;
+            increaseBtn.disabled = currentValue >= max;
+            updatePriceDisplay();
+        }
+        
+        // Decrease quantity
+        decreaseBtn.addEventListener('click', function() {
+            const currentValue = parseFloat(input.value) || min;
+            const newValue = Math.max(min, currentValue - step);
+            
+            if (newValue >= min) {
+                input.value = newValue.toFixed(1);
+                updateButtonStates();
+                
+                // Add visual feedback
+                this.style.transform = 'scale(0.9)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+            } else {
+                showToast(`Minimum quantity is ${min} kg`, 'warning');
+            }
+        });
+        
+        // Increase quantity
+        increaseBtn.addEventListener('click', function() {
+            const currentValue = parseFloat(input.value) || min;
+            const newValue = Math.min(max, currentValue + step);
+            
+            if (newValue <= max) {
+                input.value = newValue.toFixed(1);
+                updateButtonStates();
+                
+                // Add visual feedback
+                this.style.transform = 'scale(0.9)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+            } else {
+                showToast(`Maximum quantity is ${max} kg`, 'warning');
+            }
+        });
+        
+        // Handle direct input changes
+        input.addEventListener('input', function() {
+            let value = parseFloat(this.value);
+            
+            if (isNaN(value) || value < min) {
+                value = min;
+            } else if (value > max) {
+                value = max;
+                showToast(`Maximum quantity is ${max} kg`, 'warning');
+            }
+            
+            // Round to step
+            value = Math.round(value / step) * step;
+            this.value = value.toFixed(1);
+            updateButtonStates();
+        });
+        
+        // Initial button state and price update
+        updateButtonStates();
     });
 }
 
@@ -622,12 +752,21 @@ function setupEventListeners() {
     anchorLinks.forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
+            const href = this.getAttribute('href');
+            
+            // Validate that href is not just '#' and has a valid fragment identifier
+            if (href && href.length > 1 && href !== '#') {
+                try {
+                    const target = document.querySelector(href);
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                } catch (error) {
+                    console.warn('Invalid selector:', href, error);
+                }
             }
         });
     });
@@ -865,38 +1004,91 @@ function showConfirmDialog(title, message, confirmText = 'Confirm', confirmClass
             document.body.appendChild(modal);
         }
         
-        // Update modal content
-        modal.querySelector('.modal-title').textContent = title;
-        modal.querySelector('.modal-body').textContent = message;
-        
+        // Update modal content - check if elements exist
+        const titleElement = modal.querySelector('.modal-title');
+        const bodyElement = modal.querySelector('.modal-body');
         const confirmBtn = modal.querySelector('.confirm-btn');
-        confirmBtn.textContent = confirmText;
-        confirmBtn.className = `btn ${confirmClass}`;
+        const cancelBtn = modal.querySelector('[data-bs-dismiss="modal"]');
+        
+        if (titleElement) titleElement.textContent = title;
+        if (bodyElement) bodyElement.textContent = message;
+        
+        if (confirmBtn) {
+            confirmBtn.textContent = confirmText;
+            confirmBtn.className = `btn ${confirmClass}`;
+        }
         
         // Set up event listeners
         const handleConfirm = () => {
-            bootstrap.Modal.getInstance(modal).hide();
+            try {
+                const modalInstance = bootstrap.Modal.getInstance(modal);
+                if (modalInstance) {
+                    modalInstance.hide();
+                } else {
+                    modal.style.display = 'none';
+                    modal.classList.remove('show');
+                    document.body.classList.remove('modal-open');
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) backdrop.remove();
+                }
+            } catch (e) {
+                console.warn('Error hiding modal:', e);
+            }
             resolve(true);
         };
         
         const handleCancel = () => {
+            try {
+                const modalInstance = bootstrap.Modal.getInstance(modal);
+                if (modalInstance) {
+                    modalInstance.hide();
+                } else {
+                    modal.style.display = 'none';
+                    modal.classList.remove('show');
+                    document.body.classList.remove('modal-open');
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) backdrop.remove();
+                }
+            } catch (e) {
+                console.warn('Error hiding modal:', e);
+            }
             resolve(false);
         };
         
-        // Remove existing listeners
-        confirmBtn.replaceWith(confirmBtn.cloneNode(true));
-        const newConfirmBtn = modal.querySelector('.confirm-btn');
+        // Remove existing listeners and add new ones
+        if (confirmBtn) {
+            const newConfirmBtn = confirmBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+            newConfirmBtn.addEventListener('click', handleConfirm);
+        }
         
-        newConfirmBtn.addEventListener('click', handleConfirm);
-        modal.querySelector('[data-bs-dismiss="modal"]').addEventListener('click', handleCancel);
+        if (cancelBtn) {
+            const newCancelBtn = cancelBtn.cloneNode(true);
+            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+            newCancelBtn.addEventListener('click', handleCancel);
+        }
         
         // Show modal
-        const bsModal = new bootstrap.Modal(modal);
-        bsModal.show();
-        
-        modal.addEventListener('hidden.bs.modal', () => {
-            resolve(false);
-        }, { once: true });
+        try {
+            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                const bsModal = new bootstrap.Modal(modal);
+                bsModal.show();
+                
+                modal.addEventListener('hidden.bs.modal', () => {
+                    resolve(false);
+                }, { once: true });
+            } else {
+                // Fallback if Bootstrap is not available
+                modal.style.display = 'block';
+                modal.classList.add('show');
+                document.body.classList.add('modal-open');
+            }
+        } catch (e) {
+            console.error('Error showing modal:', e);
+            // Simple fallback confirmation
+            const confirmed = confirm(`${title}\n\n${message}`);
+            resolve(confirmed);
+        }
     });
 }
 
@@ -996,6 +1188,87 @@ const LocalStorage = {
     }
 };
 
+/**
+ * Increase quantity for cart items
+ */
+function increaseQuantity(index) {
+    const quantityInput = document.querySelector(`#quantity_${index}`);
+    if (quantityInput) {
+        const currentValue = parseFloat(quantityInput.value) || 0;
+        const step = parseFloat(quantityInput.getAttribute('step')) || 0.1;
+        const max = parseFloat(quantityInput.getAttribute('max')) || 999;
+        
+        const newValue = currentValue + step;
+        if (newValue <= max) {
+            quantityInput.value = newValue.toFixed(1);
+            validateQuantity(quantityInput);
+            
+            // Auto-submit the form after a short delay
+            setTimeout(() => {
+                quantityInput.closest('form').submit();
+            }, 300);
+        } else {
+            showToast(`Maximum quantity is ${max} kg`, 'warning');
+        }
+    }
+}
+
+/**
+ * Decrease quantity for cart items
+ */
+function decreaseQuantity(index) {
+    const quantityInput = document.querySelector(`#quantity_${index}`);
+    if (quantityInput) {
+        const currentValue = parseFloat(quantityInput.value) || 0;
+        const step = parseFloat(quantityInput.getAttribute('step')) || 0.1;
+        const min = parseFloat(quantityInput.getAttribute('min')) || 0.1;
+        
+        const newValue = currentValue - step;
+        if (newValue >= min) {
+            quantityInput.value = newValue.toFixed(1);
+            validateQuantity(quantityInput);
+            
+            // Auto-submit the form after a short delay
+            setTimeout(() => {
+                quantityInput.closest('form').submit();
+            }, 300);
+        } else {
+            showToast(`Minimum quantity is ${min} kg`, 'warning');
+        }
+    }
+}
+
+/**
+ * Initialize cart button event listeners
+ */
+function initializeCartButtons() {
+    // Add event listeners for increase buttons
+    document.querySelectorAll('.increase-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const index = this.getAttribute('data-index');
+            increaseQuantity(index);
+        });
+    });
+    
+    // Add event listeners for decrease buttons
+    document.querySelectorAll('.decrease-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const index = this.getAttribute('data-index');
+            decreaseQuantity(index);
+        });
+    });
+    
+    // Add event listeners for quantity input changes
+    document.querySelectorAll('.quantity-input').forEach(input => {
+        input.addEventListener('change', function() {
+            validateQuantity(this);
+            setTimeout(() => {
+                this.closest('form').submit();
+            }, 300);
+        });
+    });
+}
+
 // Export functions for global access
 window.MeatShop = {
     showToast,
@@ -1005,20 +1278,16 @@ window.MeatShop = {
     makeRequest,
     LocalStorage,
     updateCartSummary,
-    validateQuantity
+    validateQuantity,
+    increaseQuantity,
+    decreaseQuantity
 };
 
-// Service Worker registration for PWA capabilities (optional)
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js')
-            .then(function(registration) {
-                console.log('SW registered: ', registration);
-            })
-            .catch(function(registrationError) {
-                console.log('SW registration failed: ', registrationError);
-            });
-    });
-}
+// Make functions globally available
+window.increaseQuantity = increaseQuantity;
+window.decreaseQuantity = decreaseQuantity;
+
+// Service Worker registration removed to prevent 404 errors
+// If you want PWA capabilities, create a sw.js file in the static folder
 
 console.log('🍖 Nepal Meat Shop JavaScript loaded successfully!');
