@@ -629,7 +629,7 @@ def update_order_status(order_id):
         new_status = data['status']
         
         # Validate status
-        valid_statuses = ['pending', 'confirmed', 'processing', 'out_for_delivery', 'delivered', 'cancelled']
+        valid_statuses = ['pending', 'confirmed', 'processing', 'out_for_delivery', 'delivered', 'cod_paid', 'cancelled']
         if new_status not in valid_statuses:
             return jsonify({'success': False, 'message': 'Invalid status.'}), 400
         
@@ -654,6 +654,44 @@ def update_order_status(order_id):
         # Add delivery date if status is delivered
         if new_status == 'delivered':
             update_data['delivered_at'] = datetime.now()
+            
+            # For COD orders, mark as paid when delivered (payment collected during delivery)
+            payment_method = order_data.get('payment_method', '').lower().strip()
+            current_payment_status = order_data.get('payment_status', 'pending').lower().strip()
+            
+            if payment_method == 'cod' and current_payment_status != 'paid':
+                update_data['payment_status'] = 'paid'
+                update_data['payment_confirmed_at'] = datetime.now()
+                update_data['payment_confirmed_by'] = current_user._id
+                print(f"DEBUG: COD order {order_id} marked as paid upon delivery")
+        
+        # Auto-mark as paid when status is COD PAID (for COD orders)
+        if new_status == 'cod_paid':
+            update_data['payment_status'] = 'paid'
+            update_data['payment_confirmed_at'] = datetime.now()
+            update_data['payment_confirmed_by'] = current_user._id
+            print(f"DEBUG: COD payment status updated to 'paid' for order {order_id}")
+        
+        # Auto-mark as paid when status is confirmed (only for online payments, not COD)
+        if new_status == 'confirmed':
+            payment_method = order_data.get('payment_method', '').lower().strip()
+            current_payment_status = order_data.get('payment_status', 'pending').lower().strip()
+            
+            # Debug logging
+            print(f"DEBUG: Order {order_id} - Payment method: '{payment_method}', Current payment status: '{current_payment_status}'")
+            print(f"DEBUG: Condition check - payment_method != 'cod': {payment_method != 'cod'}, current_payment_status != 'paid': {current_payment_status != 'paid'}")
+            
+            # List of online payment methods
+            online_payment_methods = ['esewa', 'khalti', 'ime_pay', 'fonepay']
+            
+            # Only update payment status for online payments (not COD) and if not already paid
+            if (payment_method in online_payment_methods or (payment_method != 'cod' and payment_method != '')) and current_payment_status != 'paid':
+                update_data['payment_status'] = 'paid'
+                update_data['payment_confirmed_at'] = datetime.now()
+                update_data['payment_confirmed_by'] = current_user._id
+                print(f"DEBUG: Payment status will be updated to 'paid' for order {order_id}")
+            else:
+                print(f"DEBUG: Payment status NOT updated for order {order_id} - Reason: payment_method='{payment_method}', current_payment_status='{current_payment_status}'")
         
         result = mongo_db.db.orders.update_one(
             {'_id': order_object_id},
@@ -664,16 +702,71 @@ def update_order_status(order_id):
             # Log status change
             _log_status_change(order_id, old_status, new_status, current_user._id)
             
+            # Log payment status change if applicable
+            if new_status == 'cod_paid':
+                current_payment_status = order_data.get('payment_status', 'pending').lower().strip()
+                _log_payment_status_change(order_id, current_payment_status, 'paid', current_user._id, 'cod_paid')
+                print(f"DEBUG: COD payment status change logged for order {order_id}")
+            elif new_status == 'delivered':
+                payment_method = order_data.get('payment_method', '').lower().strip()
+                current_payment_status = order_data.get('payment_status', 'pending').lower().strip()
+                
+                if payment_method == 'cod' and current_payment_status != 'paid':
+                    _log_payment_status_change(order_id, current_payment_status, 'paid', current_user._id, 'cod_delivered')
+                    print(f"DEBUG: COD payment status change logged for delivered order {order_id}")
+            elif new_status == 'confirmed':
+                payment_method = order_data.get('payment_method', '').lower().strip()
+                current_payment_status = order_data.get('payment_status', 'pending').lower().strip()
+                
+                print(f"DEBUG: Logging check - payment_method: '{payment_method}', current_payment_status: '{current_payment_status}'")
+                
+                # List of online payment methods
+                online_payment_methods = ['esewa', 'khalti', 'ime_pay', 'fonepay']
+                
+                if (payment_method in online_payment_methods or (payment_method != 'cod' and payment_method != '')) and current_payment_status != 'paid':
+                    _log_payment_status_change(order_id, current_payment_status, 'paid', current_user._id, 'auto_confirmed')
+                    print(f"DEBUG: Payment status change logged for order {order_id}")
+            
             # Get customer info for notification
-            user_data = mongo_db.db.users.find_one({'_id': ObjectId(order_data['user_id'])})
-            customer_name = user_data.get('full_name', 'Customer') if user_data else 'Customer'
+            customer_name = 'Customer'
+            user_id = order_data.get('user_id')
+            if user_id:
+                try:
+                    user_data = mongo_db.db.users.find_one({'_id': ObjectId(user_id)})
+                    customer_name = user_data.get('full_name', 'Customer') if user_data else 'Customer'
+                except Exception as e:
+                    print(f"Error fetching user data: {e}")
+                    customer_name = 'Customer'
+            
+            # Prepare response message
+            message = f'Order status updated to {new_status.replace("_", " ").title()}'
+            
+            # Add payment status update info if applicable
+            if new_status == 'cod_paid':
+                message += ' and payment status automatically marked as Paid (COD payment received)'
+            elif new_status == 'delivered':
+                payment_method = order_data.get('payment_method', '').lower().strip()
+                current_payment_status = order_data.get('payment_status', 'pending').lower().strip()
+                
+                if payment_method == 'cod' and current_payment_status != 'paid':
+                    message += ' and payment status automatically marked as Paid (COD payment collected during delivery)'
+            elif new_status == 'confirmed':
+                payment_method = order_data.get('payment_method', '').lower().strip()
+                current_payment_status = order_data.get('payment_status', 'pending').lower().strip()
+                
+                # List of online payment methods
+                online_payment_methods = ['esewa', 'khalti', 'ime_pay', 'fonepay']
+                
+                if (payment_method in online_payment_methods or (payment_method != 'cod' and payment_method != '')) and current_payment_status != 'paid':
+                    message += ' and payment status automatically marked as Paid (online payment)'
             
             return jsonify({
                 'success': True, 
-                'message': f'Order status updated to {new_status.replace("_", " ").title()}',
+                'message': message,
                 'old_status': old_status,
                 'new_status': new_status,
-                'customer_name': customer_name
+                'customer_name': customer_name,
+                'payment_updated': new_status == 'confirmed' and order_data.get('payment_method', '').lower().strip() in ['esewa', 'khalti', 'ime_pay', 'fonepay'] and order_data.get('payment_status', 'pending').lower().strip() != 'paid'
             })
         else:
             return jsonify({'success': False, 'message': 'Failed to update order status.'}), 500
@@ -701,9 +794,16 @@ def send_order_notification(order_id):
         if not order_data:
             return jsonify({'success': False, 'message': 'Order not found.'}), 404
         
-        user_data = mongo_db.db.users.find_one({'_id': ObjectId(order_data['user_id'])})
-        if not user_data:
-            return jsonify({'success': False, 'message': 'Customer not found.'}), 404
+        user_id = order_data.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'message': 'Order has no associated customer.'}), 400
+            
+        try:
+            user_data = mongo_db.db.users.find_one({'_id': ObjectId(user_id)})
+            if not user_data:
+                return jsonify({'success': False, 'message': 'Customer not found.'}), 404
+        except Exception as e:
+            return jsonify({'success': False, 'message': f'Error fetching customer data: {str(e)}'}), 500
         
         order = MongoOrder(order_data)
         customer = MongoUser(user_data)
@@ -718,6 +818,7 @@ def send_order_notification(order_id):
             'processing': 'Your order is currently being processed.',
             'out_for_delivery': 'Great news! Your order is out for delivery.',
             'delivered': 'Your order has been delivered successfully.',
+            'cod_paid': 'Thank you! Your COD payment has been received and your order is complete.',
             'cancelled': 'Your order has been cancelled.'
         }
         
@@ -759,8 +860,9 @@ def _is_valid_status_transition(old_status, new_status):
         'pending': ['confirmed', 'cancelled'],
         'confirmed': ['processing', 'cancelled'],
         'processing': ['out_for_delivery', 'cancelled'],
-        'out_for_delivery': ['delivered', 'cancelled'],
-        'delivered': [],  # Final status
+        'out_for_delivery': ['delivered', 'cod_paid', 'cancelled'],
+        'delivered': [],  # Final status - no transitions allowed from delivered
+        'cod_paid': [],  # Final status for COD orders
         'cancelled': []   # Final status
     }
     
@@ -775,6 +877,20 @@ def _log_status_change(order_id, old_status, new_status, admin_id):
         'changed_by': admin_id,
         'changed_at': datetime.now(),
         'type': 'status_change'
+    }
+    
+    mongo_db.db.order_logs.insert_one(log_data)
+
+def _log_payment_status_change(order_id, old_payment_status, new_payment_status, admin_id, trigger_type='manual'):
+    """Log payment status changes for audit trail."""
+    log_data = {
+        'order_id': order_id,
+        'old_payment_status': old_payment_status,
+        'new_payment_status': new_payment_status,
+        'changed_by': admin_id,
+        'changed_at': datetime.now(),
+        'trigger_type': trigger_type,  # 'manual', 'auto_confirmed', 'webhook'
+        'type': 'payment_status_change'
     }
     
     mongo_db.db.order_logs.insert_one(log_data)

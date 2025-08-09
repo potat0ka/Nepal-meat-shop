@@ -692,7 +692,10 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         {{ form.delivery_address.label(class="form-label") }}
-                                        {{ form.delivery_address(class="form-control") }}
+                                        {{ form.delivery_address(class="form-control", placeholder="Enter your delivery address manually if location services don't work") }}
+                                        <small class="form-text text-muted">
+                                            <i class="fas fa-info-circle"></i> You can type your address here if the map or location services are not working
+                                        </small>
                                     </div>
                                     <div class="col-md-6">
                                         {{ form.delivery_phone.label(class="form-label") }}
@@ -994,17 +997,26 @@ const DEFAULT_LOCATION = {
 // Initialize everything when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Initializing checkout page...');
-    
-    // Wait for page to be fully loaded before initializing map
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializeComponents);
-    } else {
-        initializeComponents();
-    }
+    initializeComponents();
 });
 
 // Initialize all components
 function initializeComponents() {
+    console.log('🔧 Initializing components...');
+    
+    // Debug: Check if key elements exist
+    const currentLocationBtn = document.getElementById('current-location-btn');
+    const addressSearch = document.getElementById('address-search');
+    const useLocationBtn = document.getElementById('use-selected-location');
+    const mapContainer = document.getElementById('delivery-map');
+    
+    console.log('🔍 Element check:', {
+        currentLocationBtn: !!currentLocationBtn,
+        addressSearch: !!addressSearch,
+        useLocationBtn: !!useLocationBtn,
+        mapContainer: !!mapContainer
+    });
+    
     setupEventListeners();
     setupPaymentMethodHandlers();
     
@@ -1012,6 +1024,14 @@ function initializeComponents() {
     setTimeout(() => {
         initMap();
     }, 100);
+    
+    // Add debug info to console
+    console.log('🌐 Location debug info:', {
+        protocol: location.protocol,
+        hostname: location.hostname,
+        geolocationSupported: !!navigator.geolocation,
+        leafletLoaded: typeof L !== 'undefined'
+    });
 }
 
 /**
@@ -1105,6 +1125,24 @@ function initMap() {
             }, 100);
             
             showAlert('Map loaded successfully! Click anywhere to select delivery location.', 'success');
+            
+            // Enable location controls now that map is ready
+            const currentLocationBtn = document.getElementById('current-location-btn');
+            const useLocationBtn = document.getElementById('use-selected-location');
+            const addressSearch = document.getElementById('address-search');
+            
+            if (currentLocationBtn) {
+                currentLocationBtn.disabled = false;
+                currentLocationBtn.innerHTML = '<i class="fas fa-location-arrow"></i> Use Current Location';
+            }
+            if (useLocationBtn) {
+                useLocationBtn.disabled = false;
+                useLocationBtn.innerHTML = '<i class="fas fa-map-marker-alt"></i> Use This Location';
+            }
+            if (addressSearch) {
+                addressSearch.disabled = false;
+                addressSearch.placeholder = 'Search for an address...';
+            }
         });
         
         // Handle map errors
@@ -1112,6 +1150,14 @@ function initMap() {
             console.error('❌ Map error:', e);
             showMapError('Map encountered an error. Please refresh the page.');
         });
+        
+        // Add timeout for map loading
+        setTimeout(() => {
+            if (!isMapInitialized) {
+                console.warn('⚠️ Map loading timeout');
+                showMapError('Map is taking too long to load. Please check your internet connection and refresh the page.');
+            }
+        }, 10000); // 10 second timeout
         
         console.log('✅ Map initialized successfully');
         
@@ -1127,6 +1173,9 @@ function setupEventListeners() {
     const currentLocationBtn = document.getElementById('current-location-btn');
     if (currentLocationBtn) {
         currentLocationBtn.addEventListener('click', detectUserLocation);
+        // Disable until map is ready
+        currentLocationBtn.disabled = true;
+        currentLocationBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading map...';
     }
     
     // Address search
@@ -1138,12 +1187,18 @@ function setupEventListeners() {
                 e.preventDefault();
             }
         });
+        // Disable until map is ready
+        addressSearch.disabled = true;
+        addressSearch.placeholder = 'Loading map...';
     }
     
     // Use selected location button
     const useLocationBtn = document.getElementById('use-selected-location');
     if (useLocationBtn) {
         useLocationBtn.addEventListener('click', useSelectedLocation);
+        // Disable until map is ready
+        useLocationBtn.disabled = true;
+        useLocationBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
     }
     
     // QR Code click to enlarge
@@ -1161,6 +1216,69 @@ function setupEventListeners() {
     const checkoutForm = document.querySelector('form[action*="checkout"]');
     if (checkoutForm) {
         checkoutForm.addEventListener('submit', handleFormSubmission);
+    }
+}
+
+// Handle form submission with location validation and payment processing
+async function handleFormSubmission(e) {
+    e.preventDefault();
+    
+    // First, validate location data
+    const latInput = document.getElementById('latitude');
+    const lngInput = document.getElementById('longitude');
+    const deliveryAddressField = document.querySelector('input[name="delivery_address"]');
+    
+    const hasCoordinates = latInput && lngInput && latInput.value && lngInput.value;
+    const hasManualAddress = deliveryAddressField && deliveryAddressField.value.trim();
+    
+    if (!hasCoordinates && !hasManualAddress) {
+        showAlert('Please select a location on the map or enter your delivery address manually.', 'warning');
+        
+        // Focus on the delivery address field
+        if (deliveryAddressField) {
+            deliveryAddressField.focus();
+        }
+        
+        return false;
+    }
+    
+    console.log('✅ Location validation passed:', {
+        hasCoordinates,
+        hasManualAddress,
+        coordinates: hasCoordinates ? `${latInput.value}, ${lngInput.value}` : 'none',
+        address: hasManualAddress ? deliveryAddressField.value : 'none'
+    });
+    
+    // Now handle payment processing
+    const formData = new FormData(e.target);
+    const paymentMethod = formData.get('payment_method');
+    
+    if (!paymentMethod) {
+        showAlert('Please select a payment method.', 'error');
+        return;
+    }
+    
+    // Show loading state
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    
+    try {
+        if (paymentMethod === 'cod') {
+            // Handle Cash on Delivery - submit form normally
+            await handleCODPayment(formData);
+        } else {
+            // Handle all other payments as QR code payments (including eSewa, Khalti, IME Pay, FonePay, etc.)
+            await handleQRPayment(paymentMethod, formData);
+        }
+    } catch (error) {
+        console.error('Payment processing error:', error);
+        showAlert('Payment processing failed. Please try again.', 'error');
+    } finally {
+        // Restore button state
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
     }
 }
 
@@ -1182,18 +1300,33 @@ function detectUserLocation() {
         return;
     }
     
-    // Check if map is ready
+    // Check if map is ready - if not, wait and retry
     if (!isMapInitialized) {
-        showAlert('Map is not ready yet. Please wait a moment and try again.', 'warning');
+        console.log('⏳ Map not ready, waiting...');
+        showAlert('Map is loading. Please wait a moment...', 'info');
+        
+        // Wait for map to be ready and retry
+        setTimeout(() => {
+            if (isMapInitialized) {
+                detectUserLocation();
+            } else {
+                showAlert('Map failed to load. Please refresh the page and try again.', 'warning');
+            }
+        }, 2000);
         return;
     }
     
-    // Check if we're on HTTPS (required for geolocation except on localhost)
-    if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-        console.warn('⚠️ Geolocation requires HTTPS');
-        showAlert('Location services require a secure connection. Using default location.', 'warning');
-        fallbackToDefaultLocation();
-        return;
+    // More lenient HTTPS check - allow localhost and development environments
+    const isSecureContext = location.protocol === 'https:' || 
+                           location.hostname === 'localhost' || 
+                           location.hostname === '127.0.0.1' ||
+                           location.hostname === '0.0.0.0' ||
+                           location.hostname.endsWith('.local');
+    
+    if (!isSecureContext) {
+        console.warn('⚠️ Geolocation may not work on non-HTTPS sites');
+        // Don't block, just warn - some browsers may still allow it
+        showAlert('Location services work best on secure connections. If this fails, please select location manually.', 'warning');
     }
     
     // Show loading state
@@ -1337,6 +1470,7 @@ function resetLocationButton() {
 function selectLocation(lat, lng, label = null) {
     if (!isMapInitialized) {
         console.error('❌ Map not initialized');
+        showAlert('Map is not ready. Please wait for the map to load.', 'warning');
         return;
     }
     
@@ -1345,7 +1479,7 @@ function selectLocation(lat, lng, label = null) {
     // Validate coordinates
     if (!isValidCoordinates(lat, lng)) {
         console.error('❌ Invalid coordinates provided to selectLocation');
-        showAlert('Invalid location coordinates', 'error');
+        showAlert('Invalid location coordinates. Please try clicking on a different location.', 'error');
         return;
     }
     
@@ -1474,6 +1608,7 @@ function updateLocationDisplay(address, lat, lng) {
 // Handle address search input with debouncing
 function handleAddressSearch(e) {
     const query = e.target.value.trim();
+    const resultsContainer = document.getElementById('search-results');
     
     // Clear previous timeout
     if (searchTimeout) {
@@ -1482,7 +1617,18 @@ function handleAddressSearch(e) {
     
     // Hide results if query is empty
     if (query.length < 3) {
-        document.getElementById('search-results').style.display = 'none';
+        if (resultsContainer) {
+            resultsContainer.style.display = 'none';
+        }
+        return;
+    }
+    
+    // Check if map is ready
+    if (!isMapInitialized) {
+        if (resultsContainer) {
+            resultsContainer.innerHTML = '<div class="search-result-item text-warning"><i class="fas fa-exclamation-triangle"></i> Map is loading. Please wait...</div>';
+            resultsContainer.style.display = 'block';
+        }
         return;
     }
     
@@ -1645,8 +1791,14 @@ function getCurrentMapCenter() {
 function useSelectedLocation() {
     console.log('📍 Using selected location...');
     
+    // Check if map is ready
+    if (!isMapInitialized) {
+        showAlert('Map is not ready yet. Please wait for the map to load and try again.', 'warning');
+        return;
+    }
+    
     const addressTextElement = document.getElementById('selected-address-text');
-    const addressText = addressTextElement ? addressTextElement.textContent : 'No location selected';
+    const addressText = addressTextElement ? addressTextElement.textContent.trim() : '';
     const deliveryAddressField = document.querySelector('input[name="delivery_address"]');
     
     // Get coordinates from hidden inputs
@@ -1656,7 +1808,10 @@ function useSelectedLocation() {
     let lat, lng;
     
     // If no specific location selected, use map center
-    if (addressText === 'No location selected' || !latInput || !lngInput || !latInput.value || !lngInput.value) {
+    if (!addressText || addressText === 'No location selected' || addressText === 'Getting address...' || 
+        !latInput || !lngInput || !latInput.value || !lngInput.value) {
+        
+        console.log('📍 No specific location selected, using map center...');
         const mapCenter = getCurrentMapCenter();
         if (!mapCenter) {
             showAlert('Map not ready. Please wait for the map to load and try again.', 'warning');
@@ -1668,13 +1823,13 @@ function useSelectedLocation() {
         
         // Validate map center coordinates
         if (!isValidCoordinates(lat, lng)) {
-            showAlert('Invalid map center coordinates. Please select a location manually.', 'error');
+            showAlert('Invalid map center coordinates. Please click on the map to select a location.', 'error');
             return;
         }
         
-        // Select the map center location
-        selectLocation(lat, lng, 'Map Center Location');
-        showAlert('Using map center as selected location. You can now proceed with your order.', 'info');
+        // Select the map center location and get its address
+        selectLocation(lat, lng, 'Selected Location');
+        showAlert('Using current map view as delivery location. Address will be updated shortly.', 'info');
         return; // Let the selectLocation function handle the rest
     } else {
         // Use existing coordinates
@@ -1683,7 +1838,7 @@ function useSelectedLocation() {
         
         // Validate coordinates
         if (!isValidCoordinates(lat, lng)) {
-            showAlert('Invalid location coordinates. Please select a new location.', 'error');
+            showAlert('Invalid location coordinates. Please select a new location on the map.', 'error');
             return;
         }
     }
@@ -1970,40 +2125,6 @@ document.addEventListener('click', function(e) {
 });
 
 // Payment processing functions
-async function handleFormSubmission(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(e.target);
-    const paymentMethod = formData.get('payment_method');
-    
-    if (!paymentMethod) {
-        showAlert('Please select a payment method.', 'error');
-        return;
-    }
-    
-    // Show loading state
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-    
-    try {
-        if (paymentMethod === 'cod') {
-            // Handle Cash on Delivery - submit form normally
-            await handleCODPayment(formData);
-        } else {
-            // Handle all other payments as QR code payments (including eSewa, Khalti, IME Pay, FonePay, etc.)
-            await handleQRPayment(paymentMethod, formData);
-        }
-    } catch (error) {
-        console.error('Payment processing error:', error);
-        showAlert('Payment processing failed. Please try again.', 'error');
-    } finally {
-        // Restore button state
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalText;
-    }
-}
 
 async function handleCODPayment(formData) {
     try {

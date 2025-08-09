@@ -39,33 +39,51 @@ app/
 ## ✨ Features
 
 ### 🛒 E-commerce Functionality
-- Product catalog with categories and filtering
-- Shopping cart with session management
-- Multi-step checkout process
-- Order tracking and history
-- Product reviews and ratings
+- **Product Catalog**: Comprehensive product listing with categories and advanced filtering
+- **Shopping Cart**: Session-based cart management with real-time updates
+- **Checkout Process**: Multi-step checkout with location selection and payment options
+- **Order Management**: Complete order tracking, history, and status updates
+- **Inventory Tracking**: Real-time stock management with low-stock alerts
 
-### 🔐 User Management
-- User registration and authentication
-- Profile management
-- Password change functionality
-- Session-based cart persistence
+### 🔐 User Management & Security
+- **Authentication System**: Secure user registration and login with password hashing
+- **Role-Based Access**: Hierarchical permissions (Admin, Sub-Admin, Staff, Customer)
+- **Profile Management**: User profile updates and password management
+- **Session Security**: Secure session handling with CSRF protection
 
 ### 💰 Payment Integration
-- Cash on Delivery (COD)
-- Digital payment simulation (eSewa, Khalti, PhonePay)
-- Mobile banking and bank transfer options
+- **Cash on Delivery (COD)**: Traditional payment method with confirmation
+- **Digital Wallets**: eSewa, Khalti, IME Pay, FonePay with QR code integration
+- **Banking Options**: Mobile banking and bank transfer support
+- **Payment Gateway Management**: Admin panel for gateway configuration and testing
+- **QR Code System**: Dynamic QR code generation for digital payments
+
+### 🗺️ Location Services
+- **Interactive Maps**: Leaflet.js integration with click-to-select functionality
+- **Current Location**: HTML5 Geolocation API with comprehensive error handling
+- **Address Search**: Nominatim API integration for location search
+- **Delivery Zones**: Coordinate-based delivery location management
+- **Map Fallbacks**: Graceful degradation for various network conditions
+
+### 👨‍💼 Administrative Panel
+- **Dashboard Overview**: Real-time statistics and system monitoring
+- **User Management**: Complete user administration with role management
+- **Product Management**: Full CRUD operations with inventory control
+- **Order Processing**: Order status management and tracking
+- **Category Management**: Product categorization and organization
+- **Business Insights**: Advanced analytics and reporting dashboard
+- **Payment Gateway Config**: Gateway status monitoring and testing tools
 
 ### 🌐 Bilingual Support
-- English and Nepali language support
-- Localized product names and descriptions
-- Bilingual user interface
+- **Dual Language**: Complete English and Nepali language support
+- **Localized Content**: Product names, descriptions, and UI in both languages
+- **Cultural Adaptation**: Nepal-specific payment methods and business practices
 
 ### 📱 Modern UI/UX
-- Responsive Bootstrap design
-- Mobile-friendly interface
-- Clean, modern aesthetics
-- Intuitive navigation
+- **Responsive Design**: Mobile-first Bootstrap framework implementation
+- **Progressive Enhancement**: Graceful degradation across devices
+- **Interactive Elements**: Dynamic content loading and real-time updates
+- **Accessibility**: User-friendly interface with intuitive navigation
 
 ## 🚀 Quick Start
 
@@ -79,7 +97,7 @@ app/
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd BugFixer
+   cd nepal-meat-shop
    ```
 
 2. **Install dependencies**
@@ -98,7 +116,7 @@ app/
    SECRET_KEY=your-secret-key-here
    ```
    
-   See `MONGODB_SETUP.md` for detailed MongoDB installation instructions.
+   See `DEPLOYMENT_GUIDE.md` for detailed MongoDB installation and deployment instructions.
 
 4. **Run the MongoDB application**
    ```bash
@@ -120,61 +138,128 @@ Environment can be set via `FLASK_ENV` environment variable.
 
 ## 📁 Project Structure
 
-### Models
-- **User**: Customer accounts and authentication
-- **Product**: Meat products with categories and stock
-- **Order**: Order processing and tracking
-- **Analytics**: Sales reporting and notifications
+### Core Application
+```
+BugFixer/
+├── mongo_main.py           # MongoDB application entry point
+├── run_mongo.py           # Development server runner
+├── requirements.txt       # Python dependencies
+├── .env.mongo            # Environment configuration
+└── documentation.md      # Technical documentation
+```
 
-### Routes (Blueprints)
-- **Main**: Homepage, search, and general pages
-- **Auth**: Login, registration, and profile management
-- **Products**: Product listing, details, and reviews
-- **Orders**: Shopping cart and order processing
+### Templates & Frontend
+```
+templates/
+├── base.html             # Base template with navigation
+├── admin/               # Administrative interface
+│   ├── dashboard.html   # Admin dashboard with statistics
+│   ├── users.html       # User management interface
+│   ├── products.html    # Product management
+│   ├── orders.html      # Order processing
+│   ├── categories.html  # Category management
+│   ├── payment_gateways.html  # Payment configuration
+│   └── business_insights.html # Analytics dashboard
+├── orders/              # Order management templates
+│   ├── checkout.html    # Enhanced checkout with maps
+│   ├── cart.html        # Shopping cart interface
+│   ├── order_detail.html # Order tracking
+│   └── invoice.html     # Order invoices
+├── pages/               # Static and informational pages
+└── errors/              # Error handling templates
+```
 
-### Utilities
-- **File Utils**: Image upload and file management
-- **Business**: Order processing and pricing logic
-- **Validation**: Input validation and sanitization
+### Key Features Implementation
+- **MongoDB Integration**: Document-based data storage with flexible schema
+- **Blueprint Architecture**: Modular route organization for maintainability
+- **Location Services**: Leaflet.js maps with geolocation and address search
+- **Payment Systems**: Multi-gateway support with QR code integration
+- **Admin Panel**: Comprehensive management interface with analytics
+- **Security**: Role-based access control with CSRF protection
+- **Bilingual Support**: English/Nepali localization throughout the application
 
 ## 🛠️ Development
 
+### Technology Stack
+- **Backend**: Flask 3.0.0 with MongoDB integration
+- **Database**: MongoDB with PyMongo driver
+- **Frontend**: Bootstrap 5, Leaflet.js for maps, vanilla JavaScript
+- **Authentication**: Flask-Login with secure session management
+- **Forms**: Flask-WTF with CSRF protection
+- **File Handling**: Pillow for image processing
+- **PDF Generation**: ReportLab for invoice generation
+
 ### Running in Development Mode
 ```bash
-# Set environment
+# Set environment variables
 export FLASK_ENV=development
+export MONGO_URI=mongodb://localhost:27017/nepal_meat_shop_dev
 
 # Run with auto-reload
 python run_mongo.py
 ```
 
-### Database Migrations
+### Database Setup
 ```bash
-# Initialize migrations (first time)
-flask db init
+# MongoDB setup (local installation)
+# Install MongoDB Community Edition
+# Start MongoDB service
+mongod --dbpath /path/to/data/directory
 
-# Create migration
-flask db migrate -m "Description of changes"
-
-# Apply migration
-flask db upgrade
+# Or use MongoDB Atlas (cloud)
+# Set MONGO_URI to your Atlas connection string
+export MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/nepal_meat_shop
 ```
 
 ### Adding New Features
 
-1. **Models**: Add to appropriate model file in `app/models/`
-2. **Routes**: Create new blueprint or add to existing in `app/routes/`
-3. **Forms**: Add form classes to `app/forms/`
-4. **Templates**: Add HTML templates to `templates/`
-5. **Utilities**: Add helper functions to `app/utils/`
+1. **Routes**: Add new routes to `mongo_main.py` or create new blueprint files
+2. **Templates**: Add HTML templates to appropriate directories in `templates/`
+3. **Static Assets**: Add CSS, JS, images to `static/` directory
+4. **Database Models**: Define MongoDB document structures in route handlers
+5. **Forms**: Create WTForms classes for user input validation
+
+### Development Workflow
+```bash
+# 1. Make changes to code
+# 2. Test locally with development server
+python run_mongo.py
+
+# 3. Check for errors in browser console and terminal
+# 4. Test admin panel functionality at /admin
+# 5. Test payment gateway integration
+# 6. Verify location services on checkout page
+```
 
 ## 🔒 Security Features
 
-- CSRF protection on all forms
-- Secure password hashing
-- Input validation and sanitization
-- File upload security
-- Session management
+- **CSRF Protection**: All forms protected against cross-site request forgery
+- **Password Security**: PBKDF2 hashing with salt for secure password storage
+- **Input Validation**: Comprehensive server-side validation and sanitization
+- **File Upload Security**: Restricted file types and size limits for uploads
+- **Session Management**: Secure session handling with proper timeout
+- **Role-Based Access**: Hierarchical permission system with granular controls
+- **SQL Injection Prevention**: Parameterized queries and input sanitization
+
+## 🚀 Recent Enhancements
+
+### Location Services Integration
+- **Interactive Maps**: Full Leaflet.js integration with responsive design
+- **Geolocation API**: Current location detection with comprehensive error handling
+- **Address Search**: Real-time address search using Nominatim API
+- **Delivery Zones**: Precise coordinate-based delivery location management
+
+### Enhanced Payment System
+- **QR Code Integration**: Dynamic QR code generation for digital payments
+- **Gateway Management**: Admin panel for payment gateway configuration
+- **Multi-Method Support**: Support for 6+ payment methods including digital wallets
+- **Payment Testing**: Built-in gateway testing and status monitoring
+
+### Advanced Admin Features
+- **Business Insights**: Comprehensive analytics dashboard with charts and metrics
+- **Real-time Statistics**: Live order, user, and product statistics
+- **User Role Management**: Advanced role-based access control system
+- **Order Processing**: Streamlined order management with status tracking
 
 ## 📊 Key Improvements
 

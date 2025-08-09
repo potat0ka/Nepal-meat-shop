@@ -171,20 +171,24 @@
                         <div class="card h-100 shadow-sm category-card">
                             <div class="card-body text-center">
                                 <div class="category-icon mb-3">
-                                    {% if category.name == 'Mutton' or 'खसीको मासु' in category.name_nepali %}
-                                    <i class="fas fa-sheep fa-3x text-warning"></i>
+                                    {% if 'mutton' in category.name.lower() or 'goat' in category.name.lower() or 'खसी' in (category.name_nepali or '') or 'बोका' in (category.name_nepali or '') %}
+                                    <i class="fas fa-paw fa-3x text-warning"></i>
+                                    {% elif 'chicken' in category.name.lower() or 'कुखुरा' in (category.name_nepali or '') %}
+                                    <i class="fas fa-drumstick-bite fa-3x text-primary"></i>
+                                    {% elif 'beef' in category.name.lower() or 'cow' in category.name.lower() or 'गाईको' in (category.name_nepali or '') %}
+                                    <i class="fas fa-cow fa-3x text-danger"></i>
+                                    {% elif 'buffalo' in category.name.lower() or 'राँगो' in (category.name_nepali or '') %}
+                                    <i class="fas fa-cow fa-3x text-dark"></i>
+                                    {% elif 'pork' in category.name.lower() or 'pig' in category.name.lower() or 'सुँगुर' in (category.name_nepali or '') %}
+                                    <i class="fas fa-bacon fa-3x text-primary"></i>
+                                    {% elif 'fish' in category.name.lower() or 'माछा' in (category.name_nepali or '') %}
+                                    <i class="fas fa-fish fa-3x text-info"></i>
                                     {% elif 'fresh' in category.name.lower() and 'meat' in category.name.lower() %}
                                     <i class="fas fa-leaf fa-3x text-success"></i>
-                                    {% elif 'processed' in category.name.lower() or 'प्रशोधित' in category.name_nepali %}
-                                    <i class="fas fa-industry fa-3x text-primary"></i>
-                                    {% elif 'ground' in category.name.lower() or 'पिसेको' in category.name_nepali %}
+                                    {% elif 'processed' in category.name.lower() or 'प्रशोधित' in (category.name_nepali or '') %}
+                                    <i class="fas fa-industry fa-3x text-secondary"></i>
+                                    {% elif 'ground' in category.name.lower() or 'minced' in category.name.lower() or 'पिसेको' in (category.name_nepali or '') %}
                                     <i class="fas fa-mortar-pestle fa-3x text-primary"></i>
-                                    {% elif 'pork' in category.name.lower() or 'सुँगुर' in category.name_nepali %}
-                                    <i class="fas fa-bacon fa-3x text-primary"></i>
-                                    {% elif 'buffalo' in category.name.lower() or 'राँगो' in category.name_nepali %}
-                                    <i class="fas fa-cow fa-3x text-primary"></i>
-                                    {% elif 'chicken' in category.name.lower() or 'कुखुरा' in category.name_nepali %}
-                                    <i class="fas fa-drumstick-bite fa-3x text-primary"></i>
                                     {% else %}
                                     <i class="fas fa-drumstick-bite fa-3x text-primary"></i>
                                     {% endif %}

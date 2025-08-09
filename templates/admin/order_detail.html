@@ -177,7 +177,7 @@
                     </div>
                     <div class="card-body">
                         <div class="d-grid gap-2">
-                            {% if order.status not in ['delivered', 'cancelled'] %}
+                            {% if order.status not in ['delivered', 'cod_paid', 'cancelled'] %}
                             <!-- Quick Status Actions -->
                             {% if order.status == 'pending' %}
                             <button class="btn btn-success btn-sm" onclick="quickStatusUpdate('{{ order._id }}', 'confirmed')">
@@ -195,6 +195,12 @@
                                 Out for Delivery
                             </button>
                             {% elif order.status == 'out_for_delivery' %}
+                            {% if order.payment_method == 'cod' %}
+                            <button class="btn btn-warning btn-sm" onclick="quickStatusUpdate('{{ order._id }}', 'cod_paid')">
+                                <i class="fas fa-money-bill me-2"></i>
+                                COD Payment Received
+                            </button>
+                            {% endif %}
                             <button class="btn btn-success btn-sm" onclick="quickStatusUpdate('{{ order._id }}', 'delivered')">
                                 <i class="fas fa-check-circle me-2"></i>
                                 Mark Delivered
@@ -294,7 +300,8 @@ function quickStatusUpdate(orderId, newStatus) {
         'confirmed': 'CONFIRMED',
         'processing': 'PROCESSING',
         'out_for_delivery': 'OUT FOR DELIVERY',
-        'delivered': 'DELIVERED'
+        'delivered': 'DELIVERED',
+        'cod_paid': 'COD PAID'
     };
     
     console.log('Quick status update called:', orderId, newStatus);

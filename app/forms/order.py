@@ -94,6 +94,7 @@ class OrderStatusForm(FlaskForm):
                             ('processing', 'Processing'),
                             ('out_for_delivery', 'Out for Delivery'),
                             ('delivered', 'Delivered'),
+                            ('cod_paid', 'COD Paid'),
                             ('cancelled', 'Cancelled')
                         ],
                         validators=[DataRequired()])

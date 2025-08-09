@@ -127,6 +127,7 @@ def get_order_status_badge_class(status):
         'processing': 'bg-primary',
         'out_for_delivery': 'bg-secondary',
         'delivered': 'bg-success',
+        'cod_paid': 'bg-success',
         'cancelled': 'bg-danger',
         'refunded': 'bg-dark'
     }
