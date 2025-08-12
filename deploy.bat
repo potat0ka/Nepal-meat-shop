@@ -25,13 +25,30 @@ if %errorlevel% neq 0 (
     echo %RED%❌ Python is not installed or not in PATH%NC%
     echo %YELLOW%💡 Please install Python from: https://www.python.org/downloads/%NC%
     echo %YELLOW%   Make sure to check "Add Python to PATH" during installation%NC%
+    echo %YELLOW%   Minimum required version: Python 3.8%NC%
     pause
     exit /b 1
 )
 
-REM Get Python version
+REM Get Python version and validate
 for /f "tokens=2" %%i in ('python --version 2^>^&1') do set PYTHON_VERSION=%%i
 echo %GREEN%✅ Python %PYTHON_VERSION% found%NC%
+
+REM Check Python version (must be 3.8+)
+for /f "tokens=1,2 delims=." %%a in ("%PYTHON_VERSION%") do (
+    set MAJOR_VERSION=%%a
+    set MINOR_VERSION=%%b
+)
+if %MAJOR_VERSION% lss 3 (
+    echo %RED%❌ Python 3.8 or higher is required. Found: %PYTHON_VERSION%%NC%
+    pause
+    exit /b 1
+)
+if %MAJOR_VERSION% equ 3 if %MINOR_VERSION% lss 8 (
+    echo %RED%❌ Python 3.8 or higher is required. Found: %PYTHON_VERSION%%NC%
+    pause
+    exit /b 1
+)
 
 REM Check if pip is available
 echo %BLUE%🔍 Checking pip installation...%NC%
@@ -48,7 +65,7 @@ REM Set project directory and virtual environment path
 set "PROJECT_DIR=%~dp0"
 set "VENV_DIR=%PROJECT_DIR%venv"
 set "REQUIREMENTS_FILE=%PROJECT_DIR%requirements.txt"
-set "MAIN_FILE=%PROJECT_DIR%run_mongo.py"
+set "MAIN_FILE=%PROJECT_DIR%mongo_app.py"
 
 REM Check if requirements.txt exists
 if not exist "%REQUIREMENTS_FILE%" (
@@ -113,10 +130,23 @@ if "%FRESH_VENV%"=="1" (
 REM Install/update dependencies if needed
 if "%INSTALL_DEPS%"=="1" (
     echo %BLUE%📦 Installing dependencies from requirements.txt...%NC%
+    echo %YELLOW%💡 This may take a few minutes on first run...%NC%
+    
+    REM Upgrade pip first
     python -m pip install --upgrade pip
-    python -m pip install -r "%REQUIREMENTS_FILE%"
+    if %errorlevel% neq 0 (
+        echo %YELLOW%⚠️ Warning: Failed to upgrade pip, continuing with current version%NC%
+    )
+    
+    REM Install dependencies with better error handling
+    python -m pip install -r "%REQUIREMENTS_FILE%" --no-cache-dir
     if %errorlevel% neq 0 (
         echo %RED%❌ Failed to install dependencies%NC%
+        echo %YELLOW%💡 Troubleshooting tips:%NC%
+        echo %YELLOW%   1. Check your internet connection%NC%
+        echo %YELLOW%   2. Try running as administrator%NC%
+        echo %YELLOW%   3. Clear pip cache: python -m pip cache purge%NC%
+        echo %YELLOW%   4. Update pip: python -m pip install --upgrade pip%NC%
         pause
         exit /b 1
     )
@@ -125,6 +155,17 @@ if "%INSTALL_DEPS%"=="1" (
     for /f %%i in ('certutil -hashfile "%REQUIREMENTS_FILE%" MD5 ^| find /v ":" ^| find /v "CertUtil"') do echo %%i > "%VENV_DIR%\requirements_hash.txt"
     
     echo %GREEN%✅ Dependencies installed successfully%NC%
+)
+
+REM Check MongoDB connection (optional but recommended)
+echo %BLUE%🔍 Checking MongoDB availability...%NC%
+python -c "import pymongo; client = pymongo.MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=2000); client.server_info(); print('MongoDB connection successful')" 2>nul
+if %errorlevel% equ 0 (
+    echo %GREEN%✅ MongoDB is running and accessible%NC%
+) else (
+    echo %YELLOW%⚠️ MongoDB is not running or not accessible%NC%
+    echo %YELLOW%💡 The application will work but you may need to start MongoDB%NC%
+    echo %YELLOW%   Download MongoDB from: https://www.mongodb.com/try/download/community%NC%
 )
 
 REM Check if main application file exists

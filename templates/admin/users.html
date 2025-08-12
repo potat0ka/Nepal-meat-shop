@@ -402,13 +402,13 @@ function changeUserRole(userId, newRole, userName) {
 }
 
 function confirmRoleChange(userName, isSubAdmin) {
-    console.log('confirmRoleChange called for:', userName, 'isSubAdmin:', isSubAdmin);
+    // Confirm role change for user
     const action = isSubAdmin === 'true' ? 'remove Sub-Admin role from' : 'grant Sub-Admin role to';
     const message = `Are you sure you want to ${action} ${userName}?\n\nThis will ${isSubAdmin === 'true' ? 'downgrade them to Customer' : 'upgrade them to Sub-Admin'}.`;
     const confirmed = confirm(message);
-    console.log('User confirmed:', confirmed);
+    // User confirmed action
     if (confirmed) {
-        console.log('Form will be submitted...');
+        // Form will be submitted
     }
     return confirmed;
 }

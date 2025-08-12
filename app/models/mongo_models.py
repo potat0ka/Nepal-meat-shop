@@ -30,6 +30,8 @@ class MongoUser(UserMixin):
             self.profile_image = data.get('profile_image')
             self.date_joined = data.get('date_joined') or datetime.utcnow()
             self.last_login = data.get('last_login')
+            self.reset_token = data.get('reset_token')
+            self.reset_token_expiry = data.get('reset_token_expiry')
         else:
             self._id = None
             self.username = None
@@ -45,6 +47,8 @@ class MongoUser(UserMixin):
             self.profile_image = None
             self.date_joined = datetime.utcnow()
             self.last_login = None
+            self.reset_token = None
+            self.reset_token_expiry = None
     
     def get_id(self):
         """Return the user ID as string for Flask-Login."""
@@ -153,7 +157,9 @@ class MongoUser(UserMixin):
             'is_active': self.is_active,
             'profile_image': self.profile_image,
             'date_joined': self.date_joined,
-            'last_login': self.last_login
+            'last_login': self.last_login,
+            'reset_token': self.reset_token,
+            'reset_token_expiry': self.reset_token_expiry
         }
         if self._id is not None:
             data['_id'] = self._id

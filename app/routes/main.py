@@ -5,7 +5,8 @@ Home page, general pages, and core application routes.
 """
 
 from flask import Blueprint, render_template, request, jsonify, current_app
-from app.models import Product, Category, Review
+from app.utils.mongo_db import mongo_db
+from app.models.mongo_models import MongoProduct, MongoCategory
 from app.utils import get_stock_status, format_currency
 
 # Create main blueprint
@@ -19,18 +20,20 @@ def index():
     """
     try:
         # Get featured products (marked as featured and active)
-        featured_products = Product.query.filter_by(
-            is_featured=True, 
-            is_active=True
-        ).limit(6).all()
+        featured_products_data = mongo_db.db.products.find({
+            'is_featured': True, 
+            'is_available': True
+        }).limit(6)
+        featured_products = [MongoProduct(product_data) for product_data in featured_products_data]
 
         # Get recent products (newest first)
-        recent_products = Product.query.filter_by(
-            is_active=True
-        ).order_by(Product.created_at.desc()).limit(8).all()
+        recent_products_data = mongo_db.db.products.find({
+            'is_available': True
+        }).sort('created_at', -1).limit(8)
+        recent_products = [MongoProduct(product_data) for product_data in recent_products_data]
 
         # Get active categories
-        categories = Category.query.filter_by(is_active=True).all()
+        categories = mongo_db.get_all_categories()
 
         return render_template('index.html', 
                              featured_products=featured_products,
@@ -94,12 +97,16 @@ def search():
                              total_results=0)
     
     # Search in product name, name_nepali, and description
-    products = Product.query.filter(
-        Product.is_active == True,
-        (Product.name.ilike(f'%{query}%') | 
-         Product.name_nepali.ilike(f'%{query}%') |
-         Product.description.ilike(f'%{query}%'))
-    ).order_by(Product.name.asc()).all()
+    search_filter = {
+        'is_available': True,
+        '$or': [
+            {'name': {'$regex': query, '$options': 'i'}},
+            {'name_nepali': {'$regex': query, '$options': 'i'}},
+            {'description': {'$regex': query, '$options': 'i'}}
+        ]
+    }
+    products_data = mongo_db.db.products.find(search_filter).sort('name', 1)
+    products = [MongoProduct(product_data) for product_data in products_data]
     
     return render_template('products/search_results.html', 
                          products=products, 
@@ -113,13 +120,19 @@ def api_product_stock(product_id):
     Returns JSON with stock information.
     """
     try:
-        product = Product.query.get_or_404(product_id)
+        product = mongo_db.find_product_by_id(product_id)
+        if not product:
+            return jsonify({
+                'success': False,
+                'error': 'Product not found'
+            }), 404
+            
         stock_status = get_stock_status(product)
         
         return jsonify({
             'success': True,
             'product_id': product_id,
-            'stock_kg': product.stock_kg,
+            'stock_kg': product.stock_quantity,
             'status': stock_status,
             'price': product.price,
             'formatted_price': format_currency(product.price)
@@ -139,16 +152,22 @@ def api_categories():
     Returns JSON list of categories.
     """
     try:
-        categories = Category.query.filter_by(is_active=True).all()
+        categories = mongo_db.get_all_categories()
         
         category_list = []
         for category in categories:
+            # Count products in this category
+            product_count = mongo_db.db.products.count_documents({
+                'category_id': str(category._id),
+                'is_available': True
+            })
+            
             category_list.append({
-                'id': category.id,
+                'id': str(category._id),
                 'name': category.name,
                 'name_nepali': category.name_nepali,
                 'description': category.description,
-                'product_count': len(category.products)
+                'product_count': product_count
             })
         
         return jsonify({
@@ -170,8 +189,8 @@ def health_check():
     """
     try:
         # Simple database connectivity check
-        category_count = Category.query.count()
-        product_count = Product.query.count()
+        category_count = mongo_db.db.categories.count_documents({})
+        product_count = mongo_db.db.products.count_documents({})
         
         return jsonify({
             'status': 'healthy',

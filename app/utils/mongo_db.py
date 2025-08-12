@@ -29,6 +29,7 @@ class MongoDB:
         # User indexes
         self.db.users.create_index('email', unique=True)
         self.db.users.create_index('username', unique=True)
+        self.db.users.create_index('phone', unique=True)  # Add phone index
         
         # Product indexes
         self.db.products.create_index('name')
@@ -65,6 +66,16 @@ class MongoDB:
     def find_user_by_username(self, username):
         """Find user by username."""
         user_data = self.db.users.find_one({'username': username})
+        return MongoUser(user_data) if user_data else None
+    
+    def find_user_by_phone(self, phone):
+        """Find user by phone number."""
+        user_data = self.db.users.find_one({'phone': phone})
+        return MongoUser(user_data) if user_data else None
+    
+    def find_user_by_reset_token(self, reset_token):
+        """Find user by reset token."""
+        user_data = self.db.users.find_one({'reset_token': reset_token})
         return MongoUser(user_data) if user_data else None
     
     def save_user(self, user):

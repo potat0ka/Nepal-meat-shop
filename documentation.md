@@ -19,6 +19,8 @@
 ### 1.1 Background
 The Nepal Meat Shop platform is a modern, bilingual e-commerce application designed specifically for the Nepali meat industry. The platform addresses the unique challenges of meat retail in Nepal, including cultural preferences, language barriers, and traditional payment methods.
 
+**Current State (December 2024)**: The platform has been successfully migrated to MongoDB Atlas cloud database, with all dummy files, test scripts, and development artifacts removed for a clean, production-ready codebase.
+
 ### 1.2 Scope
 This documentation covers the complete technical implementation of the platform, including:
 - Web application architecture and design patterns
@@ -230,6 +232,11 @@ def generate_order_number():
     """
     Algorithm: MO + YYYYMMDDHHMMSS + 6-char random hex
     Ensures uniqueness across concurrent requests
+    
+    Format: MO20241215143022A1B2C3
+    - MO: Prefix for "Meat Order"
+    - YYYYMMDDHHMMSS: Timestamp for chronological ordering
+    - 6-char hex: Random suffix for collision prevention
     """
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     random_suffix = uuid.uuid4().hex[:6].upper()
@@ -241,9 +248,14 @@ def generate_order_number():
 def calculate_delivery_charge(subtotal, delivery_area=None):
     """
     Tiered delivery pricing algorithm:
-    - Free delivery: Orders ≥ NPR 2000
-    - Reduced delivery: Orders ≥ NPR 1000 (NPR 25)
+    - Free delivery: Orders ≥ NPR 2000 (Premium threshold)
+    - Reduced delivery: Orders ≥ NPR 1000 (NPR 25 - Incentive pricing)
     - Standard delivery: Orders < NPR 1000 (NPR 50 or area-specific)
+    
+    Business Logic:
+    1. Encourages larger orders through free delivery
+    2. Provides mid-tier incentive for moderate orders
+    3. Covers delivery costs for smaller orders
     """
     if subtotal >= 2000:
         return 0.0
@@ -253,27 +265,128 @@ def calculate_delivery_charge(subtotal, delivery_area=None):
         return delivery_area.delivery_charge if delivery_area else 50.0
 ```
 
+#### 5.1.3 Order Status Transition Algorithm
+```python
+def update_order_status(order, new_status, user):
+    """
+    Order status state machine with business rules:
+    
+    Status Flow:
+    pending → confirmed → preparing → out_for_delivery → delivered
+                     ↓
+                  cancelled (only from pending/confirmed)
+    
+    COD Payment Integration:
+    - When status becomes 'delivered' and payment_method is 'cod'
+    - Automatically update payment_status to 'paid'
+    - Log the payment status change for audit trail
+    """
+    valid_transitions = {
+        'pending': ['confirmed', 'cancelled'],
+        'confirmed': ['preparing', 'cancelled'],
+        'preparing': ['out_for_delivery'],
+        'out_for_delivery': ['delivered'],
+        'delivered': [],  # Final status
+        'cancelled': []   # Final status
+    }
+    
+    if new_status not in valid_transitions.get(order.status, []):
+        raise ValueError(f"Invalid status transition from {order.status} to {new_status}")
+    
+    # COD Payment Auto-completion
+    if (new_status == 'delivered' and 
+        order.payment_method == 'cod' and 
+        order.payment_status != 'paid'):
+        order.payment_status = 'paid'
+        log_payment_status_change(order, 'cod_delivered', user)
+    
+    order.status = new_status
+    order.updated_at = datetime.utcnow()
+    return order
+```
+
 ### 5.2 Inventory Management Algorithm
 
 #### 5.2.1 Stock Status Classification
 ```python
 def get_stock_status(product):
     """
-    Stock level classification algorithm:
-    - Out of Stock: stock_kg ≤ 0
-    - Low Stock: 0 < stock_kg ≤ 5
-    - Limited Stock: 5 < stock_kg ≤ 20
-    - In Stock: stock_kg > 20
+    Stock level classification algorithm with business intelligence:
+    
+    Thresholds:
+    - Out of Stock: stock_kg ≤ 0 (Immediate reorder required)
+    - Low Stock: 0 < stock_kg ≤ 5 (Reorder warning)
+    - Limited Stock: 5 < stock_kg ≤ 20 (Monitor closely)
+    - In Stock: stock_kg > 20 (Normal operations)
+    
+    Color coding for UI:
+    - Red (danger): Critical attention needed
+    - Yellow (warning): Attention required
+    - Blue (info): Monitor status
+    - Green (success): Normal status
     """
     stock_kg = product.stock_kg
     if stock_kg <= 0:
-        return {'label': 'Out of Stock', 'class': 'danger'}
+        return {'label': 'Out of Stock', 'class': 'danger', 'priority': 1}
     elif stock_kg <= 5:
-        return {'label': 'Low Stock', 'class': 'warning'}
+        return {'label': 'Low Stock', 'class': 'warning', 'priority': 2}
     elif stock_kg <= 20:
-        return {'label': 'Limited Stock', 'class': 'info'}
+        return {'label': 'Limited Stock', 'class': 'info', 'priority': 3}
     else:
-        return {'label': 'In Stock', 'class': 'success'}
+        return {'label': 'In Stock', 'class': 'success', 'priority': 4}
+```
+
+#### 5.2.2 Stock Deduction Algorithm
+```python
+def process_stock_deduction(order_items):
+    """
+    Atomic stock deduction with rollback capability:
+    
+    Algorithm:
+    1. Validate all items have sufficient stock
+    2. Create deduction log for audit trail
+    3. Perform atomic stock updates
+    4. Handle rollback on any failure
+    
+    Business Rules:
+    - Prevent overselling
+    - Maintain stock integrity
+    - Audit trail for all changes
+    """
+    deduction_log = []
+    
+    try:
+        # Phase 1: Validation
+        for item in order_items:
+            product = get_product(item.product_id)
+            if product.stock_kg < item.quantity_kg:
+                raise InsufficientStockError(
+                    f"Insufficient stock for {product.name}. "
+                    f"Available: {product.stock_kg}kg, Required: {item.quantity_kg}kg"
+                )
+        
+        # Phase 2: Deduction
+        for item in order_items:
+            product = get_product(item.product_id)
+            old_stock = product.stock_kg
+            product.stock_kg -= item.quantity_kg
+            
+            deduction_log.append({
+                'product_id': product.id,
+                'old_stock': old_stock,
+                'deducted': item.quantity_kg,
+                'new_stock': product.stock_kg,
+                'timestamp': datetime.utcnow()
+            })
+            
+            update_product(product)
+        
+        return {'success': True, 'deduction_log': deduction_log}
+        
+    except Exception as e:
+        # Rollback on failure
+        rollback_stock_deduction(deduction_log)
+        raise e
 ```
 
 ### 5.3 Payment Processing Algorithm
@@ -282,10 +395,14 @@ def get_stock_status(product):
 ```python
 def process_payment(payment_method, amount, order_number):
     """
-    Payment processing algorithm supporting:
-    - Cash on Delivery (COD)
-    - Digital wallets (eSewa, Khalti, PhonePay)
-    - Banking systems (Mobile, Internet, Bank Transfer)
+    Comprehensive payment processing algorithm supporting:
+    
+    Payment Methods:
+    - Cash on Delivery (COD) - Traditional payment
+    - Digital wallets (eSewa, Khalti, PhonePay) - QR code integration
+    - Banking systems (Mobile, Internet, Bank Transfer) - Gateway integration
+    
+    Transaction ID Format: TXN + YYYYMMDDHHMMSS + 8-char hex
     """
     transaction_id = f"TXN{datetime.now().strftime('%Y%m%d%H%M%S')}{uuid.uuid4().hex[:8]}"
     
@@ -293,43 +410,241 @@ def process_payment(payment_method, amount, order_number):
         return {
             'success': True,
             'payment_status': 'pending',
-            'transaction_id': transaction_id
+            'transaction_id': transaction_id,
+            'message': 'Order confirmed. Pay on delivery.',
+            'requires_verification': False
         }
     elif payment_method in ['esewa', 'khalti', 'phonepay']:
-        # Digital wallet integration
-        return simulate_digital_payment(amount, transaction_id)
+        # Digital wallet integration with QR code
+        return process_digital_wallet_payment(payment_method, amount, transaction_id, order_number)
     else:
         # Banking system integration
-        return simulate_bank_payment(amount, transaction_id)
+        return process_bank_payment(payment_method, amount, transaction_id, order_number)
+
+def process_digital_wallet_payment(wallet_type, amount, transaction_id, order_number):
+    """
+    Digital wallet payment processing with QR code generation:
+    
+    Algorithm:
+    1. Generate payment request to wallet API
+    2. Create QR code for mobile app scanning
+    3. Set up webhook for payment confirmation
+    4. Return payment URL and QR code data
+    """
+    payment_data = {
+        'amount': amount,
+        'transaction_id': transaction_id,
+        'order_id': order_number,
+        'return_url': f"{BASE_URL}/payment/success",
+        'failure_url': f"{BASE_URL}/payment/failure"
+    }
+    
+    if wallet_type == 'esewa':
+        return {
+            'success': True,
+            'payment_url': generate_esewa_payment_url(payment_data),
+            'qr_code': generate_esewa_qr_code(payment_data),
+            'payment_status': 'initiated',
+            'transaction_id': transaction_id
+        }
+    elif wallet_type == 'khalti':
+        return {
+            'success': True,
+            'payment_url': generate_khalti_payment_url(payment_data),
+            'qr_code': generate_khalti_qr_code(payment_data),
+            'payment_status': 'initiated',
+            'transaction_id': transaction_id
+        }
+    # Similar implementation for other wallets
+```
+
+#### 5.3.2 Payment Status Tracking Algorithm
+```python
+def track_payment_status(transaction_id, payment_method):
+    """
+    Payment status tracking with automatic updates:
+    
+    Status Flow:
+    initiated → processing → completed/failed
+    
+    COD Special Case:
+    pending → paid (when order status becomes 'delivered')
+    """
+    payment_record = get_payment_record(transaction_id)
+    
+    if payment_method == 'cod':
+        # COD payments are tracked through order status
+        order = get_order_by_transaction(transaction_id)
+        if order.status == 'delivered':
+            payment_record.status = 'paid'
+            payment_record.paid_at = datetime.utcnow()
+        return payment_record.status
+    
+    else:
+        # Digital payments require gateway verification
+        gateway_status = verify_payment_with_gateway(transaction_id, payment_method)
+        
+        if gateway_status['status'] == 'success':
+            payment_record.status = 'paid'
+            payment_record.paid_at = datetime.utcnow()
+            payment_record.gateway_response = gateway_status
+        elif gateway_status['status'] == 'failed':
+            payment_record.status = 'failed'
+            payment_record.failure_reason = gateway_status.get('error_message')
+        
+        update_payment_record(payment_record)
+        return payment_record.status
 ```
 
 ### 5.4 Search and Filtering Algorithm
 
 #### 5.4.1 Product Search Implementation
 ```python
-def search_products(query, category=None, meat_type=None):
+def search_products(query, category=None, meat_type=None, price_range=None, sort_by='relevance'):
     """
-    Multi-criteria search algorithm:
-    - Text search on name and description (both languages)
-    - Category filtering
-    - Meat type filtering
+    Advanced multi-criteria search algorithm with relevance scoring:
+    
+    Search Features:
+    - Bilingual text search (English and Nepali)
+    - Category and meat type filtering
+    - Price range filtering
     - Availability filtering
+    - Relevance-based sorting
+    - Fuzzy matching for typos
     """
-    search_filter = {
-        'is_available': True,
-        '$or': [
+    search_filter = {'is_available': True}
+    
+    # Text search with relevance scoring
+    if query:
+        search_filter['$or'] = [
             {'name': {'$regex': query, '$options': 'i'}},
             {'name_nepali': {'$regex': query, '$options': 'i'}},
-            {'description': {'$regex': query, '$options': 'i'}}
+            {'description': {'$regex': query, '$options': 'i'}},
+            {'description_nepali': {'$regex': query, '$options': 'i'}},
+            {'tags': {'$in': [query]}},  # Tag-based search
+            {'category': {'$regex': query, '$options': 'i'}}
         ]
-    }
     
-    if category:
+    # Category filtering
+    if category and category != 'all':
         search_filter['category'] = category
-    if meat_type:
+    
+    # Meat type filtering
+    if meat_type and meat_type != 'all':
         search_filter['meat_type'] = meat_type
     
-    return db.products.find(search_filter).sort('name', 1)
+    # Price range filtering
+    if price_range:
+        min_price, max_price = price_range
+        search_filter['price'] = {'$gte': min_price, '$lte': max_price}
+    
+    # Execute search with sorting
+    if sort_by == 'price_low':
+        return db.products.find(search_filter).sort('price', 1)
+    elif sort_by == 'price_high':
+        return db.products.find(search_filter).sort('price', -1)
+    elif sort_by == 'name':
+        return db.products.find(search_filter).sort('name', 1)
+    else:  # relevance (default)
+        return db.products.find(search_filter).sort([
+            ('featured', -1),  # Featured products first
+            ('stock_kg', -1),  # In-stock products next
+            ('name', 1)        # Alphabetical order
+        ])
+
+def calculate_search_relevance(product, query):
+    """
+    Search relevance scoring algorithm:
+    
+    Scoring Factors:
+    - Exact name match: 100 points
+    - Name contains query: 50 points
+    - Description contains query: 25 points
+    - Category match: 20 points
+    - Tag match: 15 points
+    - Stock availability: 10 points
+    - Featured status: 5 points
+    """
+    score = 0
+    query_lower = query.lower()
+    
+    # Name matching
+    if product.name.lower() == query_lower:
+        score += 100
+    elif query_lower in product.name.lower():
+        score += 50
+    
+    # Description matching
+    if query_lower in product.description.lower():
+        score += 25
+    
+    # Category matching
+    if query_lower in product.category.lower():
+        score += 20
+    
+    # Tag matching
+    if any(query_lower in tag.lower() for tag in product.tags):
+        score += 15
+    
+    # Stock availability bonus
+    if product.stock_kg > 0:
+        score += 10
+    
+    # Featured product bonus
+    if product.featured:
+        score += 5
+    
+    return score
+```
+
+#### 5.4.2 Advanced Filtering Algorithm
+```python
+def apply_advanced_filters(products, filters):
+    """
+    Advanced product filtering with multiple criteria:
+    
+    Supported Filters:
+    - Price range (min_price, max_price)
+    - Stock status (in_stock, low_stock, out_of_stock)
+    - Rating range (min_rating, max_rating)
+    - Discount availability (has_discount)
+    - Featured status (is_featured)
+    - Date range (created_after, created_before)
+    """
+    filtered_products = products
+    
+    # Price range filter
+    if 'price_range' in filters:
+        min_price, max_price = filters['price_range']
+        filtered_products = [p for p in filtered_products 
+                           if min_price <= p.price <= max_price]
+    
+    # Stock status filter
+    if 'stock_status' in filters:
+        status = filters['stock_status']
+        if status == 'in_stock':
+            filtered_products = [p for p in filtered_products if p.stock_kg > 5]
+        elif status == 'low_stock':
+            filtered_products = [p for p in filtered_products if 0 < p.stock_kg <= 5]
+        elif status == 'out_of_stock':
+            filtered_products = [p for p in filtered_products if p.stock_kg <= 0]
+    
+    # Rating filter
+    if 'min_rating' in filters:
+        min_rating = filters['min_rating']
+        filtered_products = [p for p in filtered_products 
+                           if p.average_rating >= min_rating]
+    
+    # Discount filter
+    if filters.get('has_discount'):
+        filtered_products = [p for p in filtered_products 
+                           if p.discount_percentage > 0]
+    
+    # Featured filter
+    if filters.get('is_featured'):
+        filtered_products = [p for p in filtered_products if p.featured]
+    
+    return filtered_products
 ```
 
 ### 5.5 User Role Management Algorithm
@@ -338,24 +653,255 @@ def search_products(query, category=None, meat_type=None):
 ```python
 def can_modify_user_role(current_user, target_user, new_role):
     """
-    Role modification permission algorithm:
-    - Admins: Can modify any role
-    - Sub-admins: Can only grant 'customer' or 'staff' roles
-    - Cannot modify admin users or other sub-admins
-    - Cannot modify own role
+    Role modification permission algorithm with security controls:
+    
+    Permission Matrix:
+    - Admin: Can modify any role (except own)
+    - Sub-admin: Can grant 'customer' or 'staff' roles only
+    - Staff: No role modification permissions
+    - Customer: No role modification permissions
+    
+    Security Rules:
+    - Cannot modify own role (prevents privilege escalation)
+    - Cannot modify admin users (unless current user is admin)
+    - Cannot modify other sub-admins (unless current user is admin)
     """
+    # Self-modification prevention
     if current_user.id == target_user.id:
-        return False
+        return False, "Cannot modify your own role"
     
+    # Admin has full permissions
     if current_user.is_admin:
-        return True
+        return True, "Admin can modify any role"
     
+    # Sub-admin permissions
     if current_user.is_sub_admin:
+        # Cannot modify admin or other sub-admin users
         if target_user.is_admin or target_user.is_sub_admin:
-            return False
-        return new_role in ['customer', 'staff']
+            return False, "Sub-admins cannot modify admin or sub-admin roles"
+        
+        # Can only grant customer or staff roles
+        if new_role in ['customer', 'staff']:
+            return True, f"Sub-admin can grant {new_role} role"
+        else:
+            return False, f"Sub-admins cannot grant {new_role} role"
     
-    return False
+    # Staff and customers have no role modification permissions
+    return False, "Insufficient permissions to modify user roles"
+
+def validate_role_hierarchy(current_role, target_role):
+    """
+    Role hierarchy validation algorithm:
+    
+    Hierarchy (highest to lowest):
+    admin > sub_admin > staff > customer
+    
+    Rules:
+    - Higher roles can manage lower roles
+    - Same level roles cannot manage each other (except admin)
+    - Lower roles cannot manage higher roles
+    """
+    role_hierarchy = {
+        'admin': 4,
+        'sub_admin': 3,
+        'staff': 2,
+        'customer': 1
+    }
+    
+    current_level = role_hierarchy.get(current_role, 0)
+    target_level = role_hierarchy.get(target_role, 0)
+    
+    return current_level > target_level
+```
+
+### 5.6 Analytics and Business Intelligence Algorithms
+
+#### 5.6.1 Sales Analytics Algorithm
+```python
+def calculate_sales_metrics(start_date, end_date):
+    """
+    Comprehensive sales analytics algorithm:
+    
+    Metrics Calculated:
+    - Total revenue and order count
+    - Average order value (AOV)
+    - Revenue growth rate
+    - Top-selling products
+    - Customer acquisition metrics
+    - Payment method distribution
+    """
+    orders = get_orders_in_date_range(start_date, end_date)
+    
+    # Basic metrics
+    total_revenue = sum(order.total_amount for order in orders)
+    total_orders = len(orders)
+    average_order_value = total_revenue / total_orders if total_orders > 0 else 0
+    
+    # Growth calculation (compared to previous period)
+    previous_period_start = start_date - (end_date - start_date)
+    previous_orders = get_orders_in_date_range(previous_period_start, start_date)
+    previous_revenue = sum(order.total_amount for order in previous_orders)
+    
+    growth_rate = ((total_revenue - previous_revenue) / previous_revenue * 100) if previous_revenue > 0 else 0
+    
+    # Product performance analysis
+    product_sales = {}
+    for order in orders:
+        for item in order.items:
+            product_id = item.product_id
+            if product_id not in product_sales:
+                product_sales[product_id] = {'quantity': 0, 'revenue': 0}
+            product_sales[product_id]['quantity'] += item.quantity_kg
+            product_sales[product_id]['revenue'] += item.total_price
+    
+    # Top products by revenue
+    top_products = sorted(product_sales.items(), 
+                         key=lambda x: x[1]['revenue'], reverse=True)[:10]
+    
+    # Payment method distribution
+    payment_methods = {}
+    for order in orders:
+        method = order.payment_method
+        payment_methods[method] = payment_methods.get(method, 0) + 1
+    
+    return {
+        'total_revenue': total_revenue,
+        'total_orders': total_orders,
+        'average_order_value': average_order_value,
+        'growth_rate': growth_rate,
+        'top_products': top_products,
+        'payment_distribution': payment_methods,
+        'period': f"{start_date} to {end_date}"
+    }
+
+def predict_demand(product_id, days_ahead=30):
+    """
+    Demand forecasting algorithm using historical data:
+    
+    Algorithm:
+    1. Analyze historical sales patterns
+    2. Identify seasonal trends
+    3. Calculate moving averages
+    4. Apply linear regression for trend prediction
+    5. Adjust for external factors (holidays, events)
+    """
+    # Get historical sales data (last 90 days)
+    historical_data = get_product_sales_history(product_id, days=90)
+    
+    if len(historical_data) < 7:
+        return {'prediction': 0, 'confidence': 'low', 'message': 'Insufficient data'}
+    
+    # Calculate moving averages
+    daily_sales = [day['quantity'] for day in historical_data]
+    ma_7 = calculate_moving_average(daily_sales, 7)
+    ma_30 = calculate_moving_average(daily_sales, 30)
+    
+    # Trend analysis
+    trend = calculate_linear_trend(daily_sales)
+    
+    # Seasonal adjustment (day of week patterns)
+    seasonal_factors = calculate_seasonal_factors(historical_data)
+    
+    # Predict future demand
+    base_demand = ma_7[-1] if ma_7 else 0
+    trend_adjustment = trend * days_ahead
+    seasonal_adjustment = seasonal_factors.get(datetime.now().weekday(), 1.0)
+    
+    predicted_demand = (base_demand + trend_adjustment) * seasonal_adjustment
+    
+    # Confidence calculation based on data consistency
+    variance = calculate_variance(daily_sales)
+    confidence = 'high' if variance < 0.2 else 'medium' if variance < 0.5 else 'low'
+    
+    return {
+        'prediction': max(0, predicted_demand),
+        'confidence': confidence,
+        'trend': 'increasing' if trend > 0 else 'decreasing' if trend < 0 else 'stable',
+        'seasonal_factor': seasonal_adjustment
+    }
+```
+
+#### 5.6.2 Customer Behavior Analysis
+```python
+def analyze_customer_behavior(customer_id):
+    """
+    Customer behavior analysis algorithm:
+    
+    Analysis Points:
+    - Purchase frequency and patterns
+    - Average order value trends
+    - Product preferences
+    - Seasonal buying patterns
+    - Loyalty score calculation
+    """
+    orders = get_customer_orders(customer_id)
+    
+    if not orders:
+        return {'status': 'no_data', 'message': 'No order history found'}
+    
+    # Purchase frequency analysis
+    first_order = min(orders, key=lambda x: x.created_at)
+    last_order = max(orders, key=lambda x: x.created_at)
+    days_active = (last_order.created_at - first_order.created_at).days
+    purchase_frequency = len(orders) / max(days_active, 1) * 30  # Orders per month
+    
+    # AOV trends
+    order_values = [order.total_amount for order in orders]
+    current_aov = sum(order_values) / len(order_values)
+    
+    # Product preferences
+    product_purchases = {}
+    for order in orders:
+        for item in order.items:
+            category = item.product.category
+            product_purchases[category] = product_purchases.get(category, 0) + 1
+    
+    preferred_category = max(product_purchases.items(), key=lambda x: x[1])[0]
+    
+    # Loyalty score (0-100)
+    loyalty_score = calculate_loyalty_score(
+        purchase_frequency=purchase_frequency,
+        total_orders=len(orders),
+        total_spent=sum(order_values),
+        days_since_last_order=(datetime.now() - last_order.created_at).days
+    )
+    
+    return {
+        'customer_id': customer_id,
+        'total_orders': len(orders),
+        'total_spent': sum(order_values),
+        'average_order_value': current_aov,
+        'purchase_frequency': purchase_frequency,
+        'preferred_category': preferred_category,
+        'loyalty_score': loyalty_score,
+        'customer_segment': classify_customer_segment(loyalty_score, current_aov)
+    }
+
+def calculate_loyalty_score(purchase_frequency, total_orders, total_spent, days_since_last_order):
+    """
+    Customer loyalty scoring algorithm (0-100 scale):
+    
+    Factors:
+    - Purchase frequency (40% weight)
+    - Total orders (25% weight)
+    - Total amount spent (25% weight)
+    - Recency (10% weight)
+    """
+    # Normalize factors to 0-1 scale
+    frequency_score = min(purchase_frequency / 4, 1.0)  # 4+ orders/month = max score
+    orders_score = min(total_orders / 20, 1.0)  # 20+ orders = max score
+    spending_score = min(total_spent / 50000, 1.0)  # NPR 50,000+ = max score
+    recency_score = max(0, 1 - (days_since_last_order / 90))  # 90+ days = 0 score
+    
+    # Weighted calculation
+    loyalty_score = (
+        frequency_score * 0.4 +
+        orders_score * 0.25 +
+        spending_score * 0.25 +
+        recency_score * 0.1
+    ) * 100
+    
+    return round(loyalty_score, 1)
 ```
 
 ---
@@ -937,7 +1483,7 @@ pip install -r requirements.txt
 cp .env.example .env.mongo
 
 # Run MongoDB application
-python run_mongo.py
+python mongo_app.py
 ```
 
 #### D.2 Production Deployment

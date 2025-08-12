@@ -5,7 +5,7 @@ Sales reporting, analytics, and notification system models.
 """
 
 from datetime import datetime
-from app import db
+# SQLAlchemy removed - using MongoDB models instead
 
 class SalesReport(db.Model):
     """

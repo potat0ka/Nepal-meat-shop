@@ -268,26 +268,26 @@
     
     .small-chart-container {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-        max-width: 600px;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        max-width: 500px;
         margin: 0 auto;
     }
     
     .small-chart-card {
         background: white;
         border-radius: 12px;
-        padding: 20px;
+        padding: 15px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         border-left: 4px solid #667eea;
         text-align: center;
     }
     
     .small-chart-title {
-        font-size: 1.1rem;
+        font-size: 1rem;
         font-weight: bold;
         color: #2c3e50;
-        margin-bottom: 15px;
+        margin-bottom: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -301,8 +301,8 @@
     }
     
     .small-chart-content canvas {
-        max-width: 200px;
-        max-height: 200px;
+        max-width: 150px;
+        max-height: 150px;
         border-radius: 8px;
     }
     
@@ -2087,7 +2087,7 @@
                     <i class="fas fa-chart-pie"></i> Delivery Status
                 </h4>
                 <div class="small-chart-content">
-                    <canvas id="deliveryPieChart" width="200" height="200"></canvas>
+                    <canvas id="deliveryPieChart" width="150" height="150"></canvas>
                 </div>
             </div>
             
@@ -2096,7 +2096,7 @@
                     <i class="fas fa-chart-line"></i> Revenue Trend
                 </h4>
                 <div class="small-chart-content">
-                    <canvas id="revenueLineChart" width="200" height="200"></canvas>
+                    <canvas id="revenueLineChart" width="150" height="150"></canvas>
                 </div>
             </div>
         </div>
@@ -2537,7 +2537,7 @@ function initializePagination() {
 function changePage(direction) {
     // This would typically involve AJAX calls to the server
     // For now, we'll just show a message
-    console.log(`Changing page by ${direction}`);
+    // Changing page
     // In a real implementation, you would make an AJAX call here
 }
 

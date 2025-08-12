@@ -59,3 +59,21 @@ class ChangePasswordForm(FlaskForm):
     confirm_password = PasswordField('Confirm New Password', 
                                    validators=[DataRequired(), EqualTo('new_password')])
     submit = SubmitField('Change Password')
+
+class ForgotPasswordForm(FlaskForm):
+    """
+    Forgot password form for password reset requests.
+    Sends reset link to user's email.
+    """
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    submit = SubmitField('Send Reset Link')
+
+class ResetPasswordForm(FlaskForm):
+    """
+    Reset password form for users with valid reset tokens.
+    Allows setting new password without current password.
+    """
+    password = PasswordField('New Password', validators=[DataRequired(), Length(min=6)])
+    confirm_password = PasswordField('Confirm New Password', 
+                                   validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('Reset Password')

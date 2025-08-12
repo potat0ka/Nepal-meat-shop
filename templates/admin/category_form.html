@@ -365,7 +365,7 @@ function saveCustomTranslation(english, nepali) {
     
     try {
         localStorage.setItem('customNepaliTranslations', JSON.stringify(custom));
-        console.log('Custom translation saved:', english, '→', nepali);
+        // Custom translation saved
     } catch (e) {
         console.error('Error saving custom translation:', e);
     }

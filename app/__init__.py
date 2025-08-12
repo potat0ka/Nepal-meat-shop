@@ -7,14 +7,10 @@ Main Flask application setup with modular architecture.
 import os
 import logging
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
-from flask_migrate import Migrate
 
-# Initialize extensions
-db = SQLAlchemy()
+# Initialize extensions (SQLAlchemy removed - using MongoDB only)
 login_manager = LoginManager()
-migrate = Migrate()
 
 def create_app(config_name='development'):
     """
@@ -49,9 +45,9 @@ def create_app(config_name='development'):
         app.logger.setLevel(logging.INFO)
         app.logger.info('Nepal Meat Shop startup')
     
-    # Initialize extensions with app
-    db.init_app(app)
-    migrate.init_app(app, db)
+    # Initialize MongoDB connection
+    from app.utils.mongo_db import mongo_db
+    mongo_db.init_app(app)
     
     # Setup Flask-Login
     login_manager.init_app(app)
@@ -61,36 +57,35 @@ def create_app(config_name='development'):
     
     @login_manager.user_loader
     def load_user(user_id):
-        from app.models import User
+        from app.utils.mongo_db import mongo_db
         try:
-            return User.query.get(int(user_id))
+            return mongo_db.find_user_by_id(user_id)
         except (ValueError, TypeError):
             # Handle invalid user_id format (e.g., from old sessions)
             return None
     
-    # Register blueprints
+    # Register blueprints - Using MongoDB routes only
     from app.routes.main import main_bp
-    from app.routes.auth import auth_bp
-    from app.routes.admin import admin_bp
-    from app.routes.orders import orders_bp
+    from app.routes.mongo_auth import mongo_auth_bp
     from app.routes.mongo_admin import mongo_admin_bp
     from app.routes.mongo_orders import mongo_orders_bp
+    from app.routes.mongo_products import mongo_products_bp
+    from app.routes.mongo_main import mongo_main_bp
     from app.routes.payment_webhooks import payment_webhooks_bp
     
-    app.register_blueprint(main_bp)
-    app.register_blueprint(auth_bp, url_prefix='/auth')
-    app.register_blueprint(admin_bp, url_prefix='/admin')
-    app.register_blueprint(orders_bp, url_prefix='/orders')
+    # Register MongoDB-based blueprints
+    app.register_blueprint(mongo_main_bp)  # MongoDB main routes
+    app.register_blueprint(main_bp)  # Keep for compatibility
+    app.register_blueprint(mongo_auth_bp, url_prefix='/auth')
     app.register_blueprint(mongo_admin_bp, url_prefix='/admin')
     app.register_blueprint(mongo_orders_bp, url_prefix='/orders')
+    app.register_blueprint(mongo_products_bp, url_prefix='/products')
     app.register_blueprint(payment_webhooks_bp)
     
     # Register template filters and context processors
     register_template_helpers(app)
     
-    # Create database tables
-    with app.app_context():
-        db.create_all()
+    # MongoDB connection is handled by mongo_db.init_app()
     
     return app
 

@@ -53,16 +53,22 @@ def register():
 
     form = RegisterForm()
     if form.validate_on_submit():
-        # Check if user already exists
+        # Check if email already exists
         if User.query.filter_by(email=form.email.data).first():
-            flash('यो ईमेल पहिले नै प्रयोग भइसकेको छ / Email already registered!', 'error')
+            flash('यो ईमेल पहिले नै प्रयोग भइसकेको छ! यदि तपाईंसँग खाता छ भने लगइन गर्नुहोस् वा पासवर्ड भुल्नुभयो भने रिसेट गर्नुहोस् / Email already registered! If you have an account, please login or reset your password if forgotten.', 'error')
             return render_template('auth/register.html', form=form)
 
+        # Check if username already exists
         if User.query.filter_by(username=form.username.data).first():
             flash('यो प्रयोगकर्ता नाम उपलब्ध छैन / Username not available!', 'error')
             return render_template('auth/register.html', form=form)
 
-        # Validate phone number
+        # Check if phone number already exists
+        if User.query.filter_by(phone=form.phone.data).first():
+            flash('यो फोन नम्बर पहिले नै प्रयोग भइसकेको छ! यदि तपाईंसँग खाता छ भने लगइन गर्नुहोस् वा पासवर्ड भुल्नुभयो भने रिसेट गर्नुहोस् / Phone number already registered! If you have an account, please login or reset your password if forgotten.', 'error')
+            return render_template('auth/register.html', form=form)
+
+        # Validate phone number format
         if not validate_phone_number(form.phone.data):
             flash('गलत फोन नम्बर / Invalid phone number format!', 'error')
             return render_template('auth/register.html', form=form)

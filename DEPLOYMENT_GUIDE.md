@@ -2,6 +2,12 @@
 
 This comprehensive guide covers all deployment methods for the Nepal Meat Shop application across Windows, macOS, and Linux platforms.
 
+## 🆕 Recent Updates (December 2024)
+- ✅ **MongoDB Atlas Migration**: Application now uses cloud database exclusively
+- ✅ **Simplified Entry Point**: All platforms now use `mongo_app.py` as the main application file
+- ✅ **Cleaned Codebase**: Removed dummy files, test scripts, and cache files
+- ✅ **Updated Scripts**: All deployment scripts updated to reflect current architecture
+
 ## 🚀 Quick Start (One-Click Deployment)
 
 ### Automated Deployment Scripts
@@ -70,7 +76,7 @@ export FLASK_ENV=development
 export MONGO_URI=mongodb://localhost:27017/nepal_meat_shop_dev
 
 # Run the application
-python3 run_mongo_mac.py
+python3 mongo_app.py
 ```
 
 ### 🐧 Linux Setup
@@ -131,7 +137,7 @@ sudo systemctl enable mongod
 ```bash
 # Install dependencies and run
 pip3 install -r requirements.txt
-python3 run_mongo_linux.py
+python3 mongo_app.py
 ```
 
 ### 🪟 Windows Setup
@@ -151,7 +157,7 @@ python3 run_mongo_linux.py
 pip install -r requirements.txt
 
 # Run the application
-python run_mongo.py
+python mongo_app.py
 ```
 
 ---
@@ -347,7 +353,7 @@ RUN pip install -r requirements.txt
 COPY . .
 EXPOSE 5000
 
-CMD ["python", "run_mongo.py"]
+CMD ["python", "mongo_app.py"]
 ```
 
 **docker-compose.yml:**
@@ -386,7 +392,7 @@ Type=simple
 User=www-data
 WorkingDirectory=/path/to/nepal-meat-shop
 Environment=MONGO_URI=mongodb://localhost:27017/nepal_meat_shop
-ExecStart=/usr/bin/python3 run_mongo_linux.py
+ExecStart=/usr/bin/python3 mongo_app.py
 Restart=always
 
 [Install]

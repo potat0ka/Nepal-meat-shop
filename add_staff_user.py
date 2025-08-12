@@ -4,6 +4,8 @@ Script to add a staff user to the MongoDB database.
 """
 
 import os
+import secrets
+import string
 from datetime import datetime
 from werkzeug.security import generate_password_hash
 from dotenv import load_dotenv
@@ -28,11 +30,18 @@ app.config.from_object(mongo_config[config_name])
 with app.app_context():
     mongo_db.init_app(app)
 
+# Generate secure password or use environment variable
+staff_password = os.environ.get('STAFF_PASSWORD')
+if not staff_password:
+    # Generate a secure random password
+    alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+    staff_password = ''.join(secrets.choice(alphabet) for _ in range(12))
+
 # Staff user data
 staff_user = {
     'username': 'staff1',
     'email': 'staff@meatshop.com',
-    'password_hash': generate_password_hash('staff123'),
+    'password_hash': generate_password_hash(staff_password),
     'full_name': 'Staff Member',
     'phone': '+977-9841234569',
     'address': 'Bhaktapur, Nepal',
@@ -55,7 +64,8 @@ try:
         print(f"✅ Staff user created successfully with ID: {result.inserted_id}")
         print("Login credentials:")
         print("Username: staff1")
-        print("Password: staff123")
+        print(f"Password: {staff_password}")
+        print("\n⚠️  IMPORTANT: Save this password securely! It won't be shown again.")
         
 except Exception as e:
     print(f"❌ Error creating staff user: {e}")

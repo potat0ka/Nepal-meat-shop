@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
  * Initialize the application
  */
 function initializeApp() {
-    console.log('🍖 Nepal Meat Shop - Application Initialized');
+    // Application initialized
     
     // Initialize components
     initializeNavigation();
@@ -27,6 +27,9 @@ function initializeApp() {
     initializeTooltips();
     initializeAnimations();
     initializeQuantitySelector();
+    
+    // Initialize password visibility toggles
+    initializePasswordToggles();
     
     // Set up event listeners
     setupEventListeners();
@@ -1290,4 +1293,33 @@ window.decreaseQuantity = decreaseQuantity;
 // Service Worker registration removed to prevent 404 errors
 // If you want PWA capabilities, create a sw.js file in the static folder
 
-console.log('🍖 Nepal Meat Shop JavaScript loaded successfully!');
+/**
+ * Initialize password visibility toggles
+ */
+function initializePasswordToggles() {
+    const passwordToggles = document.querySelectorAll('.password-toggle');
+    
+    passwordToggles.forEach(toggle => {
+        toggle.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const passwordInput = document.querySelector(targetId);
+            const icon = this.querySelector('i');
+            
+            if (passwordInput) {
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                    this.setAttribute('title', 'Hide password');
+                } else {
+                    passwordInput.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                    this.setAttribute('title', 'Show password');
+                }
+            }
+        });
+    });
+}
+
+// Nepal Meat Shop JavaScript loaded successfully

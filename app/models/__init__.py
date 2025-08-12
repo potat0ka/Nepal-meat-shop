@@ -3,16 +3,13 @@
 Centralized import for all database models.
 """
 
-# Import all models to ensure they're registered with SQLAlchemy
-from .user import User
-from .product import Category, Product, Review, StockAlert
-from .order import Order, OrderItem, CartItem, DeliveryArea, Invoice
-from .analytics import SalesReport, NotificationTemplate, NotificationLog
+# Import MongoDB models
+from .mongo_models import MongoUser, MongoProduct, MongoOrder, MongoCategory
 
 # Export all models for easy importing
 __all__ = [
-    'User',
-    'Category', 'Product', 'Review', 'StockAlert',
-    'Order', 'OrderItem', 'CartItem', 'DeliveryArea', 'Invoice',
-    'SalesReport', 'NotificationTemplate', 'NotificationLog'
+    'MongoUser',
+    'MongoProduct', 
+    'MongoOrder', 
+    'MongoCategory'
 ]

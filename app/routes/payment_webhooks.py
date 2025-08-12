@@ -9,8 +9,7 @@ from flask_login import current_user
 from app.services.payment_service import payment_service
 from app.utils.mongo_db import mongo_db
 from app.models.mongo_models import MongoOrder
-from app.models.order import Order
-from app import db
+# Removed SQLAlchemy imports - using MongoDB only
 import logging
 import json
 from datetime import datetime
@@ -249,45 +248,31 @@ def manual_payment_verification(payment_method):
 
 def update_order_payment_status(order_number: str, payment_status: str, 
                                transaction_id: str = None, payment_method: str = None) -> bool:
-    """Update order payment status in both SQLite and MongoDB."""
+    """Update order payment status in MongoDB."""
     try:
-        updated = False
+        if mongo_db.db is None:
+            logger.error("MongoDB connection not available")
+            return False
+            
+        result = mongo_db.db.orders.update_one(
+            {'order_number': order_number},
+            {
+                '$set': {
+                    'payment_status': payment_status,
+                    'transaction_id': transaction_id,
+                    'payment_method': payment_method,
+                    'payment_verified_at': datetime.utcnow() if payment_status == 'paid' else None
+                }
+            }
+        )
         
-        # Try MongoDB first
-        if mongo_db.db is not None:
-            try:
-                result = mongo_db.db.orders.update_one(
-                    {'order_number': order_number},
-                    {
-                        '$set': {
-                            'payment_status': payment_status,
-                            'transaction_id': transaction_id,
-                            'payment_verified_at': datetime.utcnow() if payment_status == 'paid' else None
-                        }
-                    }
-                )
-                if result.modified_count > 0:
-                    updated = True
-                    logger.info(f"MongoDB order {order_number} payment status updated to {payment_status}")
-            except Exception as e:
-                logger.error(f"MongoDB update error: {str(e)}")
-        
-        # Try SQLite as fallback
-        try:
-            order = Order.query.filter_by(order_number=order_number).first()
-            if order:
-                order.payment_status = payment_status
-                if transaction_id:
-                    order.transaction_id = transaction_id
-                db.session.commit()
-                updated = True
-                logger.info(f"SQLite order {order_number} payment status updated to {payment_status}")
-        except Exception as e:
-            logger.error(f"SQLite update error: {str(e)}")
-            db.session.rollback()
-        
-        return updated
-        
+        if result.modified_count > 0:
+            logger.info(f"MongoDB order {order_number} payment status updated to {payment_status}")
+            return True
+        else:
+            logger.warning(f"No order found with number {order_number}")
+            return False
+            
     except Exception as e:
         logger.error(f"Order update error: {str(e)}")
         return False
@@ -295,18 +280,17 @@ def update_order_payment_status(order_number: str, payment_status: str,
 def get_order_id_by_number(order_number: str) -> str:
     """Get order ID by order number for redirect purposes."""
     try:
-        # Try MongoDB first
-        if mongo_db.db is not None:
-            order_data = mongo_db.db.orders.find_one({'order_number': order_number})
-            if order_data:
-                return str(order_data['_id'])
-        
-        # Try SQLite as fallback
-        order = Order.query.filter_by(order_number=order_number).first()
-        if order:
-            return str(order.id)
+        if mongo_db.db is None:
+            logger.error("MongoDB connection not available")
+            return None
+            
+        order_data = mongo_db.db.orders.find_one({'order_number': order_number})
+        if order_data:
+            return str(order_data['_id'])
+        else:
+            logger.warning(f"No order found with number {order_number}")
+            return None
             
     except Exception as e:
         logger.error(f"Error getting order ID: {str(e)}")
-    
-    return None
+        return None

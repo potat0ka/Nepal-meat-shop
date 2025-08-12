@@ -1,36 +1,100 @@
-# 🍖 Nepal Meat Shop - Dependencies
-# Core Flask framework and extensions
+# 🍖 Nepal Meat Shop - Complete Dependencies List
+# Updated: January 2025
+# Python 3.8+ required
+
+# ========================================================================
+# CORE FLASK FRAMEWORK AND EXTENSIONS
+# ========================================================================
 Flask==3.0.0
 Flask-SQLAlchemy==3.1.1
 Flask-Login==0.6.3
 Flask-WTF==1.2.1
 Flask-Migrate==4.0.5
 
-# Database support
+# ========================================================================
+# DATABASE SUPPORT
+# ========================================================================
+# SQL Database
 SQLAlchemy==2.0.23
 
-# MongoDB support
+# MongoDB Database
 pymongo==4.6.0
 flask-pymongo==2.3.0
 
-# Form handling and validation
+# ========================================================================
+# FORM HANDLING AND VALIDATION
+# ========================================================================
 WTForms==3.1.1
 
-# Security and password hashing
+# ========================================================================
+# SECURITY AND AUTHENTICATION
+# ========================================================================
 Werkzeug==3.0.1
 
-# File upload handling
+# ========================================================================
+# HTTP REQUESTS AND API COMMUNICATION
+# ========================================================================
+requests==2.31.0
+
+# ========================================================================
+# FILE HANDLING AND IMAGE PROCESSING
+# ========================================================================
 Pillow==10.1.0
 
-# PDF generation
+# ========================================================================
+# PDF GENERATION AND REPORTING
+# ========================================================================
 reportlab==4.0.7
 
-# Environment configuration
+# ========================================================================
+# ENVIRONMENT CONFIGURATION
+# ========================================================================
 python-dotenv==1.0.0
 
-# Development and testing (optional)
+# ========================================================================
+# DATA PROCESSING AND UTILITIES
+# ========================================================================
+# BSON handling (included with pymongo but explicit for clarity)
+bson>=0.5.10
+
+# ========================================================================
+# DEVELOPMENT AND TESTING
+# ========================================================================
 pytest==7.4.3
 pytest-flask==1.3.0
 
-# Production server (optional)
+# ========================================================================
+# PRODUCTION SERVER
+# ========================================================================
 gunicorn==21.2.0
+waitress==2.1.2
+
+# ========================================================================
+# ADDITIONAL UTILITIES
+# ========================================================================
+# Email validation and utilities
+email-validator==2.1.0
+
+# Date and time utilities
+python-dateutil==2.8.2
+
+# JSON Web Token support (for future API authentication)
+PyJWT==2.8.0
+
+# Caching support
+Flask-Caching==2.1.0
+
+# Rate limiting
+Flask-Limiter==3.5.0
+
+# CORS support for API endpoints
+Flask-CORS==4.0.0
+
+# ========================================================================
+# SYSTEM REQUIREMENTS
+# ========================================================================
+# Minimum Python version: 3.8
+# Recommended Python version: 3.9+
+# Operating System: Windows, macOS, Linux
+# RAM: Minimum 2GB, Recommended 4GB+
+# Storage: Minimum 1GB free space

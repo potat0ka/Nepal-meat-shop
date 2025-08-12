@@ -326,16 +326,9 @@ class PaymentService:
         
         logger.info(f"Payment attempt logged: {json.dumps(log_entry)}")
         
+        # Note: payment_logs.json file removed - now using MongoDB for payment logging
         # In production, save to database or external logging service
-        # For now, just log to file
-        try:
-            log_file = os.path.join(current_app.instance_path, 'payment_logs.json')
-            os.makedirs(os.path.dirname(log_file), exist_ok=True)
-            
-            with open(log_file, 'a') as f:
-                f.write(json.dumps(log_entry) + '\n')
-        except Exception as e:
-            logger.error(f"Failed to write payment log: {str(e)}")
+        # Payment logs are now stored in MongoDB collections
 
 # Global payment service instance
 payment_service = PaymentService()

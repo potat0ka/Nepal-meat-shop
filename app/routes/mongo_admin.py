@@ -663,23 +663,21 @@ def update_order_status(order_id):
                 update_data['payment_status'] = 'paid'
                 update_data['payment_confirmed_at'] = datetime.now()
                 update_data['payment_confirmed_by'] = current_user._id
-                print(f"DEBUG: COD order {order_id} marked as paid upon delivery")
+                # COD order marked as paid upon delivery
         
         # Auto-mark as paid when status is COD PAID (for COD orders)
         if new_status == 'cod_paid':
             update_data['payment_status'] = 'paid'
             update_data['payment_confirmed_at'] = datetime.now()
             update_data['payment_confirmed_by'] = current_user._id
-            print(f"DEBUG: COD payment status updated to 'paid' for order {order_id}")
+            # COD payment status updated to 'paid'
         
         # Auto-mark as paid when status is confirmed (only for online payments, not COD)
         if new_status == 'confirmed':
             payment_method = order_data.get('payment_method', '').lower().strip()
             current_payment_status = order_data.get('payment_status', 'pending').lower().strip()
             
-            # Debug logging
-            print(f"DEBUG: Order {order_id} - Payment method: '{payment_method}', Current payment status: '{current_payment_status}'")
-            print(f"DEBUG: Condition check - payment_method != 'cod': {payment_method != 'cod'}, current_payment_status != 'paid': {current_payment_status != 'paid'}")
+            # Check payment method and status for auto-confirmation
             
             # List of online payment methods
             online_payment_methods = ['esewa', 'khalti', 'ime_pay', 'fonepay']
@@ -689,9 +687,8 @@ def update_order_status(order_id):
                 update_data['payment_status'] = 'paid'
                 update_data['payment_confirmed_at'] = datetime.now()
                 update_data['payment_confirmed_by'] = current_user._id
-                print(f"DEBUG: Payment status will be updated to 'paid' for order {order_id}")
-            else:
-                print(f"DEBUG: Payment status NOT updated for order {order_id} - Reason: payment_method='{payment_method}', current_payment_status='{current_payment_status}'")
+                # Payment status will be updated to 'paid'
+                pass
         
         result = mongo_db.db.orders.update_one(
             {'_id': order_object_id},
@@ -706,26 +703,26 @@ def update_order_status(order_id):
             if new_status == 'cod_paid':
                 current_payment_status = order_data.get('payment_status', 'pending').lower().strip()
                 _log_payment_status_change(order_id, current_payment_status, 'paid', current_user._id, 'cod_paid')
-                print(f"DEBUG: COD payment status change logged for order {order_id}")
+                # COD payment status change logged
             elif new_status == 'delivered':
                 payment_method = order_data.get('payment_method', '').lower().strip()
                 current_payment_status = order_data.get('payment_status', 'pending').lower().strip()
                 
                 if payment_method == 'cod' and current_payment_status != 'paid':
                     _log_payment_status_change(order_id, current_payment_status, 'paid', current_user._id, 'cod_delivered')
-                    print(f"DEBUG: COD payment status change logged for delivered order {order_id}")
+                    # COD payment status change logged for delivered order
             elif new_status == 'confirmed':
                 payment_method = order_data.get('payment_method', '').lower().strip()
                 current_payment_status = order_data.get('payment_status', 'pending').lower().strip()
                 
-                print(f"DEBUG: Logging check - payment_method: '{payment_method}', current_payment_status: '{current_payment_status}'")
+                # Check payment method and status for logging
                 
                 # List of online payment methods
                 online_payment_methods = ['esewa', 'khalti', 'ime_pay', 'fonepay']
                 
                 if (payment_method in online_payment_methods or (payment_method != 'cod' and payment_method != '')) and current_payment_status != 'paid':
                     _log_payment_status_change(order_id, current_payment_status, 'paid', current_user._id, 'auto_confirmed')
-                    print(f"DEBUG: Payment status change logged for order {order_id}")
+                    # Payment status change logged
             
             # Get customer info for notification
             customer_name = 'Customer'

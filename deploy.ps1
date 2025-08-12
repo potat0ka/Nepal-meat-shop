@@ -119,7 +119,7 @@ function Start-Deployment {
         $ProjectDir = Split-Path -Parent $MyInvocation.MyCommand.Path
         $VenvDir = Join-Path $ProjectDir "venv"
         $RequirementsFile = Join-Path $ProjectDir "requirements.txt"
-        $MainFile = Join-Path $ProjectDir "run_mongo.py"
+        $MainFile = Join-Path $ProjectDir "mongo_app.py"
         $EnvFile = Join-Path $ProjectDir ".env.mongo"
 
         Write-Status "Checking Python installation..."
@@ -142,13 +142,14 @@ function Start-Deployment {
             exit 1
         }
 
-        # Check Python version (must be 3.6+)
+        # Check Python version (must be 3.8+)
         $versionParts = $version.Split('.')
         $majorVersion = [int]$versionParts[0]
         $minorVersion = [int]$versionParts[1]
         
-        if ($majorVersion -lt 3 -or ($majorVersion -eq 3 -and $minorVersion -lt 6)) {
-            Write-Error "Python 3.6 or higher is required. Found: $version"
+        if ($majorVersion -lt 3 -or ($majorVersion -eq 3 -and $minorVersion -lt 8)) {
+            Write-Error "Python 3.8 or higher is required. Found: $version"
+            Write-Warning "Please upgrade Python from: https://www.python.org/downloads/"
             exit 1
         }
 
@@ -229,14 +230,24 @@ function Start-Deployment {
         # Install/update dependencies if needed
         if ($installDeps) {
             Write-Status "Installing dependencies from requirements.txt..."
+            Write-Info "💡 This may take a few minutes on first run..."
             
             # Upgrade pip first
             python -m pip install --upgrade pip
+            if ($LASTEXITCODE -ne 0) {
+                Write-Warning "⚠️ Warning: Failed to upgrade pip, continuing with current version"
+            }
             
-            # Install requirements
-            python -m pip install -r $RequirementsFile
+            # Install requirements with better error handling
+            python -m pip install -r $RequirementsFile --no-cache-dir
             if ($LASTEXITCODE -ne 0) {
                 Write-Error "Failed to install dependencies"
+                Write-Warning "💡 Troubleshooting tips:"
+                Write-Warning "  1. Check your internet connection"
+                Write-Warning "  2. Run PowerShell as Administrator"
+                Write-Warning "  3. Try clearing pip cache: python -m pip cache purge"
+                Write-Warning "  4. Update pip: python -m pip install --upgrade pip"
+                Write-Warning "  5. Install with --user flag: python -m pip install --user -r requirements.txt"
                 exit 1
             }
             
@@ -247,6 +258,19 @@ function Start-Deployment {
             }
             
             Write-Success "Dependencies installed successfully"
+        }
+
+        # Check MongoDB connection (optional but recommended)
+        Write-Status "🔍 Checking MongoDB availability..."
+        try {
+            python -c "import pymongo; client = pymongo.MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=2000); client.server_info(); print('MongoDB connection successful')" 2>$null
+            Write-Success "MongoDB is running and accessible"
+        }
+        catch {
+            Write-Warning "⚠️ MongoDB is not running or not accessible"
+            Write-Warning "💡 The application will work but you may need to start MongoDB"
+            Write-Warning "  Download from: https://www.mongodb.com/try/download/community"
+            Write-Warning "  Or install via package manager"
         }
 
         # Check if main application file exists

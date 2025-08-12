@@ -304,11 +304,10 @@ function quickStatusUpdate(orderId, newStatus) {
         'cod_paid': 'COD PAID'
     };
     
-    console.log('Quick status update called:', orderId, newStatus);
+    // Quick status update for order
     
     if (confirm(`Mark order as ${statusNames[newStatus]}?`)) {
         const csrfToken = getCSRFToken();
-        console.log('CSRF Token:', csrfToken);
         
         fetch(`/admin/orders/${orderId}/update-status`, {
             method: 'POST',
@@ -318,11 +317,11 @@ function quickStatusUpdate(orderId, newStatus) {
             body: JSON.stringify({ status: newStatus })
         })
         .then(response => {
-            console.log('Response status:', response.status);
+            // Processing response
             return response.json();
         })
         .then(data => {
-            console.log('Response data:', data);
+            // Processing response data
             if (data.success) {
                 showToast(data.message, 'success');
                 // Refresh page to show updated status

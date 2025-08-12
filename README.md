@@ -90,7 +90,13 @@ app/
 ### Prerequisites
 - Python 3.8+
 - pip (Python package manager)
-- MongoDB (local installation or MongoDB Atlas account)
+- MongoDB Atlas account (cloud database - recommended)
+
+### Recent Updates (December 2024)
+- ✅ **Migrated to MongoDB Atlas**: Application now uses cloud database instead of local SQLite
+- ✅ **Cleaned up dummy files**: Removed development database files and test scripts
+- ✅ **Streamlined deployment**: Updated all deployment scripts to use `mongo_app.py`
+- ✅ **Removed cache files**: Cleaned up Python cache files for better performance
 
 ### Installation
 
@@ -120,7 +126,7 @@ app/
 
 4. **Run the MongoDB application**
    ```bash
-   python run_mongo.py
+   python mongo_app.py
    ```
 
 5. **Access the application**
@@ -141,8 +147,7 @@ Environment can be set via `FLASK_ENV` environment variable.
 ### Core Application
 ```
 BugFixer/
-├── mongo_main.py           # MongoDB application entry point
-├── run_mongo.py           # Development server runner
+├── mongo_app.py           # MongoDB application entry point
 ├── requirements.txt       # Python dependencies
 ├── .env.mongo            # Environment configuration
 └── documentation.md      # Technical documentation
@@ -196,7 +201,7 @@ export FLASK_ENV=development
 export MONGO_URI=mongodb://localhost:27017/nepal_meat_shop_dev
 
 # Run with auto-reload
-python run_mongo.py
+python mongo_app.py
 ```
 
 ### Database Setup

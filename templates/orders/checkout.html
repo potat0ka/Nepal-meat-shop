@@ -996,13 +996,13 @@ const DEFAULT_LOCATION = {
 
 // Initialize everything when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Initializing checkout page...');
+    // Initializing checkout page
     initializeComponents();
 });
 
 // Initialize all components
 function initializeComponents() {
-    console.log('🔧 Initializing components...');
+    // Initializing components
     
     // Debug: Check if key elements exist
     const currentLocationBtn = document.getElementById('current-location-btn');
@@ -1010,12 +1010,7 @@ function initializeComponents() {
     const useLocationBtn = document.getElementById('use-selected-location');
     const mapContainer = document.getElementById('delivery-map');
     
-    console.log('🔍 Element check:', {
-        currentLocationBtn: !!currentLocationBtn,
-        addressSearch: !!addressSearch,
-        useLocationBtn: !!useLocationBtn,
-        mapContainer: !!mapContainer
-    });
+    // Element check completed
     
     setupEventListeners();
     setupPaymentMethodHandlers();
@@ -1025,13 +1020,7 @@ function initializeComponents() {
         initMap();
     }, 100);
     
-    // Add debug info to console
-    console.log('🌐 Location debug info:', {
-        protocol: location.protocol,
-        hostname: location.hostname,
-        geolocationSupported: !!navigator.geolocation,
-        leafletLoaded: typeof L !== 'undefined'
-    });
+    // Location debug info checked
 }
 
 /**
@@ -1039,7 +1028,7 @@ function initializeComponents() {
  * Initializes the Leaflet map with OpenStreetMap tiles and sets up event handlers
  */
 function initMap() {
-    console.log('🗺️ Initializing map...');
+    // Initializing map
     
     const mapContainer = document.getElementById('delivery-map');
     const loadingElement = document.getElementById('map-loading');
@@ -1055,7 +1044,7 @@ function initMap() {
         console.error('❌ Leaflet library not loaded');
         if (mapRetryCount < MAX_RETRY_COUNT) {
             mapRetryCount++;
-            console.log(`🔄 Retrying map initialization (${mapRetryCount}/${MAX_RETRY_COUNT})...`);
+            // Retrying map initialization
             setTimeout(initMap, 1000);
             return;
         }
@@ -1116,7 +1105,7 @@ function initMap() {
         
         // Handle map load event
         map.whenReady(function() {
-            console.log('✅ Map loaded and ready');
+            // Map loaded and ready
             isMapInitialized = true;
             
             // Invalidate size to ensure proper rendering
@@ -1159,7 +1148,7 @@ function initMap() {
             }
         }, 10000); // 10 second timeout
         
-        console.log('✅ Map initialized successfully');
+        // Map initialized successfully
         
     } catch (error) {
         console.error('❌ Map initialization error:', error);
@@ -1242,12 +1231,7 @@ async function handleFormSubmission(e) {
         return false;
     }
     
-    console.log('✅ Location validation passed:', {
-        hasCoordinates,
-        hasManualAddress,
-        coordinates: hasCoordinates ? `${latInput.value}, ${lngInput.value}` : 'none',
-        address: hasManualAddress ? deliveryAddressField.value : 'none'
-    });
+    // Location validation passed
     
     // Now handle payment processing
     const formData = new FormData(e.target);
@@ -1290,7 +1274,7 @@ async function handleFormSubmission(e) {
  * Ensures geolocation works only over HTTPS (except localhost)
  */
 function detectUserLocation() {
-    console.log('📍 Getting current location...');
+    // Getting current location
     
     // Check if geolocation is supported
     if (!navigator.geolocation) {
@@ -1302,7 +1286,7 @@ function detectUserLocation() {
     
     // Check if map is ready - if not, wait and retry
     if (!isMapInitialized) {
-        console.log('⏳ Map not ready, waiting...');
+        // Map not ready, waiting
         showAlert('Map is loading. Please wait a moment...', 'info');
         
         // Wait for map to be ready and retry
@@ -1355,12 +1339,10 @@ function detectUserLocation() {
     
     Promise.race([getLocationPromise, timeoutPromise])
         .then(function(position) {
-            console.log('✅ Location found:', position.coords);
+            // Location found
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
             const accuracy = position.coords.accuracy;
-            
-            console.log(`📍 Coordinates: ${lat}, ${lng} (accuracy: ${accuracy}m)`);
             
             // Validate coordinates (basic sanity check)
             if (isValidCoordinates(lat, lng)) {
@@ -1431,7 +1413,7 @@ function handleGeolocationError(error) {
 
 // Fallback to default location (Kathmandu, Nepal)
 function fallbackToDefaultLocation() {
-    console.log('🏠 Using default location:', DEFAULT_LOCATION.name);
+    // Using default location
     
     if (map && isMapInitialized) {
         map.setView([DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng], 13);
@@ -1474,7 +1456,7 @@ function selectLocation(lat, lng, label = null) {
         return;
     }
     
-    console.log(`📍 Selecting location: ${lat}, ${lng}`);
+    // Selecting location
     
     // Validate coordinates
     if (!isValidCoordinates(lat, lng)) {
@@ -1645,7 +1627,7 @@ function handleAddressSearch(e) {
  * Shows "Location not found" message if no results found
  */
 function searchLocation(query) {
-    console.log('🔍 Searching for:', query);
+    // Searching for location
     
     // Show loading state
     const searchInput = document.getElementById('address-search');
@@ -1677,11 +1659,11 @@ function searchLocation(query) {
         })
         .then(data => {
             if (!data || data.length === 0) {
-                console.log('📍 No results found for query:', query);
+                // No results found for query
                 showAlert('Location not found. Please try a different search term or use the map to select a location.', 'warning');
                 showSearchResults([]);
             } else {
-                console.log(`📍 Found ${data.length} results for:`, query);
+                // Found results for query
                 showSearchResults(data);
             }
         })
@@ -1789,7 +1771,7 @@ function getCurrentMapCenter() {
  * Shows confirmation message with coordinates
  */
 function useSelectedLocation() {
-    console.log('📍 Using selected location...');
+    // Using selected location
     
     // Check if map is ready
     if (!isMapInitialized) {
@@ -1811,7 +1793,7 @@ function useSelectedLocation() {
     if (!addressText || addressText === 'No location selected' || addressText === 'Getting address...' || 
         !latInput || !lngInput || !latInput.value || !lngInput.value) {
         
-        console.log('📍 No specific location selected, using map center...');
+        // No specific location selected, using map center
         const mapCenter = getCurrentMapCenter();
         if (!mapCenter) {
             showAlert('Map not ready. Please wait for the map to load and try again.', 'warning');
@@ -1846,7 +1828,7 @@ function useSelectedLocation() {
     // Update delivery address field with the selected address
     if (deliveryAddressField && addressText !== 'No location selected') {
         deliveryAddressField.value = addressText;
-        console.log('✅ Updated delivery address field:', addressText);
+        // Updated delivery address field
     }
     
     // Update hidden coordinate fields
@@ -1857,11 +1839,7 @@ function useSelectedLocation() {
     const shortCoords = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
     showAlert(`✅ Location confirmed! Address: ${addressText.substring(0, 50)}${addressText.length > 50 ? '...' : ''} (${shortCoords})`, 'success');
     
-    console.log('📍 Location data saved:', {
-        address: addressText,
-        latitude: lat,
-        longitude: lng
-    });
+    // Location data saved
     
     // Optional: Send coordinates to backend via AJAX/fetch
     // This can be uncommented and customized based on backend requirements
@@ -1880,7 +1858,7 @@ function useSelectedLocation() {
     })
     .then(response => response.json())
     .then(data => {
-        console.log('✅ Location saved to backend:', data);
+        // Location saved to backend
         showAlert('Location saved successfully!', 'success');
     })
     .catch(error => {
@@ -2013,7 +1991,7 @@ function showQRCode(paymentMethod) {
         }, 10);
     } else {
         // Hide QR code if no QR code is available for this payment method
-        console.log(`No QR code available for payment method: ${paymentMethod}`);
+        // No QR code available for payment method
         hideQRCode();
         
         // Show a message to the user
@@ -2278,6 +2256,6 @@ document.addEventListener('DOMContentLoaded', function() {
     loadAvailableGateways();
 });
 
-console.log('✅ Checkout page scripts loaded successfully');
+// Checkout page scripts loaded successfully
 </script>
 {% endblock %}

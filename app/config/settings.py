@@ -12,17 +12,9 @@ class Config:
     # Security Configuration
     SECRET_KEY = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-production")
     
-    # Database Configuration
-    DATABASE_URL = os.environ.get("DATABASE_URL")
-    if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
-        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-    
-    SQLALCHEMY_DATABASE_URI = DATABASE_URL or "sqlite:///meatshop.db"
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        "pool_recycle": 300,
-        "pool_pre_ping": True,
-    }
+    # MongoDB Configuration (SQLAlchemy removed)
+    MONGO_URI = os.environ.get('MONGO_URI')
+    MONGO_DBNAME = os.environ.get('MONGO_DB_NAME') or 'nepal_meat_shop'
     
     # File Upload Configuration
     UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'uploads')
@@ -42,16 +34,21 @@ class Config:
 class DevelopmentConfig(Config):
     """Development environment configuration."""
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = "sqlite:///meatshop_dev.db"
+    # MongoDB Atlas configuration from environment
+    MONGO_URI = os.environ.get('MONGO_URI')
+    MONGO_DBNAME = os.environ.get('MONGO_DB_NAME') or 'nepal_meat_shop'
 
 class ProductionConfig(Config):
     """Production environment configuration."""
     DEBUG = False
+    MONGO_URI = os.environ.get('MONGO_URI')
+    MONGO_DBNAME = os.environ.get('MONGO_DB_NAME') or 'nepal_meat_shop'
     
 class TestingConfig(Config):
     """Testing environment configuration."""
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+    MONGO_URI = 'mongodb://localhost:27017/nepal_meat_shop_test'
+    MONGO_DBNAME = 'nepal_meat_shop_test'
     WTF_CSRF_ENABLED = False
 
 # Configuration mapping

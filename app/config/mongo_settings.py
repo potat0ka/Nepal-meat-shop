@@ -12,7 +12,7 @@ class MongoConfig:
     Base MongoDB configuration class.
     """
     # MongoDB settings - supports both local and Atlas
-    MONGO_URI = os.environ.get('MONGO_URI') or 'mongodb://localhost:27017/nepal_meat_shop'
+    MONGO_URI = os.environ.get('MONGO_URI')
     MONGO_HOST = os.environ.get('MONGO_HOST') or 'localhost'
     MONGO_PORT = int(os.environ.get('MONGO_PORT') or 27017)
     MONGO_DB_NAME = os.environ.get('MONGO_DB_NAME') or 'nepal_meat_shop'
@@ -37,14 +37,14 @@ class MongoConfig:
 class MongoDevelopmentConfig(MongoConfig):
     """Development environment configuration for MongoDB."""
     DEBUG = True
-    # Use environment variable if set, otherwise default to local dev database
-    MONGO_URI = os.environ.get('MONGO_URI') or 'mongodb://localhost:27017/nepal_meat_shop_dev'
-    MONGO_DBNAME = os.environ.get('MONGO_DB_NAME') or 'nepal_meat_shop_dev'
+    # Use environment variable from .env.mongo file
+    MONGO_URI = os.environ.get('MONGO_URI')
+    MONGO_DBNAME = os.environ.get('MONGO_DB_NAME') or 'nepal_meat_shop'
 
 class MongoProductionConfig(MongoConfig):
     """Production environment configuration for MongoDB."""
     DEBUG = False
-    MONGO_URI = os.environ.get('MONGO_URI') or 'mongodb://localhost:27017/nepal_meat_shop'
+    MONGO_URI = os.environ.get('MONGO_URI')
     
 class MongoTestingConfig(MongoConfig):
     """Testing environment configuration for MongoDB."""

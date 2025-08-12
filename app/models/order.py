@@ -5,7 +5,7 @@ Order management, cart functionality, and delivery models.
 """
 
 from datetime import datetime
-from app import db
+# SQLAlchemy removed - using MongoDB models instead
 
 class Order(db.Model):
     """

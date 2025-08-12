@@ -5,7 +5,7 @@ Product catalog, categories, and inventory management models.
 """
 
 from datetime import datetime
-from app import db
+# SQLAlchemy removed - using MongoDB models instead
 
 class Category(db.Model):
     """

@@ -11,22 +11,22 @@ class PaymentConfig:
     """Payment gateway configuration settings."""
     
     # eSewa Configuration
-    ESEWA_MERCHANT_ID = os.environ.get('ESEWA_MERCHANT_ID', 'EPAYTEST')
-    ESEWA_SECRET_KEY = os.environ.get('ESEWA_SECRET_KEY', '8gBm/:&EnhH.1/q')
+    ESEWA_MERCHANT_ID = os.environ.get('ESEWA_MERCHANT_ID')
+    ESEWA_SECRET_KEY = os.environ.get('ESEWA_SECRET_KEY')
     ESEWA_SUCCESS_URL = os.environ.get('ESEWA_SUCCESS_URL', 'http://localhost:5000/payment/esewa/success')
     ESEWA_FAILURE_URL = os.environ.get('ESEWA_FAILURE_URL', 'http://localhost:5000/payment/esewa/failure')
     ESEWA_VERIFICATION_URL = os.environ.get('ESEWA_VERIFICATION_URL', 'https://uat.esewa.com.np/epay/transrec')
     
     # Khalti Configuration
-    KHALTI_PUBLIC_KEY = os.environ.get('KHALTI_PUBLIC_KEY', 'test_public_key_dc74e0fd57cb46cd93832aee0a390234')
-    KHALTI_SECRET_KEY = os.environ.get('KHALTI_SECRET_KEY', 'test_secret_key_f59e8b7d18b4499ca40f68195a846e9b')
+    KHALTI_PUBLIC_KEY = os.environ.get('KHALTI_PUBLIC_KEY')
+    KHALTI_SECRET_KEY = os.environ.get('KHALTI_SECRET_KEY')
     KHALTI_VERIFICATION_URL = os.environ.get('KHALTI_VERIFICATION_URL', 'https://khalti.com/api/v2/payment/verify/')
     KHALTI_SUCCESS_URL = os.environ.get('KHALTI_SUCCESS_URL', 'http://localhost:5000/payment/khalti/success')
     
     # Stripe Configuration
-    STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY', 'pk_test_...')
-    STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', 'sk_test_...')
-    STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', 'whsec_...')
+    STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY')
+    STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY')
+    STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET')
     
     # General Payment Settings
     PAYMENT_TIMEOUT_MINUTES = int(os.environ.get('PAYMENT_TIMEOUT_MINUTES', '30'))
