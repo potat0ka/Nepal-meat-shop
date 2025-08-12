@@ -1500,8 +1500,8 @@ gunicorn -w 4 -b 0.0.0.0:8000 mongo_app:app
 ---
 
 **Document Version**: 1.0  
-**Last Updated**: December 2024  
-**Authors**: Development Team  
+**Last Updated**: December 2025  
+**Authors**: Ebregel Gazmer  
 **Status**: Complete
 
 ---
