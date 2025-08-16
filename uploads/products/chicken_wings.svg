@@ -1,7 +1,42 @@
 <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
-  <rect width="400" height="300" fill="#3498db"/>
-  <text x="200" y="140" font-family="Arial, sans-serif" font-size="24" font-weight="bold" 
-        text-anchor="middle" fill="white">Chicken Wings</text>
-  <text x="200" y="170" font-family="Arial, sans-serif" font-size="16" 
-        text-anchor="middle" fill="white">Nepal Meat Shop</text>
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ff6b35;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f7931e;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="wingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#d4a574;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#c8956d;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#b8845a;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="400" height="300" fill="url(#bgGradient)"/>
+  
+  <!-- Chicken Wing Illustration -->
+  <g transform="translate(200,120)">
+    <!-- Wing 1 -->
+    <path d="M-60,-20 Q-80,-30 -90,-15 Q-85,0 -70,5 Q-50,0 -40,-10 Z" fill="url(#wingGradient)" stroke="#8b4513" stroke-width="2"/>
+    <!-- Wing 2 -->
+    <path d="M-20,-25 Q-35,-35 -45,-20 Q-40,-5 -25,0 Q-5,-5 5,-15 Z" fill="url(#wingGradient)" stroke="#8b4513" stroke-width="2"/>
+    <!-- Wing 3 -->
+    <path d="M20,-20 Q5,-30 -5,-15 Q0,0 15,5 Q35,0 45,-10 Z" fill="url(#wingGradient)" stroke="#8b4513" stroke-width="2"/>
+    <!-- Wing 4 -->
+    <path d="M60,-25 Q45,-35 35,-20 Q40,-5 55,0 Q75,-5 85,-15 Z" fill="url(#wingGradient)" stroke="#8b4513" stroke-width="2"/>
+    
+    <!-- Seasoning dots -->
+    <circle cx="-50" cy="-5" r="2" fill="#ff4444" opacity="0.8"/>
+    <circle cx="-10" cy="-10" r="1.5" fill="#44ff44" opacity="0.8"/>
+    <circle cx="30" cy="-8" r="2" fill="#ffff44" opacity="0.8"/>
+    <circle cx="70" cy="-12" r="1.5" fill="#ff4444" opacity="0.8"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="200" y="220" font-family="Arial, sans-serif" font-size="28" font-weight="bold" 
+        text-anchor="middle" fill="white" stroke="#8b4513" stroke-width="1">Chicken Wings</text>
+  <text x="200" y="250" font-family="Arial, sans-serif" font-size="16" 
+        text-anchor="middle" fill="white" opacity="0.9">Fresh & Delicious</text>
+  <text x="200" y="270" font-family="Arial, sans-serif" font-size="14" 
+        text-anchor="middle" fill="white" opacity="0.8">Nepal Meat Shop</text>
 </svg>

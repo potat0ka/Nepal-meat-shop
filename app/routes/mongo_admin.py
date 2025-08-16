@@ -129,6 +129,9 @@ def admin_edit_user(user_id):
                 address = request.form.get('address', '').strip()
                 new_password = request.form.get('new_password', '').strip()
                 
+                print(f"DEBUG: Form data received - new_password length: {len(new_password) if new_password else 0}")
+                print(f"DEBUG: Form data keys: {list(request.form.keys())}")
+                
                 # Validate required fields
                 if not full_name or not email or not phone:
                     flash('Full name, email, and phone are required.', 'error')
@@ -157,7 +160,9 @@ def admin_edit_user(user_id):
                     if len(new_password) < 6:
                         flash('Password must be at least 6 characters long.', 'error')
                         return render_template('admin/user_edit.html', user=user)
-                    update_data['password'] = generate_password_hash(new_password)
+                    update_data['password_hash'] = generate_password_hash(new_password)
+                    print(f"DEBUG: Password update requested for user {user_object_id}")
+                    print(f"DEBUG: New password hash: {update_data['password_hash'][:20]}...")
                 
                 # Handle profile picture upload
                 if 'profile_picture' in request.files:
@@ -185,10 +190,12 @@ def admin_edit_user(user_id):
                             return render_template('admin/user_edit.html', user=user)
                 
                 # Update user in database
-                mongo_db.db.users.update_one(
+                print(f"DEBUG: Update data keys: {list(update_data.keys())}")
+                result = mongo_db.db.users.update_one(
                     {'_id': user_object_id},
                     {'$set': update_data}
                 )
+                print(f"DEBUG: Database update result - matched: {result.matched_count}, modified: {result.modified_count}")
                 
                 flash(f'User {full_name} has been updated successfully!', 'success')
                 return redirect(url_for('admin.admin_users'))

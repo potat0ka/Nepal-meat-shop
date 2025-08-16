@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify, session
 from flask_login import login_required, current_user
-from app.models.enhanced_chat import ChatConversation, ChatMessage, AdminSession
-from app.services.websocket_service import WebSocketChatService
+from app.models.enhanced_chat_v2 import ChatConversationV2 as ChatConversation, ChatMessageV2 as ChatMessage, MessageType, ConversationStatus, UserRole
+from app.services.enhanced_websocket_service import EnhancedWebSocketChatService as WebSocketChatService
 from datetime import datetime, timedelta
 import logging
 

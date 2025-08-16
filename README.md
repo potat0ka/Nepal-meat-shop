@@ -2,9 +2,9 @@
 
 **A modern, bilingual e-commerce platform for meat products with MongoDB backend**
 
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org)
+[![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-3.0.3-green.svg)](https://flask.palletsprojects.com)
-[![MongoDB](https://img.shields.io/badge/MongoDB-5.0+-green.svg)](https://mongodb.com)
+[![MongoDB](https://img.shields.io/badge/MongoDB-4.4+-green.svg)](https://mongodb.com)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen.svg)](#)
 
@@ -12,9 +12,19 @@
 
 ---
 
+## 🆕 Recent Platform Cleanup (January 2025)
+
+✅ **Duplicate Files Removed**: Eliminated duplicate QR codes, profile templates, contact/about pages  
+✅ **Cache Cleaned**: Removed all __pycache__ directories and compiled Python files  
+✅ **Structure Organized**: Streamlined templates and static file organization  
+✅ **Dependencies Updated**: Updated requirements.txt with correct Python 3.9+ dependencies  
+✅ **Documentation Updated**: Fresh deployment guide and updated README  
+✅ **Import References Verified**: All imports validated and working correctly  
+✅ **Production Ready**: Cleaned codebase optimized for deployment  
+
 A modern, clean Flask e-commerce application for a Nepali meat shop with MongoDB database and bilingual support (English/Nepali).
 
-## 🏗️ Clean Architecture (Updated December 2024)
+## 🏗️ Clean Architecture (Updated January 2025)
 
 The application has been cleaned up and organized with a streamlined structure:
 
@@ -27,7 +37,9 @@ app/
 │   └── settings.py         # General app settings
 ├── models/                  # Database models (MongoDB only)
 │   ├── mongo_models.py     # MongoDB user, product, order models
-│   ├── chat.py             # Chat functionality models
+│   ├── enhanced_chat_v2.py # Enhanced chat system models
+│   ├── chat.py             # Basic chat functionality models
+│   ├── chat_learning.py    # AI learning and training models
 │   └── analytics.py        # Analytics and reporting models
 ├── routes/                  # Route blueprints (MongoDB only)
 │   ├── mongo_main.py       # Home and general routes
@@ -35,7 +47,10 @@ app/
 │   ├── mongo_products.py   # Product listing and details
 │   ├── mongo_orders.py     # Cart and order management
 │   ├── mongo_admin.py      # Admin panel routes
-│   ├── chat.py             # AI chat assistant
+│   ├── chat.py             # Basic chat routes
+│   ├── admin_chat.py       # Admin chat management
+│   ├── enhanced_admin_chat.py # Enhanced admin chat features
+│   ├── enhanced_chat_routes.py # Enhanced chat API routes
 │   └── payment_*.py        # Payment gateway integration
 ├── forms/                   # WTForms definitions
 │   ├── auth.py             # Authentication forms
@@ -43,6 +58,10 @@ app/
 │   ├── order.py            # Order and cart forms
 │   └── qr_code.py          # QR code forms
 ├── services/                # Business services
+│   ├── enhanced_websocket_service.py # Enhanced WebSocket chat service
+│   ├── chat_takeover_service.py # Admin takeover functionality
+│   ├── enhanced_ai_service.py # AI chat assistant service
+│   ├── ai_service_manager.py # AI service management
 │   ├── gateways/           # Payment gateway implementations
 │   └── payment_service.py  # Payment processing logic
 └── utils/                   # Utility functions
@@ -50,6 +69,7 @@ app/
     ├── file_utils.py       # File upload and management
     ├── business.py         # Business logic utilities
     ├── validation.py       # Input validation utilities
+    ├── chat_utils.py       # Chat utility functions
     └── analytics.py        # Analytics utilities
 ```
 
@@ -68,12 +88,15 @@ app/
 - **Cultural Adaptation**: Nepali currency, address formats, and business practices
 - **Smart Detection**: Automatic language detection for user inputs
 
-### 🤖 AI-Powered Chat System
-- **Smart Assistant**: OpenAI GPT-powered customer support
+### 🤖 Enhanced AI Chat System
+- **Smart Assistant**: Google Gemini-powered customer support with learning capabilities
 - **Bilingual Chat**: Supports both English and Nepali conversations
-- **Admin Takeover**: Human agents can seamlessly take over conversations
-- **Real-time Communication**: WebSocket-based instant messaging
-- **Conversation History**: Persistent chat history and analytics
+- **Admin Takeover**: Silent human agent takeover with queue management
+- **Role-Based Access**: Different chat features for customers, staff, and admins
+- **Real-time Communication**: Enhanced WebSocket service with room management
+- **Internal Messaging**: Admin-to-admin communication channels
+- **Conversation History**: Persistent chat history with analytics and AI learning
+- **Queue Management**: Automated conversation routing and priority handling
 
 ### 👨‍💼 Admin Panel
 - **Business Dashboard**: Real-time analytics and key performance metrics
@@ -96,234 +119,162 @@ app/
 - **Delivery Zones**: Coordinate-based delivery location management
 
 ### 📱 Modern UI/UX
-- **Responsive Design**: Mobile-first Bootstrap framework implementation
-- **Progressive Enhancement**: Graceful degradation across devices
-- **Interactive Elements**: Dynamic content loading and real-time updates
-- **Accessibility**: User-friendly interface with intuitive navigation
+- **Responsive Design**: Mobile-first approach with Bootstrap framework
+- **Clean Interface**: Modern, intuitive user interface design
+- **Enhanced Chat Widget**: Streamlined chat interface with role-based features
+- **Optimized Assets**: Consolidated JavaScript and CSS files for better performance
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.8+
-- pip (Python package manager)
-- MongoDB Atlas account (cloud database - recommended)
-
-### Recent Updates (December 2024)
-- ✅ **Migrated to MongoDB Atlas**: Application now uses cloud database instead of local SQLite
-- ✅ **Cleaned up dummy files**: Removed development database files and test scripts
-- ✅ **Streamlined deployment**: Updated all deployment scripts to use `mongo_app.py`
-- ✅ **Removed cache files**: Cleaned up Python cache files for better performance
+- **Python 3.9+** (recommended: 3.11+)
+- **MongoDB 4.4+** (recommended: 5.0+)
+- **Google Gemini API Key** (for AI chat features)
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd nepal-meat-shop
+   cd Nepal-meat-shop
    ```
 
-2. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Set up MongoDB and environment variables**
-   ```bash
-   # Create .env.mongo file
-   MONGO_URI=mongodb://localhost:27017/nepal_meat_shop
-   # Or for MongoDB Atlas:
-   # MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/nepal_meat_shop
+2. **Run deployment script**
    
-   FLASK_ENV=development
-   SECRET_KEY=your-secret-key-here
+   **Windows (Command Prompt):**
+   ```cmd
+   scripts\deploy.bat
    ```
    
-   See `DEPLOYMENT_GUIDE.md` for detailed MongoDB installation and deployment instructions.
-
-4. **Run the MongoDB application**
+   **Windows (PowerShell):**
+   ```powershell
+   scripts\deploy.ps1
+   ```
+   
+   **Linux/macOS:**
    ```bash
-   python mongo_app.py
+   chmod +x scripts/deploy.sh
+   scripts/deploy.sh
    ```
 
-5. **Access the application**
-   - Open your browser to `http://127.0.0.1:5000`
+3. **Configure environment**
+   - Copy `.env.mongo` and update MongoDB connection settings
+   - Set up payment gateway credentials (optional)
+   - Configure Google Gemini API key for chat functionality (optional)
+
+4. **Access the application**
+   - Open your browser and navigate to `http://localhost:5000`
+   - Default admin credentials will be displayed in the terminal
+
+### Environment Configuration
+
+Create a `.env` file with the following variables:
+
+```bash
+# Database
+MONGODB_URI=mongodb://localhost:27017/nepal_meat_shop
+
+# Security
+SECRET_KEY=your-secret-key-here
+
+# AI Chat
+GEMINI_API_KEY=your-gemini-api-key
+
+# Payment Gateways
+KHALTI_SECRET_KEY=your-khalti-secret
+ESEWA_SECRET_KEY=your-esewa-secret
+```
+
+## 📁 Organized Project Structure (Updated January 2025)
+
+```
+Nepal-meat-shop/
+├── app/                    # Application modules
+│   ├── config/            # Configuration files
+│   ├── forms/             # WTForms form definitions
+│   ├── models/            # MongoDB models
+│   ├── routes/            # Flask route handlers
+│   ├── services/          # Business logic services
+│   └── utils/             # Utility functions
+├── scripts/               # Utility and deployment scripts
+│   ├── check_session.py   # Session checking utility
+│   ├── create_admin.py    # Admin user creation
+│   ├── list_users.py      # User listing utility
+│   ├── deploy.bat         # Windows deployment
+│   ├── deploy.ps1         # PowerShell deployment
+│   ├── deploy.sh          # Linux/macOS deployment
+│   └── README.md          # Scripts documentation
+├── static/                # Static assets (CSS, JS, images)
+├── templates/             # Jinja2 HTML templates
+├── uploads/               # User uploaded files
+├── requirements.txt       # Python dependencies
+├── mongo_app.py          # Main application entry point
+├── documentation.md       # Technical documentation
+├── deployment.md         # Deployment guide
+└── .env.mongo            # Environment configuration
+```
+
+## 📖 Usage
+
+### For Customers
+- Browse products by category or search
+- Add items to cart and proceed to checkout
+- Choose from multiple payment options
+- Track order status and history
+- Use AI chat for instant support
+
+### For Administrators
+- Access admin panel at `/admin`
+- Manage products, categories, and inventory
+- Process orders and update delivery status
+- Monitor business analytics and performance
+- Configure payment gateways and QR codes
+- Manage customer support conversations
+
+## 🛠️ Technology Stack
+
+- **Backend**: Python 3.9+, Flask 3.0.3
+- **Database**: MongoDB 4.4+ with PyMongo 4.8.0
+- **Frontend**: HTML5, CSS3, JavaScript, Bootstrap
+- **AI Integration**: Google Gemini API
+- **Payment**: eSewa, Khalti, IME Pay, FonePay
+- **Real-time**: WebSocket for chat functionality
+- **Security**: CSRF protection, input validation, secure sessions
 
 ## 🔧 Configuration
 
-The application supports multiple environments:
-
-- **Development**: Default configuration with debug mode
-- **Production**: Optimized for production deployment
-- **Testing**: Configuration for running tests
-
-Environment can be set via `FLASK_ENV` environment variable.
-
-## 📁 Project Structure
-
-### Core Application
-```
-BugFixer/
-├── mongo_app.py           # MongoDB application entry point
-├── requirements.txt       # Python dependencies
-├── .env.mongo            # Environment configuration
-└── documentation.md      # Technical documentation
+### Environment Variables (.env.mongo)
+```env
+MONGO_URI=mongodb://localhost:27017/nepal_meat_shop
+SECRET_KEY=your-secret-key-here
+OPENAI_API_KEY=your-openai-api-key
+ESEWA_MERCHANT_ID=your-esewa-merchant-id
+KHALTI_SECRET_KEY=your-khalti-secret-key
 ```
 
-### Templates & Frontend
-```
-templates/
-├── base.html             # Base template with navigation
-├── admin/               # Administrative interface
-│   ├── dashboard.html   # Admin dashboard with statistics
-│   ├── users.html       # User management interface
-│   ├── products.html    # Product management
-│   ├── orders.html      # Order processing
-│   ├── categories.html  # Category management
-│   ├── payment_gateways.html  # Payment configuration
-│   └── business_insights.html # Analytics dashboard
-├── orders/              # Order management templates
-│   ├── checkout.html    # Enhanced checkout with maps
-│   ├── cart.html        # Shopping cart interface
-│   ├── order_detail.html # Order tracking
-│   └── invoice.html     # Order invoices
-├── pages/               # Static and informational pages
-└── errors/              # Error handling templates
-```
-
-### Key Features Implementation
-- **MongoDB Integration**: Document-based data storage with flexible schema
-- **Blueprint Architecture**: Modular route organization for maintainability
-- **Location Services**: Leaflet.js maps with geolocation and address search
-- **Payment Systems**: Multi-gateway support with QR code integration
-- **Admin Panel**: Comprehensive management interface with analytics
-- **Security**: Role-based access control with CSRF protection
-- **Bilingual Support**: English/Nepali localization throughout the application
-
-## 🛠️ Development
-
-### Technology Stack
-- **Backend**: Flask 3.0.0 with MongoDB integration
-- **Database**: MongoDB with PyMongo driver
-- **Frontend**: Bootstrap 5, Leaflet.js for maps, vanilla JavaScript
-- **Authentication**: Flask-Login with secure session management
-- **Forms**: Flask-WTF with CSRF protection
-- **File Handling**: Pillow for image processing
-- **PDF Generation**: ReportLab for invoice generation
-
-### Running in Development Mode
-```bash
-# Set environment variables
-export FLASK_ENV=development
-export MONGO_URI=mongodb://localhost:27017/nepal_meat_shop_dev
-
-# Run with auto-reload
-python mongo_app.py
-```
-
-### Database Setup
-```bash
-# MongoDB setup (local installation)
-# Install MongoDB Community Edition
-# Start MongoDB service
-mongod --dbpath /path/to/data/directory
-
-# Or use MongoDB Atlas (cloud)
-# Set MONGO_URI to your Atlas connection string
-export MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/nepal_meat_shop
-```
-
-### Adding New Features
-
-1. **Routes**: Add new routes to `mongo_main.py` or create new blueprint files
-2. **Templates**: Add HTML templates to appropriate directories in `templates/`
-3. **Static Assets**: Add CSS, JS, images to `static/` directory
-4. **Database Models**: Define MongoDB document structures in route handlers
-5. **Forms**: Create WTForms classes for user input validation
-
-### Development Workflow
-```bash
-# 1. Make changes to code
-# 2. Test locally with development server
-python run_mongo.py
-
-# 3. Check for errors in browser console and terminal
-# 4. Test admin panel functionality at /admin
-# 5. Test payment gateway integration
-# 6. Verify location services on checkout page
-```
-
-## 🔒 Security Features
-
-- **CSRF Protection**: All forms protected against cross-site request forgery
-- **Password Security**: PBKDF2 hashing with salt for secure password storage
-- **Input Validation**: Comprehensive server-side validation and sanitization
-- **File Upload Security**: Restricted file types and size limits for uploads
-- **Session Management**: Secure session handling with proper timeout
-- **Role-Based Access**: Hierarchical permission system with granular controls
-- **SQL Injection Prevention**: Parameterized queries and input sanitization
-
-## 🚀 Recent Enhancements
-
-### Location Services Integration
-- **Interactive Maps**: Full Leaflet.js integration with responsive design
-- **Geolocation API**: Current location detection with comprehensive error handling
-- **Address Search**: Real-time address search using Nominatim API
-- **Delivery Zones**: Precise coordinate-based delivery location management
-
-### Enhanced Payment System
-- **QR Code Integration**: Dynamic QR code generation for digital payments
-- **Gateway Management**: Admin panel for payment gateway configuration
-- **Multi-Method Support**: Support for 6+ payment methods including digital wallets
-- **Payment Testing**: Built-in gateway testing and status monitoring
-
-### Advanced Admin Features
-- **Business Insights**: Comprehensive analytics dashboard with charts and metrics
-- **Real-time Statistics**: Live order, user, and product statistics
-- **User Role Management**: Advanced role-based access control system
-- **Order Processing**: Streamlined order management with status tracking
-
-## 📊 Key Improvements
-
-### Code Organization
-- ✅ Modular blueprint-based architecture
-- ✅ Separation of concerns
-- ✅ Reusable utility functions
-- ✅ Centralized configuration management
-
-### Performance
-- ✅ Optimized database queries
-- ✅ Efficient session management
-- ✅ Proper error handling
-- ✅ Logging and monitoring
-
-### Maintainability
-- ✅ Clear code structure
-- ✅ Comprehensive documentation
-- ✅ Type hints and docstrings
-- ✅ Consistent naming conventions
-
-### Security
-- ✅ Input validation
-- ✅ CSRF protection
-- ✅ Secure file uploads
-- ✅ Password security
+### MongoDB Setup
+- Install MongoDB Community Edition 5.0+
+- Start MongoDB service
+- Database and collections are created automatically
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🆘 Support
 
-For support or questions, please create an issue in the repository.
+- **Documentation**: Check [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for detailed setup
+- **Issues**: Report bugs and feature requests via GitHub Issues
+- **Chat**: Use the built-in AI chat system for quick questions
 
 ---
 
-**🍖 Nepal Meat Shop** - Fresh, Quality, Delivered! / ताजा, गुणस्तरीय, डेलिभरी!
+**Made with ❤️ for the Nepal Meat Shop community**

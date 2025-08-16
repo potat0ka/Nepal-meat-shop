@@ -58,6 +58,7 @@ def create_mongo_app(config_name=None):
     from app.routes.payment_callbacks import payment_callbacks
     from app.routes.chat import chat_bp
     from app.routes.admin_chat import admin_chat_bp
+    from app.routes.enhanced_chat_routes import enhanced_chat_bp
     
     app.register_blueprint(mongo_main_bp)
     app.register_blueprint(mongo_auth_bp)
@@ -68,10 +69,20 @@ def create_mongo_app(config_name=None):
     app.register_blueprint(payment_callbacks)
     app.register_blueprint(chat_bp)
     app.register_blueprint(admin_chat_bp)
+    app.register_blueprint(enhanced_chat_bp)
     
     # Initialize WebSocket service
-    from app.services.websocket_service import init_websocket_service
-    websocket_service = init_websocket_service(socketio)
+    from app.services.enhanced_websocket_service import init_enhanced_websocket_service
+    websocket_service = init_enhanced_websocket_service(socketio)
+    
+    # Initialize Enhanced AI service
+    from app.services.enhanced_ai_service import init_enhanced_ai_service
+    gemini_api_key = os.getenv('GEMINI_API_KEY')
+    if gemini_api_key:
+        ai_service = init_enhanced_ai_service(gemini_api_key, "gemini-1.5-flash")
+        app.logger.info('🤖 Enhanced AI service initialized with Gemini API')
+    else:
+        app.logger.warning('⚠️  GEMINI_API_KEY not found, AI features will be limited')
     
     # Store socketio instance in app config for access in other modules
     app.config['SOCKETIO'] = socketio

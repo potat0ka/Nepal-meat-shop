@@ -6,33 +6,42 @@ REM ========================================================================
 
 setlocal enabledelayedexpansion
 
-REM Set colors for output
-set "GREEN=[92m"
-set "RED=[91m"
-set "YELLOW=[93m"
-set "BLUE=[94m"
-set "NC=[0m"
+REM Change to project root directory
+cd /d "%~dp0.."
+if %errorlevel% neq 0 (
+    echo Error: Could not change to project root directory
+    pause
+    exit /b 1
+)
 
-echo %BLUE%========================================================================%NC%
-echo %BLUE%🍖 Nepal Meat Shop - Windows Deployment Script%NC%
-echo %BLUE%========================================================================%NC%
+REM Set colors for output (Windows Command Prompt doesn't support ANSI colors by default)
+REM Using echo without color codes for better compatibility
+set "GREEN="
+set "RED="
+set "YELLOW="
+set "BLUE="
+set "NC="
+
+echo ========================================================================
+echo 🍖 Nepal Meat Shop - Windows Deployment Script
+echo ========================================================================
 echo.
 
 REM Check if Python is installed
-echo %BLUE%🔍 Checking Python installation...%NC%
+echo 🔍 Checking Python installation...
 python --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo %RED%❌ Python is not installed or not in PATH%NC%
-    echo %YELLOW%💡 Please install Python from: https://www.python.org/downloads/%NC%
-    echo %YELLOW%   Make sure to check "Add Python to PATH" during installation%NC%
-    echo %YELLOW%   Minimum required version: Python 3.8+ (Recommended: 3.11+)%NC%
+    echo ❌ Python is not installed or not in PATH
+    echo 💡 Please install Python from: https://www.python.org/downloads/
+    echo    Make sure to check "Add Python to PATH" during installation
+    echo    Minimum required version: Python 3.8+ (Recommended: 3.11+)
     pause
     exit /b 1
 )
 
 REM Get Python version and validate
 for /f "tokens=2" %%i in ('python --version 2^>^&1') do set PYTHON_VERSION=%%i
-echo %GREEN%✅ Python %PYTHON_VERSION% found%NC%
+echo ✅ Python %PYTHON_VERSION% found
 
 REM Check Python version (must be 3.8+)
 for /f "tokens=1,2 delims=." %%a in ("%PYTHON_VERSION%") do (
@@ -40,29 +49,29 @@ for /f "tokens=1,2 delims=." %%a in ("%PYTHON_VERSION%") do (
     set MINOR_VERSION=%%b
 )
 if %MAJOR_VERSION% lss 3 (
-    echo %RED%❌ Python 3.8 or higher is required. Found: %PYTHON_VERSION%%NC%
+    echo ❌ Python 3.8 or higher is required. Found: %PYTHON_VERSION%
     pause
     exit /b 1
 )
 if %MAJOR_VERSION% equ 3 if %MINOR_VERSION% lss 8 (
-    echo %RED%❌ Python 3.8 or higher is required. Found: %PYTHON_VERSION%%NC%
+    echo ❌ Python 3.8 or higher is required. Found: %PYTHON_VERSION%
     pause
     exit /b 1
 )
 
 REM Check if pip is available
-echo %BLUE%🔍 Checking pip installation...%NC%
+echo 🔍 Checking pip installation...
 python -m pip --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo %RED%❌ pip is not available%NC%
-    echo %YELLOW%💡 Please reinstall Python with pip included%NC%
+    echo ❌ pip is not available
+    echo 💡 Please reinstall Python with pip included
     pause
     exit /b 1
 )
-echo %GREEN%✅ pip is available%NC%
+echo ✅ pip is available
 
 REM Set project directory and virtual environment path
-set "PROJECT_DIR=%~dp0"
+set "PROJECT_DIR=%CD%\"
 set "VENV_DIR=%PROJECT_DIR%venv"
 set "REQUIREMENTS_FILE=%PROJECT_DIR%requirements.txt"
 set "MAIN_FILE=%PROJECT_DIR%mongo_app.py"

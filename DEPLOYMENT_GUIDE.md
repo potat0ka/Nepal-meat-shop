@@ -9,7 +9,7 @@ Step-by-step instructions to run and deploy the Nepal Meat Shop Python + MongoDB
 - ✅ **Platform Cleanup**: Removed duplicate files, debug code, and unused utilities
 - ✅ **MongoDB Integration**: Fully functional with optimized queries
 - ✅ **Payment Gateways**: eSewa, Khalti, and other Nepali payment methods
-- ✅ **AI Chat System**: OpenAI-powered customer support with WebSocket
+- ✅ **AI Chat System**: Google Gemini-powered customer support with WebSocket
 - ✅ **Admin Panel**: Complete business management interface
 - ✅ **Clean Codebase**: Organized structure with updated dependencies
 

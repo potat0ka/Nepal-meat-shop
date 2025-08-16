@@ -81,9 +81,12 @@
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            {{ form.password.label(class="form-label") }}
+                            {{ form.password.label(class="form-label fw-bold") }}
                             <div class="input-group">
-                                {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), id="password") }}
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-lock text-muted"></i>
+                                </span>
+                                {{ form.password(class="form-control border-start-0" + (" is-invalid" if form.password.errors else ""), id="password", placeholder="Enter your password", oninput="showPasswordStrength(this)") }}
                                 <button class="btn btn-outline-secondary password-toggle" type="button" data-target="#password" title="Show password">
                                     <i class="fas fa-eye"></i>
                                 </button>
@@ -95,12 +98,16 @@
                                     {% endfor %}
                                 </div>
                             {% endif %}
+                            <!-- Password strength indicator will be added here by JavaScript -->
                         </div>
                         
                         <div class="col-md-6 mb-3">
-                            {{ form.confirm_password.label(class="form-label") }}
+                            {{ form.confirm_password.label(class="form-label fw-bold") }}
                             <div class="input-group">
-                                {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else ""), id="confirmPassword") }}
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-check-circle text-muted"></i>
+                                </span>
+                                {{ form.confirm_password(class="form-control border-start-0" + (" is-invalid" if form.confirm_password.errors else ""), id="confirmPassword", placeholder="Confirm your password", oninput="validatePasswordConfirmation(this)") }}
                                 <button class="btn btn-outline-secondary password-toggle" type="button" data-target="#confirmPassword" title="Show password">
                                     <i class="fas fa-eye"></i>
                                 </button>
@@ -112,6 +119,7 @@
                                     {% endfor %}
                                 </div>
                             {% endif %}
+                            <!-- Password match indicator will be added here by JavaScript -->
                         </div>
                     </div>
                     

@@ -11,6 +11,13 @@ param(
 # Set error action preference
 $ErrorActionPreference = "Stop"
 
+# Change to project root directory
+$scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$projectRoot = Split-Path -Parent $scriptPath
+Set-Location $projectRoot
+
+Write-Host "📁 Working directory: $(Get-Location)" -ForegroundColor Cyan
+
 # Function to write colored output
 function Write-ColorOutput {
     param(
@@ -88,7 +95,7 @@ function Import-EnvFile {
         Write-Status "Loading environment variables from $(Split-Path $FilePath -Leaf)..."
         
         Get-Content $FilePath | ForEach-Object {
-            if ($_ -match '^([^#][^=]*?)=(.*)$') {
+            if ($_ -match '^([^#=]*?)=(.*)$') {
                 $name = $matches[1].Trim()
                 $value = $matches[2].Trim()
                 
@@ -263,7 +270,8 @@ function Start-Deployment {
         # Check MongoDB connection (optional but recommended)
         Write-Status "🔍 Checking MongoDB availability..."
         try {
-            python -c "import pymongo; client = pymongo.MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=2000); client.server_info(); print('MongoDB connection successful')" 2>$null
+            $pythonCmd = "import pymongo; client = pymongo.MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=2000); client.server_info(); print('MongoDB connection successful')"
+            python -c $pythonCmd 2>`$null
             Write-Success "MongoDB is running and accessible"
         }
         catch {
@@ -320,7 +328,7 @@ function Start-Deployment {
 $null = Register-EngineEvent PowerShell.Exiting -Action {
     Write-Host ""
     Write-ColorOutput "🛑 Shutting down application..." "Blue"
-    Write-ColorOutput "✅ Application stopped successfully" "Green"
+    Write-ColorOutput "Application stopped successfully" "Green"
 }
 
 # Start deployment

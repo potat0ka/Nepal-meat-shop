@@ -86,16 +86,16 @@ Get chat statistics (admin only).
 
 ### 1. Install Dependencies
 ```bash
-pip install openai>=1.99.0
+pip install google-generativeai>=0.8.3
 ```
 
-### 2. Configure OpenAI API Key
-Add your OpenAI API key to the `.env.mongo` file:
-```env
-OPENAI_API_KEY=your_openai_api_key_here
+### 2. Configure Google Gemini API Key
+Add your Google Gemini API key to the `.env.mongo` file:
+```
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
-**Get your API key from:** https://platform.openai.com/api-keys
+**Get your API key from:** https://aistudio.google.com/app/apikey
 
 ### 3. MongoDB Collection
 The chat history is automatically stored in the `chats` collection with the following schema:
@@ -143,8 +143,8 @@ The system automatically detects the language based on:
 
 ## Error Handling
 
-- **Missing OpenAI API Key**: Returns 503 Service Unavailable
-- **OpenAI API Errors**: Returns appropriate fallback messages in detected language
+- **Missing Gemini API Key**: Returns 503 Service Unavailable
+- **Gemini API Errors**: Returns appropriate fallback messages in detected language
 - **Database Errors**: Logged but don't prevent chat functionality
 - **Invalid Requests**: Returns 400 Bad Request with error details
 
@@ -171,4 +171,4 @@ The system automatically detects the language based on:
 
 ---
 
-**Note**: To use the AI features, you must have a valid OpenAI API key. The system will work without it but will return fallback messages instead of AI-generated responses.
+**Note**: To use the AI features, you must have a valid Google Gemini API key. The system will work without it but will return fallback messages instead of AI-generated responses.

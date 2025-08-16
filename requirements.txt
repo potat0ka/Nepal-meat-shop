@@ -1,5 +1,5 @@
 # 🍖 Nepal Meat Shop - Python Dependencies
-# Updated January 2025 - Cleaned and optimized
+# Updated January 2025 - Cleaned and optimized platform
 
 # Core Flask framework and extensions
 Flask==3.0.3
@@ -23,7 +23,7 @@ requests==2.32.3
 # Image processing and file handling
 Pillow==10.4.0
 
-# PDF generation for invoices
+# PDF generation for reports and invoices
 reportlab==4.2.2
 
 # Environment configuration
@@ -38,8 +38,8 @@ email-validator==2.2.0
 python-dateutil==2.9.0
 PyJWT==2.9.0
 
-# AI/ML for chat functionality
-openai==1.51.2
+# AI/ML for enhanced chat functionality
+google-generativeai==0.8.3
 
 # WebSocket support for real-time chat
 Flask-SocketIO==5.3.6
@@ -47,7 +47,8 @@ python-socketio==5.11.0
 python-engineio==4.9.0
 
 # System requirements
-# Python 3.8+ required
+# Python 3.9+ required
+# MongoDB 4.4+ required
 # MongoDB 5.0+ recommended
 # Node.js not required (pure Python backend)
 

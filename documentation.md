@@ -19,15 +19,17 @@
 ### 1.1 Background
 The Nepal Meat Shop platform is a modern, bilingual e-commerce application designed specifically for the Nepali meat industry. The platform addresses the unique challenges of meat retail in Nepal, including cultural preferences, language barriers, and traditional payment methods.
 
-**Current State (December 2024)**: The platform has been successfully cleaned and optimized as a MongoDB-only e-commerce solution. All SQLAlchemy components, duplicate files, and unused dependencies have been removed, resulting in a streamlined, production-ready codebase with `mongo_app.py` as the main entry point.
+**Current State (January 2025)**: The platform has been successfully cleaned and optimized as a MongoDB-only e-commerce solution with enhanced AI chat capabilities. All duplicate files, debug code, and unused dependencies have been removed, resulting in a streamlined, production-ready codebase with `mongo_app.py` as the main entry point.
 
-**Recent Platform Cleanup (December 2024)**:
-- ✅ Removed duplicate route files (`auth.py`, `main.py`, `products.py`, `orders.py`)
-- ✅ Deleted unused SQLAlchemy models (`user.py`, `product.py`, `order.py`)
-- ✅ Updated `requirements.txt` with only necessary dependencies
-- ✅ Cleaned and optimized codebase structure
-- ✅ Updated all documentation to reflect current architecture
-- ✅ Verified platform functionality after cleanup
+**Recent Platform Cleanup (January 2025)**:
+- ✅ **Duplicate Files Removed**: Eliminated duplicate QR codes, profile templates, contact/about pages
+- ✅ **Cache Cleaned**: Removed all __pycache__ directories and compiled Python files
+- ✅ **Structure Organized**: Streamlined templates and static file organization
+- ✅ **Dependencies Updated**: Updated requirements.txt with correct Python 3.9+ dependencies
+- ✅ **Documentation Updated**: Fresh deployment guide and updated README
+- ✅ **Import References Verified**: All imports validated and working correctly
+- ✅ **Production Ready**: Cleaned codebase optimized for deployment
+- ✅ **Functionality Tested**: Core platform features verified working after cleanup
 
 ### 1.2 Scope
 This documentation covers the complete technical implementation of the platform, including:
@@ -73,11 +75,11 @@ The platform development followed an iterative, modular approach using:
 ### 3.2 Technology Stack Selection
 
 #### 3.2.1 Backend Framework
-- **Flask 3.0.0**: Lightweight, flexible Python web framework
+- **Python 3.9+ with Flask 3.0.3**: Lightweight, flexible Python web framework
 - **Rationale**: Simplicity, extensive ecosystem, and rapid development capabilities
 
 #### 3.2.2 Database System
-- **MongoDB with PyMongo 4.6.0**: Document-based NoSQL database
+- **MongoDB 4.4+ with PyMongo 4.8.0**: Document-based NoSQL database
 - **Rationale**: Flexibility for document-based data, scalability, and simplified data modeling for e-commerce applications
 
 #### 3.2.3 Frontend Technologies
@@ -94,10 +96,76 @@ The platform development followed an iterative, modular approach using:
 
 ## 4. Technical Architecture
 
-### 4.1 Application Structure
+### 4.1 Application Structure (Updated January 2025)
 ```
 app/
 ├── __init__.py              # Application factory
+├── config/                  # Configuration management
+│   ├── mongo_settings.py   # MongoDB configuration
+│   ├── payment_config.py   # Payment gateway settings
+│   └── settings.py         # General app settings
+├── models/                  # Database models (MongoDB only)
+│   ├── mongo_models.py     # MongoDB user, product, order models
+│   ├── enhanced_chat_v2.py # Enhanced chat system models (consolidated)
+│   ├── chat.py             # Basic chat functionality models
+│   ├── chat_learning.py    # AI learning and training models
+│   └── analytics.py        # Analytics and reporting models
+├── routes/                  # Route blueprints (MongoDB only)
+│   ├── mongo_main.py       # Home and general routes
+│   ├── mongo_auth.py       # Authentication routes
+│   ├── mongo_products.py   # Product listing and details
+│   ├── mongo_orders.py     # Cart and order management
+│   ├── mongo_admin.py      # Admin panel routes
+│   ├── chat.py             # Basic chat routes
+│   ├── admin_chat.py       # Admin chat management
+│   ├── enhanced_admin_chat.py # Enhanced admin chat features
+│   ├── enhanced_chat_routes.py # Enhanced chat API routes
+│   └── payment_*.py        # Payment gateway integration
+├── forms/                   # WTForms definitions
+│   ├── auth.py             # Authentication forms
+│   ├── product.py          # Product-related forms
+│   ├── order.py            # Order and cart forms
+│   └── qr_code.py          # QR code forms
+├── services/                # Business services
+│   ├── enhanced_websocket_service.py # Enhanced WebSocket chat service (consolidated)
+│   ├── chat_takeover_service.py # Admin takeover functionality
+│   ├── enhanced_ai_service.py # AI chat assistant service
+│   ├── ai_service_manager.py # AI service management
+│   ├── gateways/           # Payment gateway implementations
+│   └── payment_service.py  # Payment processing logic
+└── utils/                   # Utility functions
+    ├── mongo_db.py         # MongoDB connection and utilities
+    ├── file_utils.py       # File upload and management
+    ├── business.py         # Business logic utilities
+    ├── validation.py       # Input validation utilities
+    ├── chat_utils.py       # Chat utility functions
+    └── analytics.py        # Analytics utilities
+
+static/
+├── css/
+│   └── style.css           # Main stylesheet
+├── js/
+│   ├── enhanced_chat_widget.js # Chat widget frontend (consolidated)
+│   └── main.js             # Main JavaScript functionality
+└── uploads/                # File upload directories
+
+templates/                  # Jinja2 templates
+├── base.html              # Base template
+├── index.html             # Homepage
+├── admin/                 # Admin panel templates
+├── auth/                  # Authentication templates
+├── products/              # Product-related templates
+├── orders/                # Order management templates
+├── chat/                  # Chat interface templates
+└── errors/                # Error page templates
+
+# Root files
+mongo_app.py               # Main application entry point (consolidated)
+requirements.txt           # Python dependencies (cleaned)
+deployment.md              # Deployment instructions (updated)
+deploy.bat                 # Windows deployment script
+deploy.ps1                 # PowerShell deployment script
+deploy.sh                  # Unix deployment script
 ├── config/                  # Configuration management
 │   ├── settings.py         # MongoDB configurations
 │   ├── mongo_settings.py   # MongoDB configurations
@@ -1510,7 +1578,7 @@ markupsafe==2.1.3
 itsdangerous==2.1.2
 
 # AI/ML Dependencies
-openai==1.3.0
+google-generativeai==0.8.3
 ```
 
 ### Appendix D: Deployment Guide

@@ -11,8 +11,9 @@ from typing import Dict, List, Optional, Tuple
 from bson import ObjectId
 
 from app.utils.mongo_db import mongo_db
-from app.models.enhanced_chat import ChatConversation, ChatMessage, AdminSession
+from app.models.enhanced_chat_v2 import ChatConversationV2 as ChatConversation, ChatMessageV2 as ChatMessage, MessageType, ConversationStatus
 from app.services.ai_service_manager import ai_service
+from app.utils.chat_utils import get_system_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -459,6 +460,7 @@ class ChatTakeoverService:
             ai_response = ai_service.get_ai_response(
                 message=message,
                 language=language,
+                system_prompt=get_system_prompt(language),
                 context=context
             )
             

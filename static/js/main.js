@@ -11,7 +11,7 @@ let notificationTimeout;
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
     initializeCartButtons();
-    // Chat widget initialization moved to enhanced_chat.js to prevent conflicts
+    // Chat widget initialization moved to enhanced_chat_widget.js to prevent conflicts
 });
 
 /**
@@ -540,57 +540,155 @@ function showPasswordStrength(input) {
     const password = input.value;
     let strength = 0;
     let feedback = [];
+    let requirements = [];
     
-    if (password.length >= 8) strength++;
-    else feedback.push('At least 8 characters');
+    // Check password requirements
+    const hasLength = password.length >= 8;
+    const hasLower = /[a-z]/.test(password);
+    const hasUpper = /[A-Z]/.test(password);
+    const hasNumber = /\d/.test(password);
+    const hasSpecial = /[^a-zA-Z\d]/.test(password);
     
-    if (/[a-z]/.test(password)) strength++;
-    else feedback.push('Lowercase letter');
+    if (hasLength) strength++; else feedback.push('At least 8 characters');
+    if (hasLower) strength++; else feedback.push('Lowercase letter');
+    if (hasUpper) strength++; else feedback.push('Uppercase letter');
+    if (hasNumber) strength++; else feedback.push('Number');
+    if (hasSpecial) strength++; else feedback.push('Special character');
     
-    if (/[A-Z]/.test(password)) strength++;
-    else feedback.push('Uppercase letter');
-    
-    if (/\d/.test(password)) strength++;
-    else feedback.push('Number');
-    
-    if (/[^a-zA-Z\d]/.test(password)) strength++;
-    else feedback.push('Special character');
+    // Create requirements checklist
+    requirements = [
+        { text: '8+ characters', met: hasLength },
+        { text: 'Lowercase (a-z)', met: hasLower },
+        { text: 'Uppercase (A-Z)', met: hasUpper },
+        { text: 'Number (0-9)', met: hasNumber },
+        { text: 'Special character', met: hasSpecial }
+    ];
     
     // Find or create strength indicator
-    let strengthIndicator = input.parentNode.querySelector('.password-strength');
+    let strengthIndicator = input.parentNode.parentNode.querySelector('.password-strength');
     if (!strengthIndicator) {
         strengthIndicator = document.createElement('div');
         strengthIndicator.className = 'password-strength mt-2';
-        input.parentNode.appendChild(strengthIndicator);
+        input.parentNode.parentNode.appendChild(strengthIndicator);
     }
     
-    const strengthColors = ['danger', 'warning', 'info', 'success', 'success'];
+    const strengthColors = ['danger', 'warning', 'warning', 'info', 'success'];
     const strengthTexts = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
+    const strengthIcons = ['fas fa-times-circle', 'fas fa-exclamation-triangle', 'fas fa-minus-circle', 'fas fa-check-circle', 'fas fa-shield-alt'];
+    
+    // Create requirements list
+    const requirementsList = requirements.map(req => 
+        `<div class="d-flex align-items-center mb-1">
+            <i class="${req.met ? 'fas fa-check text-success' : 'fas fa-times text-muted'} me-2" style="font-size: 0.8rem;"></i>
+            <small class="${req.met ? 'text-success' : 'text-muted'}">${req.text}</small>
+        </div>`
+    ).join('');
     
     strengthIndicator.innerHTML = `
-        <div class="progress" style="height: 5px;">
-            <div class="progress-bar bg-${strengthColors[strength]} progress-bar-animated" 
-                 style="width: ${(strength * 20)}%"></div>
+        <div class="password-strength-container p-2 border rounded bg-light mt-2">
+            <div class="d-flex align-items-center mb-2">
+                <i class="${strengthIcons[strength]} text-${strengthColors[strength]} me-2"></i>
+                <span class="fw-bold text-${strengthColors[strength]} small">${strengthTexts[strength]}</span>
+                <div class="ms-auto">
+                    <div class="progress" style="width: 60px; height: 4px;">
+                        <div class="progress-bar bg-${strengthColors[strength]}" style="width: ${(strength * 20)}%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="requirements-list">
+                ${requirementsList}
+            </div>
         </div>
-        <small class="text-${strengthColors[strength]}">
-            ${strengthTexts[strength]} ${feedback.length > 0 ? '(Missing: ' + feedback.join(', ') + ')' : ''}
-        </small>
     `;
+    
+    // Update input border color based on strength
+    input.classList.remove('border-danger', 'border-warning', 'border-info', 'border-success');
+    if (password.length > 0) {
+        input.classList.add(`border-${strengthColors[strength]}`);
+    }
 }
 
 /**
  * Validate password confirmation
  */
-function validatePasswordConfirmation(input) {
-    const form = input.closest('form');
-    const passwordField = form.querySelector('input[name="password"], input[name="new_password"]');
+function validatePasswordConfirmation(confirmInput) {
+    const passwordInput = document.querySelector('input[name="password"]');
+    const password = passwordInput ? passwordInput.value : '';
+    const confirmPassword = confirmInput.value;
     
-    if (passwordField && input.value !== passwordField.value) {
-        showFieldError(input, 'Passwords do not match');
-        return false;
+    let matchIndicator = confirmInput.parentNode.parentNode.querySelector('.password-match');
+    if (!matchIndicator) {
+        matchIndicator = document.createElement('div');
+        matchIndicator.className = 'password-match mt-2';
+        confirmInput.parentNode.parentNode.appendChild(matchIndicator);
+    }
+    
+    if (confirmPassword === '') {
+        matchIndicator.innerHTML = '';
+        confirmInput.classList.remove('border-success', 'border-danger');
+        return;
+    }
+    
+    if (password === confirmPassword && password !== '') {
+        matchIndicator.innerHTML = `
+            <div class="alert alert-success py-2 mb-0">
+                <i class="fas fa-check-circle me-2"></i>
+                <small class="fw-bold">Passwords match perfectly!</small>
+            </div>
+        `;
+        confirmInput.classList.remove('border-danger');
+        confirmInput.classList.add('border-success');
     } else {
-        clearFieldError(input);
-        return true;
+        matchIndicator.innerHTML = `
+            <div class="alert alert-danger py-2 mb-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <small class="fw-bold">Passwords do not match</small>
+            </div>
+        `;
+        confirmInput.classList.remove('border-success');
+        confirmInput.classList.add('border-danger');
+    }
+}
+
+/**
+ * Validate password confirmation for change password form
+ */
+function validatePasswordConfirmationChange(confirmInput) {
+    const passwordInput = document.querySelector('input[name="new_password"]');
+    const password = passwordInput ? passwordInput.value : '';
+    const confirmPassword = confirmInput.value;
+    
+    let matchIndicator = confirmInput.parentNode.parentNode.querySelector('.password-match');
+    if (!matchIndicator) {
+        matchIndicator = document.createElement('div');
+        matchIndicator.className = 'password-match mt-2';
+        confirmInput.parentNode.parentNode.appendChild(matchIndicator);
+    }
+    
+    if (confirmPassword === '') {
+        matchIndicator.innerHTML = '';
+        confirmInput.classList.remove('border-success', 'border-danger');
+        return;
+    }
+    
+    if (password === confirmPassword && password !== '') {
+        matchIndicator.innerHTML = `
+            <div class="alert alert-success py-2 mb-0">
+                <i class="fas fa-check-circle me-2"></i>
+                <small class="fw-bold">Passwords match perfectly!</small>
+            </div>
+        `;
+        confirmInput.classList.remove('border-danger');
+        confirmInput.classList.add('border-success');
+    } else {
+        matchIndicator.innerHTML = `
+            <div class="alert alert-danger py-2 mb-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <small class="fw-bold">Passwords do not match</small>
+            </div>
+        `;
+        confirmInput.classList.remove('border-success');
+        confirmInput.classList.add('border-danger');
     }
 }
 
@@ -1325,8 +1423,12 @@ function initializePasswordToggles() {
 
 /**
  * ===== FLOATING CHAT WIDGET FUNCTIONALITY =====
+ * NOTE: Chat widget functionality has been moved to enhanced_chat_widget.js
+ * This section is commented out to prevent conflicts with the enhanced chat system
  */
 
+/*
+// Old chat widget code commented out - using enhanced_chat_widget.js instead
 // Chat widget state
 let chatWidget = {
     isOpen: false,
@@ -1336,349 +1438,87 @@ let chatWidget = {
     currentUser: null
 };
 
-/**
- * Initialize the floating chat widget
- */
 function initializeChatWidget() {
-    // Get DOM elements
-    const chatToggle = document.getElementById('chatToggle');
-    const chatBox = document.getElementById('chatBox');
-    
-    if (!chatToggle || !chatBox) {
-        console.error('Chat widget elements not found!');
-        return;
-    }
-    
-    const chatClose = document.getElementById('chatClose');
-    const chatMinimize = document.getElementById('chatMinimize');
-    const chatSendBtn = document.getElementById('chatSendBtn');
-    const chatMessageInput = document.getElementById('chatMessageInput');
-    const quickBtns = document.querySelectorAll('.quick-btn');
-    
-    // Initialize welcome message timestamp
-    updateMessageTime();
-    
-    // Event listeners
-    chatToggle.addEventListener('click', toggleChatBox);
-    chatClose.addEventListener('click', closeChatBox);
-    chatMinimize.addEventListener('click', minimizeChatBox);
-    chatSendBtn.addEventListener('click', sendMessage);
-    chatMessageInput.addEventListener('keypress', handleInputKeypress);
-    
-    // Quick action buttons
-    quickBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const message = this.getAttribute('data-message');
-            if (message) {
-                chatMessageInput.value = message;
-                sendMessage();
-            }
-        });
-    });
-    
-    // Load chat history if user is logged in
-    loadChatHistory();
-    
-    // Auto-scroll to bottom
-    scrollToBottom();
+    // Old chat widget initialization code removed
+    console.log('Chat widget initialization moved to enhanced_chat_widget.js');
 }
 
-/**
- * Toggle chat box visibility
- */
 function toggleChatBox() {
-    const chatBox = document.getElementById('chatBox');
-    const chatToggle = document.getElementById('chatToggle');
-    
-    if (chatWidget.isOpen) {
-        closeChatBox();
-    } else {
-        openChatBox();
-    }
+    // Old function - replaced by enhanced chat widget
 }
 
-/**
- * Open chat box
- */
 function openChatBox() {
-    const chatBox = document.getElementById('chatBox');
-    const chatToggle = document.getElementById('chatToggle');
-    
-    chatBox.classList.add('show');
-    chatToggle.style.transform = 'scale(0.9)';
-    chatWidget.isOpen = true;
-    chatWidget.isMinimized = false;
-    
-    // Focus on input
-    setTimeout(() => {
-        const input = document.getElementById('chatMessageInput');
-        if (input) input.focus();
-    }, 300);
-    
-    // Clear notification
-    clearChatNotification();
+    // Old function - replaced by enhanced chat widget
 }
 
-/**
- * Close chat box
- */
 function closeChatBox() {
-    const chatBox = document.getElementById('chatBox');
-    const chatToggle = document.getElementById('chatToggle');
-    
-    chatBox.classList.remove('show');
-    chatToggle.style.transform = 'scale(1)';
-    chatWidget.isOpen = false;
-    chatWidget.isMinimized = false;
+    // Old function - replaced by enhanced chat widget
 }
 
-/**
- * Minimize chat box
- */
 function minimizeChatBox() {
-    closeChatBox();
-    chatWidget.isMinimized = true;
-    
-    // Show notification badge
-    showChatNotification('−');
+    // Old function - replaced by enhanced chat widget
 }
 
-/**
- * Handle input keypress events
- */
 function handleInputKeypress(event) {
-    if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        sendMessage();
-    }
+    // Old function - replaced by enhanced chat widget
 }
 
-/**
- * Send message to AI assistant
- */
 async function sendMessage() {
-    const input = document.getElementById('chatMessageInput');
-    const message = input.value.trim();
-    
-    if (!message) return;
-    
-    // Clear input
-    input.value = '';
-    
-    // Add user message to chat
-    addMessageToChat(message, 'user');
-    
-    // Show typing indicator
-    showTypingIndicator();
-    
-    try {
-        // Send to API
-        const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken()
-            },
-            body: JSON.stringify({ message: message })
-        });
-        
-        const data = await response.json();
-        
-        // Hide typing indicator
-        hideTypingIndicator();
-        
-        if (response.ok && data.reply) {
-            // Add bot response
-            addMessageToChat(data.reply, 'bot');
-        } else {
-            // Show error message
-            const errorMsg = data.error || 'Sorry, I encountered an error. Please try again.';
-            addMessageToChat(errorMsg, 'bot');
-            console.error('Chat API error:', data.error || 'Unknown error');
-        }
-        
-    } catch (error) {
-        hideTypingIndicator();
-        addMessageToChat('Sorry, I\'m having trouble connecting. Please check your internet connection and try again.', 'bot');
-        console.error('Chat request failed:', error);
-    }
+    // Old function - replaced by enhanced chat widget
 }
 
-/**
- * Add message to chat interface
- */
 function addMessageToChat(message, sender) {
-    const chatMessages = document.getElementById('chatMessages');
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${sender}-message`;
-    
-    const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    
-    messageDiv.innerHTML = `
-        <div class="message-avatar">
-            <i class="fas ${sender === 'user' ? 'fa-user' : 'fa-robot'}"></i>
-        </div>
-        <div class="message-content">
-            <div class="message-text">${escapeHtml(message)}</div>
-            <div class="message-time">${currentTime}</div>
-        </div>
-    `;
-    
-    chatMessages.appendChild(messageDiv);
-    
-    // Store in history
-    chatWidget.messageHistory.push({
-        message: message,
-        sender: sender,
-        timestamp: new Date().toISOString()
-    });
-    
-    // Scroll to bottom
-    scrollToBottom();
-    
-    // Show notification if chat is closed
-    if (!chatWidget.isOpen && sender === 'bot') {
-        showChatNotification('!');
-    }
+    // Old function - replaced by enhanced chat widget
 }
 
-/**
- * Show typing indicator
- */
 function showTypingIndicator() {
-    const typingIndicator = document.getElementById('typingIndicator');
-    if (typingIndicator) {
-        typingIndicator.style.display = 'flex';
-        chatWidget.isTyping = true;
-        scrollToBottom();
-    }
+    // Old function - replaced by enhanced chat widget
 }
 
-/**
- * Hide typing indicator
- */
 function hideTypingIndicator() {
-    const typingIndicator = document.getElementById('typingIndicator');
-    if (typingIndicator) {
-        typingIndicator.style.display = 'none';
-        chatWidget.isTyping = false;
-    }
+    // Old function - replaced by enhanced chat widget
 }
 
-/**
- * Scroll chat messages to bottom
- */
 function scrollToBottom() {
-    const chatMessages = document.getElementById('chatMessages');
-    if (chatMessages) {
-        setTimeout(() => {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }, 100);
-    }
+    // Old function - replaced by enhanced chat widget
 }
 
-/**
- * Show chat notification badge
- */
 function showChatNotification(text = '!') {
-    const notification = document.getElementById('chatNotification');
-    if (notification) {
-        notification.textContent = text;
-        notification.classList.add('show');
-    }
+    // Old function - replaced by enhanced chat widget
 }
 
-/**
- * Clear chat notification badge
- */
 function clearChatNotification() {
-    const notification = document.getElementById('chatNotification');
-    if (notification) {
-        notification.classList.remove('show');
-    }
+    // Old function - replaced by enhanced chat widget
 }
 
-/**
- * Load chat history from server
- */
 async function loadChatHistory() {
-    try {
-        const response = await fetch('/api/chat/history', {
-            method: 'GET',
-            headers: {
-                'X-CSRFToken': getCsrfToken()
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            if (data.success && data.history && data.history.length > 0) {
-                // Clear existing messages except welcome
-                const chatMessages = document.getElementById('chatMessages');
-                const welcomeMessage = chatMessages.querySelector('.bot-message');
-                chatMessages.innerHTML = '';
-                
-                // Re-add welcome message
-                if (welcomeMessage) {
-                    chatMessages.appendChild(welcomeMessage);
-                }
-                
-                // Add history messages
-                data.history.forEach(msg => {
-                    addMessageToChat(msg.message, msg.sender);
-                });
-            }
-        }
-    } catch (error) {
-        console.warn('Could not load chat history:', error);
-    }
+    // Old function - replaced by enhanced chat widget
 }
 
-/**
- * Update message timestamps
- */
 function updateMessageTime() {
-    const timeElements = document.querySelectorAll('.message-time');
-    const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    
-    timeElements.forEach(element => {
-        if (!element.textContent) {
-            element.textContent = currentTime;
-        }
-    });
+    // Old function - replaced by enhanced chat widget
 }
 
-/**
- * Get CSRF token for requests
- */
 function getCsrfToken() {
-    const token = document.querySelector('meta[name="csrf-token"]');
-    return token ? token.getAttribute('content') : '';
+    // Old function - replaced by enhanced chat widget
 }
 
-/**
- * Escape HTML to prevent XSS
- */
 function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    // Old function - replaced by enhanced chat widget
 }
 
-/**
- * Handle window resize for mobile responsiveness
- */
 window.addEventListener('resize', function() {
-    if (chatWidget.isOpen) {
-        // Adjust chat box position on mobile
-        const chatBox = document.getElementById('chatBox');
-        if (window.innerWidth <= 768 && chatBox) {
-            chatBox.style.width = `${window.innerWidth - 30}px`;
-        }
-    }
+    // Old resize handler - replaced by enhanced chat widget
 });
 
+window.ChatWidget = {
+    // Old chat widget API - replaced by enhanced chat widget
+};
+*/
+
 // Export chat functions to global scope
+// Old ChatWidget API commented out - using enhanced_chat_widget.js instead
+/*
 window.ChatWidget = {
     open: openChatBox,
     close: closeChatBox,
@@ -1688,5 +1528,6 @@ window.ChatWidget = {
     showNotification: showChatNotification,
     clearNotification: clearChatNotification
 };
+*/
 
 // Nepal Meat Shop JavaScript loaded successfully

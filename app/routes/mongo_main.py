@@ -153,4 +153,10 @@ def uploaded_file(filename):
     Supports subdirectories like profiles/, products/, etc.
     """
     upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
-    return send_from_directory(upload_folder, filename)
+    response = send_from_directory(upload_folder, filename)
+    
+    # Set correct MIME type for SVG files
+    if filename.lower().endswith('.svg'):
+        response.headers['Content-Type'] = 'image/svg+xml'
+    
+    return response

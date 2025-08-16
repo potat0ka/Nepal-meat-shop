@@ -5,6 +5,19 @@ Shared chat functions to avoid circular imports.
 """
 
 import re
+import uuid
+
+def validate_session_id(session_id):
+    """Validate session ID format."""
+    if not session_id or not isinstance(session_id, str):
+        return False
+    
+    try:
+        # Check if it's a valid UUID format
+        uuid.UUID(session_id)
+        return True
+    except (ValueError, TypeError):
+        return False
 
 def detect_language(text):
     """Detect if text is in Nepali (Devanagari), Romanized Nepali, or English."""

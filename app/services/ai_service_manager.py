@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
 from dataclasses import dataclass, asdict
 from enum import Enum
-from openai import OpenAI
+import google.generativeai as genai
 from flask import current_app
 
 from app.utils.mongo_db import mongo_db
@@ -64,23 +64,20 @@ class AIServiceManager:
         # Initialize logging
         self.logger = logging.getLogger(__name__)
         
-    def get_openai_client(self) -> Optional[OpenAI]:
-        """Get or create OpenAI client with error handling."""
+    def get_gemini_client(self) -> Optional[Any]:
+        """Get or create Gemini client with error handling."""
         if self.client is None:
             try:
-                api_key = os.getenv('OPENAI_API_KEY')
+                api_key = os.getenv('GEMINI_API_KEY')
                 if not api_key:
-                    self.logger.warning("OPENAI_API_KEY not found, using fallback mode")
+                    self.logger.warning("GEMINI_API_KEY not found, using fallback mode")
                     return None
                     
-                self.client = OpenAI(
-                    api_key=api_key,
-                    timeout=30,
-                    max_retries=0  # We handle retries ourselves
-                )
-                self.logger.info("OpenAI client initialized successfully")
+                genai.configure(api_key=api_key)
+                self.client = genai.GenerativeModel('gemini-1.5-flash')
+                self.logger.info("Gemini client initialized successfully")
             except Exception as e:
-                self.logger.error(f"Failed to initialize OpenAI client: {e}")
+                self.logger.error(f"Failed to initialize Gemini client: {e}")
                 return None
         return self.client
     
@@ -216,9 +213,9 @@ class AIServiceManager:
             self.circuit_state = CircuitState.OPEN
             self.logger.warning(f"Circuit breaker OPENED after {self.failure_count} failures")
     
-    def _call_openai_with_retry(self, messages: List[Dict[str, str]]) -> Optional[str]:
-        """Call OpenAI API with retry logic."""
-        client = self.get_openai_client()
+    def _call_gemini_with_retry(self, messages: List[Dict[str, str]]) -> Optional[str]:
+        """Call Gemini API with retry logic."""
+        client = self.get_gemini_client()
         if not client:
             return None
         
@@ -230,21 +227,29 @@ class AIServiceManager:
         
         for attempt in range(self.max_retries + 1):
             try:
-                response = client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=messages,
-                    max_tokens=self.max_tokens,
-                    temperature=self.temperature,
-                    timeout=30
+                # Convert messages to Gemini format
+                prompt = ""
+                for msg in messages:
+                    if msg["role"] == "system":
+                        prompt += f"System: {msg['content']}\n\n"
+                    elif msg["role"] == "user":
+                        prompt += f"User: {msg['content']}\n\n"
+                
+                response = client.generate_content(
+                    prompt,
+                    generation_config=genai.types.GenerationConfig(
+                        max_output_tokens=self.max_tokens,
+                        temperature=self.temperature,
+                    )
                 )
                 
-                content = response.choices[0].message.content.strip()
+                content = response.text.strip()
                 self._record_success()
                 return content
                 
             except Exception as e:
                 last_exception = e
-                self.logger.warning(f"OpenAI API attempt {attempt + 1} failed: {e}")
+                self.logger.warning(f"Gemini API attempt {attempt + 1} failed: {e}")
                 
                 if attempt < self.max_retries:
                     delay = self.retry_delay * (2 ** attempt)  # Exponential backoff
@@ -252,7 +257,7 @@ class AIServiceManager:
                 else:
                     self._record_failure()
         
-        self.logger.error(f"All OpenAI API attempts failed. Last error: {last_exception}")
+        self.logger.error(f"All Gemini API attempts failed. Last error: {last_exception}")
         return None
     
     def get_ai_response(self, message: str, language: str, system_prompt: str, 
@@ -285,7 +290,7 @@ class AIServiceManager:
             {"role": "user", "content": message}
         ]
         
-        ai_response = self._call_openai_with_retry(messages)
+        ai_response = self._call_gemini_with_retry(messages)
         
         if ai_response:
             # Save to cache
@@ -397,22 +402,22 @@ class AIServiceManager:
             'fallback_available': True
         }
         
-        # Check OpenAI client
+        # Check Gemini client
         try:
-            client = self.get_openai_client()
+            client = self.get_gemini_client()
             if client:
-                health_status['services']['openai'] = {
+                health_status['services']['gemini'] = {
                     'status': 'healthy',
                     'circuit_state': self.circuit_state.value
                 }
             else:
-                health_status['services']['openai'] = {
+                health_status['services']['gemini'] = {
                     'status': 'unavailable',
                     'circuit_state': self.circuit_state.value
                 }
                 health_status['all_services_ok'] = False
         except Exception as e:
-            health_status['services']['openai'] = {
+            health_status['services']['gemini'] = {
                 'status': 'error',
                 'error': str(e)
             }

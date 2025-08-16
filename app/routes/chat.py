@@ -17,7 +17,7 @@ from flask_login import current_user
 from bson.objectid import ObjectId
 from app.utils.mongo_db import mongo_db
 from app.models.chat import MongoChat
-from app.models.enhanced_chat import ChatConversation, ChatMessage
+from app.models.enhanced_chat_v2 import ChatConversationV2 as ChatConversation, ChatMessageV2 as ChatMessage, MessageType, ConversationStatus
 from app.services.ai_service_manager import ai_service
 from app.utils.chat_utils import get_system_prompt, detect_language
 
