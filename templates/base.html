@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() if csrf_token else '' }}">
+    {% if current_user.is_authenticated %}
+    <meta name="user-id" content="{{ current_user.get_id() }}">
+    {% endif %}
     <title>{% block title %}Nepal Meat Shop - Fresh Meat Delivery{% endblock %}</title>
     
     <!-- Bootstrap 5 CSS -->
@@ -160,8 +163,103 @@
         </div>
     </footer>
 
+    <!-- Floating Chat Widget -->
+    <div id="chatWidget" class="chat-widget">
+        <!-- Chat Toggle Button -->
+        <div id="chatToggle" class="chat-toggle" title="Chat with AI Assistant">
+            <i class="fas fa-comments"></i>
+            <span class="chat-notification" id="chatNotification"></span>
+        </div>
+        
+        <!-- Chat Box -->
+        <div id="chatBox" class="chat-box">
+            <!-- Chat Header -->
+            <div class="chat-header">
+                <div class="chat-header-info">
+                    <i class="fas fa-robot me-2"></i>
+                    <span>ebregel</span>
+                    <small class="text-muted ms-2">Online</small>
+                </div>
+                <div class="chat-header-actions">
+                    <button id="chatMinimize" class="btn btn-sm" title="Minimize">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <button id="chatClose" class="btn btn-sm" title="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Chat Mode Switch (Admin Only) -->
+            <div class="chat-mode-switch" id="chatModeSwitch" style="display: none;">
+                <div class="mode-toggle-container">
+                    <button id="messageModeBtn" class="mode-btn active" data-mode="message">
+                        <i class="fas fa-comment-dots me-1"></i>
+                        <span>Message</span>
+                    </button>
+                    <button id="replyModeBtn" class="mode-btn" data-mode="reply">
+                        <i class="fas fa-reply me-1"></i>
+                        <span>Reply</span>
+                    </button>
+                    <div class="mode-indicator"></div>
+                </div>
+                <div class="mode-description">
+                    <span id="modeDescription">Send a new message to start conversation</span>
+                </div>
+            </div>
+            
+            <!-- Chat Messages -->
+            <div id="chatMessages" class="chat-messages">
+                <div class="message bot-message">
+                    <div class="message-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-text">
+                            नमस्ते! म तपाईंको AI सहायक हुँ। म नेपाली र अंग्रेजी दुवै भाषामा कुरा गर्न सक्छु। तपाईंलाई कसरी मद्दत गर्न सक्छु?<br><br>
+                            Hello! I'm your AI assistant. I can communicate in both Nepali and English. How can I help you today?
+                        </div>
+                        <div class="message-time"></div>
+                    </div>
+                </div>
+            </div>
+            
+
+            
+            <!-- Chat Input -->
+            <div class="chat-input">
+                <div class="input-group">
+                    <input type="text" id="chatMessageInput" class="form-control" placeholder="Type your message... (नेपाली वा English)" maxlength="500">
+                    <button id="chatSendBtn" class="btn btn-primary" type="button">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+                <div class="chat-quick-actions mt-2">
+                    <button class="btn btn-sm btn-outline-secondary quick-btn" data-message="What products do you have?">
+                        Products
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary quick-btn" data-message="Can you help me with ordering?">
+                        Order Help
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary quick-btn" data-message="Delivery information">
+                        Delivery
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Socket.IO for real-time chat -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <!-- Enhanced Chat Widget -->
+    <script src="{{ url_for('static', filename='js/enhanced_chat.js') }}"></script>
+    
+
+    
     <!-- Custom JS -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     

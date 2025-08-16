@@ -23,6 +23,7 @@ def list():
     category = request.args.get('category', '').strip()
     meat_type = request.args.get('meat_type', '').strip()
     preparation_type = request.args.get('preparation_type', '').strip()
+    price_range = request.args.get('price_range', '').strip()
     sort_by = request.args.get('sort', 'name')  # name, price_low, price_high, newest
     page = int(request.args.get('page', 1))
     per_page = 12
@@ -46,6 +47,17 @@ def list():
     
     if preparation_type:
         query['preparation_type'] = preparation_type
+    
+    # Add price range filtering
+    if price_range:
+        if price_range == 'under_500':
+            query['price'] = {'$lt': 500}
+        elif price_range == '500_750':
+            query['price'] = {'$gte': 500, '$lt': 750}
+        elif price_range == '750_1000':
+            query['price'] = {'$gte': 750, '$lt': 1000}
+        elif price_range == 'above_1000':
+            query['price'] = {'$gte': 1000}
     
     # Build sort criteria
     sort_criteria = []
@@ -99,6 +111,7 @@ def list():
                          current_category=category,
                          current_meat_type=meat_type,
                          current_preparation_type=preparation_type,
+                         current_price_range=price_range,
                          current_sort=sort_by)
 
 @mongo_products_bp.route('/<product_id>')

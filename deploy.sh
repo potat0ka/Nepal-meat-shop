@@ -1,7 +1,7 @@
 #!/bin/bash
 # ========================================================================
-# 🍖 Nepal Meat Shop - Unix Deployment Script (macOS/Linux)
-# One-click deployment for Unix-based systems
+# 🍖 Nepal Meat Shop - Unix Deployment Script (Updated Jan 2025)
+# One-click deployment for cleaned & optimized MongoDB platform
 # ========================================================================
 
 set -e  # Exit on any error

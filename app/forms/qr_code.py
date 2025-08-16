@@ -57,3 +57,26 @@ class QRCodeUpdateForm(FlaskForm):
     )
     
     submit = SubmitField('Update QR Code')
+
+class PaymentMethodForm(FlaskForm):
+    """Form for adding new payment methods."""
+    
+    method_id = StringField(
+        'Payment Method ID',
+        validators=[DataRequired(), Length(min=2, max=50)],
+        render_kw={'placeholder': 'e.g., paytm, gpay, etc.'}
+    )
+    
+    name = StringField(
+        'Payment Method Name',
+        validators=[DataRequired(), Length(min=2, max=100)],
+        render_kw={'placeholder': 'e.g., PayTM, Google Pay, etc.'}
+    )
+    
+    name_nepali = StringField(
+        'Nepali Name',
+        validators=[DataRequired(), Length(min=2, max=100)],
+        render_kw={'placeholder': 'e.g., पेटीएम, गुगल पे, etc.'}
+    )
+    
+    submit = SubmitField('Add Payment Method')

@@ -11,6 +11,7 @@ let notificationTimeout;
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
     initializeCartButtons();
+    // Chat widget initialization moved to enhanced_chat.js to prevent conflicts
 });
 
 /**
@@ -1321,5 +1322,371 @@ function initializePasswordToggles() {
         });
     });
 }
+
+/**
+ * ===== FLOATING CHAT WIDGET FUNCTIONALITY =====
+ */
+
+// Chat widget state
+let chatWidget = {
+    isOpen: false,
+    isMinimized: false,
+    messageHistory: [],
+    isTyping: false,
+    currentUser: null
+};
+
+/**
+ * Initialize the floating chat widget
+ */
+function initializeChatWidget() {
+    // Get DOM elements
+    const chatToggle = document.getElementById('chatToggle');
+    const chatBox = document.getElementById('chatBox');
+    
+    if (!chatToggle || !chatBox) {
+        console.error('Chat widget elements not found!');
+        return;
+    }
+    
+    const chatClose = document.getElementById('chatClose');
+    const chatMinimize = document.getElementById('chatMinimize');
+    const chatSendBtn = document.getElementById('chatSendBtn');
+    const chatMessageInput = document.getElementById('chatMessageInput');
+    const quickBtns = document.querySelectorAll('.quick-btn');
+    
+    // Initialize welcome message timestamp
+    updateMessageTime();
+    
+    // Event listeners
+    chatToggle.addEventListener('click', toggleChatBox);
+    chatClose.addEventListener('click', closeChatBox);
+    chatMinimize.addEventListener('click', minimizeChatBox);
+    chatSendBtn.addEventListener('click', sendMessage);
+    chatMessageInput.addEventListener('keypress', handleInputKeypress);
+    
+    // Quick action buttons
+    quickBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const message = this.getAttribute('data-message');
+            if (message) {
+                chatMessageInput.value = message;
+                sendMessage();
+            }
+        });
+    });
+    
+    // Load chat history if user is logged in
+    loadChatHistory();
+    
+    // Auto-scroll to bottom
+    scrollToBottom();
+}
+
+/**
+ * Toggle chat box visibility
+ */
+function toggleChatBox() {
+    const chatBox = document.getElementById('chatBox');
+    const chatToggle = document.getElementById('chatToggle');
+    
+    if (chatWidget.isOpen) {
+        closeChatBox();
+    } else {
+        openChatBox();
+    }
+}
+
+/**
+ * Open chat box
+ */
+function openChatBox() {
+    const chatBox = document.getElementById('chatBox');
+    const chatToggle = document.getElementById('chatToggle');
+    
+    chatBox.classList.add('show');
+    chatToggle.style.transform = 'scale(0.9)';
+    chatWidget.isOpen = true;
+    chatWidget.isMinimized = false;
+    
+    // Focus on input
+    setTimeout(() => {
+        const input = document.getElementById('chatMessageInput');
+        if (input) input.focus();
+    }, 300);
+    
+    // Clear notification
+    clearChatNotification();
+}
+
+/**
+ * Close chat box
+ */
+function closeChatBox() {
+    const chatBox = document.getElementById('chatBox');
+    const chatToggle = document.getElementById('chatToggle');
+    
+    chatBox.classList.remove('show');
+    chatToggle.style.transform = 'scale(1)';
+    chatWidget.isOpen = false;
+    chatWidget.isMinimized = false;
+}
+
+/**
+ * Minimize chat box
+ */
+function minimizeChatBox() {
+    closeChatBox();
+    chatWidget.isMinimized = true;
+    
+    // Show notification badge
+    showChatNotification('−');
+}
+
+/**
+ * Handle input keypress events
+ */
+function handleInputKeypress(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendMessage();
+    }
+}
+
+/**
+ * Send message to AI assistant
+ */
+async function sendMessage() {
+    const input = document.getElementById('chatMessageInput');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    // Clear input
+    input.value = '';
+    
+    // Add user message to chat
+    addMessageToChat(message, 'user');
+    
+    // Show typing indicator
+    showTypingIndicator();
+    
+    try {
+        // Send to API
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({ message: message })
+        });
+        
+        const data = await response.json();
+        
+        // Hide typing indicator
+        hideTypingIndicator();
+        
+        if (response.ok && data.reply) {
+            // Add bot response
+            addMessageToChat(data.reply, 'bot');
+        } else {
+            // Show error message
+            const errorMsg = data.error || 'Sorry, I encountered an error. Please try again.';
+            addMessageToChat(errorMsg, 'bot');
+            console.error('Chat API error:', data.error || 'Unknown error');
+        }
+        
+    } catch (error) {
+        hideTypingIndicator();
+        addMessageToChat('Sorry, I\'m having trouble connecting. Please check your internet connection and try again.', 'bot');
+        console.error('Chat request failed:', error);
+    }
+}
+
+/**
+ * Add message to chat interface
+ */
+function addMessageToChat(message, sender) {
+    const chatMessages = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${sender}-message`;
+    
+    const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    messageDiv.innerHTML = `
+        <div class="message-avatar">
+            <i class="fas ${sender === 'user' ? 'fa-user' : 'fa-robot'}"></i>
+        </div>
+        <div class="message-content">
+            <div class="message-text">${escapeHtml(message)}</div>
+            <div class="message-time">${currentTime}</div>
+        </div>
+    `;
+    
+    chatMessages.appendChild(messageDiv);
+    
+    // Store in history
+    chatWidget.messageHistory.push({
+        message: message,
+        sender: sender,
+        timestamp: new Date().toISOString()
+    });
+    
+    // Scroll to bottom
+    scrollToBottom();
+    
+    // Show notification if chat is closed
+    if (!chatWidget.isOpen && sender === 'bot') {
+        showChatNotification('!');
+    }
+}
+
+/**
+ * Show typing indicator
+ */
+function showTypingIndicator() {
+    const typingIndicator = document.getElementById('typingIndicator');
+    if (typingIndicator) {
+        typingIndicator.style.display = 'flex';
+        chatWidget.isTyping = true;
+        scrollToBottom();
+    }
+}
+
+/**
+ * Hide typing indicator
+ */
+function hideTypingIndicator() {
+    const typingIndicator = document.getElementById('typingIndicator');
+    if (typingIndicator) {
+        typingIndicator.style.display = 'none';
+        chatWidget.isTyping = false;
+    }
+}
+
+/**
+ * Scroll chat messages to bottom
+ */
+function scrollToBottom() {
+    const chatMessages = document.getElementById('chatMessages');
+    if (chatMessages) {
+        setTimeout(() => {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }, 100);
+    }
+}
+
+/**
+ * Show chat notification badge
+ */
+function showChatNotification(text = '!') {
+    const notification = document.getElementById('chatNotification');
+    if (notification) {
+        notification.textContent = text;
+        notification.classList.add('show');
+    }
+}
+
+/**
+ * Clear chat notification badge
+ */
+function clearChatNotification() {
+    const notification = document.getElementById('chatNotification');
+    if (notification) {
+        notification.classList.remove('show');
+    }
+}
+
+/**
+ * Load chat history from server
+ */
+async function loadChatHistory() {
+    try {
+        const response = await fetch('/api/chat/history', {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': getCsrfToken()
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.history && data.history.length > 0) {
+                // Clear existing messages except welcome
+                const chatMessages = document.getElementById('chatMessages');
+                const welcomeMessage = chatMessages.querySelector('.bot-message');
+                chatMessages.innerHTML = '';
+                
+                // Re-add welcome message
+                if (welcomeMessage) {
+                    chatMessages.appendChild(welcomeMessage);
+                }
+                
+                // Add history messages
+                data.history.forEach(msg => {
+                    addMessageToChat(msg.message, msg.sender);
+                });
+            }
+        }
+    } catch (error) {
+        console.warn('Could not load chat history:', error);
+    }
+}
+
+/**
+ * Update message timestamps
+ */
+function updateMessageTime() {
+    const timeElements = document.querySelectorAll('.message-time');
+    const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    timeElements.forEach(element => {
+        if (!element.textContent) {
+            element.textContent = currentTime;
+        }
+    });
+}
+
+/**
+ * Get CSRF token for requests
+ */
+function getCsrfToken() {
+    const token = document.querySelector('meta[name="csrf-token"]');
+    return token ? token.getAttribute('content') : '';
+}
+
+/**
+ * Escape HTML to prevent XSS
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+/**
+ * Handle window resize for mobile responsiveness
+ */
+window.addEventListener('resize', function() {
+    if (chatWidget.isOpen) {
+        // Adjust chat box position on mobile
+        const chatBox = document.getElementById('chatBox');
+        if (window.innerWidth <= 768 && chatBox) {
+            chatBox.style.width = `${window.innerWidth - 30}px`;
+        }
+    }
+});
+
+// Export chat functions to global scope
+window.ChatWidget = {
+    open: openChatBox,
+    close: closeChatBox,
+    minimize: minimizeChatBox,
+    sendMessage: sendMessage,
+    addMessage: addMessageToChat,
+    showNotification: showChatNotification,
+    clearNotification: clearChatNotification
+};
 
 // Nepal Meat Shop JavaScript loaded successfully

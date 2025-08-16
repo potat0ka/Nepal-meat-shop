@@ -19,7 +19,15 @@
 ### 1.1 Background
 The Nepal Meat Shop platform is a modern, bilingual e-commerce application designed specifically for the Nepali meat industry. The platform addresses the unique challenges of meat retail in Nepal, including cultural preferences, language barriers, and traditional payment methods.
 
-**Current State (December 2024)**: The platform has been successfully migrated to MongoDB Atlas cloud database, with all dummy files, test scripts, and development artifacts removed for a clean, production-ready codebase.
+**Current State (December 2024)**: The platform has been successfully cleaned and optimized as a MongoDB-only e-commerce solution. All SQLAlchemy components, duplicate files, and unused dependencies have been removed, resulting in a streamlined, production-ready codebase with `mongo_app.py` as the main entry point.
+
+**Recent Platform Cleanup (December 2024)**:
+- ✅ Removed duplicate route files (`auth.py`, `main.py`, `products.py`, `orders.py`)
+- ✅ Deleted unused SQLAlchemy models (`user.py`, `product.py`, `order.py`)
+- ✅ Updated `requirements.txt` with only necessary dependencies
+- ✅ Cleaned and optimized codebase structure
+- ✅ Updated all documentation to reflect current architecture
+- ✅ Verified platform functionality after cleanup
 
 ### 1.2 Scope
 This documentation covers the complete technical implementation of the platform, including:
@@ -44,7 +52,7 @@ This documentation covers the complete technical implementation of the platform,
 Modern e-commerce platforms typically employ Model-View-Controller (MVC) architecture patterns. Flask, being a micro-framework, provides flexibility in implementing architectural patterns while maintaining simplicity (Grinberg, 2018).
 
 ### 2.2 Database Design for E-commerce
-The platform implements both SQL (SQLAlchemy) and NoSQL (MongoDB) database solutions, following best practices for e-commerce data modeling including proper indexing, relationship management, and data integrity (Silberschatz et al., 2019).
+The platform implements a MongoDB NoSQL database solution, following best practices for document-based e-commerce data modeling including proper indexing, relationship management, and data integrity (Silberschatz et al., 2019).
 
 ### 2.3 Multilingual Web Applications
 Internationalization (i18n) in web applications requires careful consideration of character encoding, text direction, and cultural context (Esselink, 2000). The platform implements bilingual support for English and Nepali languages.
@@ -68,10 +76,9 @@ The platform development followed an iterative, modular approach using:
 - **Flask 3.0.0**: Lightweight, flexible Python web framework
 - **Rationale**: Simplicity, extensive ecosystem, and rapid development capabilities
 
-#### 3.2.2 Database Systems
-- **Primary**: MongoDB with PyMongo 4.6.0
-- **Alternative**: SQLAlchemy 2.0.23 with SQLite/PostgreSQL
-- **Rationale**: Flexibility for document-based data and traditional relational data
+#### 3.2.2 Database System
+- **MongoDB with PyMongo 4.6.0**: Document-based NoSQL database
+- **Rationale**: Flexibility for document-based data, scalability, and simplified data modeling for e-commerce applications
 
 #### 3.2.3 Frontend Technologies
 - **Bootstrap 5**: Responsive UI framework
@@ -92,36 +99,50 @@ The platform development followed an iterative, modular approach using:
 app/
 ├── __init__.py              # Application factory
 ├── config/                  # Configuration management
-│   ├── settings.py         # SQLAlchemy configurations
-│   └── mongo_settings.py   # MongoDB configurations
+│   ├── settings.py         # MongoDB configurations
+│   ├── mongo_settings.py   # MongoDB configurations
+│   └── payment_config.py   # Payment gateway configurations
 ├── models/                  # Database models
-│   ├── user.py             # User authentication models
-│   ├── product.py          # Product and category models
-│   ├── order.py            # Order and cart models
 │   ├── analytics.py        # Analytics models
+│   ├── chat.py             # Chat system models
 │   └── mongo_models.py     # MongoDB document models
 ├── routes/                  # Route blueprints
-│   ├── main.py             # Home and general routes
-│   ├── auth.py             # Authentication routes
-│   ├── products.py         # Product management
-│   ├── orders.py           # Order processing
+│   ├── chat.py             # AI chat functionality
 │   ├── mongo_admin.py      # MongoDB admin panel
+│   ├── mongo_auth.py       # MongoDB authentication routes
+│   ├── mongo_main.py       # MongoDB home and general routes
 │   ├── mongo_orders.py     # MongoDB order management
-│   └── mongo_products.py   # MongoDB product management
+│   ├── mongo_products.py   # MongoDB product management
+│   ├── payment_api.py      # Payment API endpoints
+│   ├── payment_callbacks.py # Payment callback handlers
+│   └── payment_webhooks.py # Payment webhook handlers
 ├── forms/                   # WTForms definitions
 │   ├── auth.py             # Authentication forms
+│   ├── order.py            # Order and checkout forms
 │   ├── product.py          # Product forms
-│   └── order.py            # Order and checkout forms
+│   └── qr_code.py          # QR code management forms
+├── services/                # Business services
+│   ├── gateways/           # Payment gateway integrations
+│   │   ├── esewa.py        # eSewa payment gateway
+│   │   ├── gateway_manager.py # Payment gateway manager
+│   │   └── khalti.py       # Khalti payment gateway
+│   └── payment_service.py  # Payment processing service
 ├── utils/                   # Utility functions
+│   ├── analytics.py        # Analytics utilities
 │   ├── business.py         # Business logic utilities
+│   ├── file_utils.py       # File management utilities
 │   ├── mongo_db.py         # MongoDB operations
-│   ├── file_utils.py       # File management
-│   └── validation.py       # Input validation
+│   └── validation.py       # Input validation utilities
 └── templates/               # Jinja2 templates
     ├── admin/              # Admin panel templates
     ├── auth/               # Authentication templates
+    ├── cart/               # Shopping cart templates
+    ├── chat/               # AI chat templates
     ├── orders/             # Order management templates
-    └── products/           # Product display templates
+    ├── pages/              # Static page templates
+    ├── payment/            # Payment processing templates
+    ├── products/           # Product display templates
+    └── user/               # User profile templates
 ```
 
 ### 4.2 Database Architecture
@@ -1450,22 +1471,46 @@ class MongoConfig:
 
 #### C.2 Dependencies (requirements.txt)
 ```
+# Core Flask Framework
 Flask==3.0.0
-Flask-SQLAlchemy==3.1.1
 Flask-Login==0.6.3
 Flask-WTF==1.2.1
-Flask-Migrate==4.0.5
-SQLAlchemy==2.0.23
-pymongo==4.6.0
-flask-pymongo==2.3.0
 WTForms==3.1.0
 Werkzeug==3.0.1
 Jinja2==3.1.2
+
+# MongoDB Database
+pymongo==4.6.0
+
+# Security and Authentication
+bcrypt==4.1.2
+
+# HTTP Requests
+requests==2.31.0
+
+# Image Processing
 Pillow==10.1.0
+
+# PDF Generation
 reportlab==4.0.7
+
+# Environment Configuration
 python-dotenv==1.0.0
-pytest==7.4.3
+
+# MongoDB Serialization
+bson==0.5.10
+
+# Production Server
 gunicorn==21.2.0
+waitress==2.1.2
+
+# Additional Utilities
+click==8.1.7
+markupsafe==2.1.3
+itsdangerous==2.1.2
+
+# AI/ML Dependencies
+openai==1.3.0
 ```
 
 ### Appendix D: Deployment Guide
@@ -1474,13 +1519,13 @@ gunicorn==21.2.0
 ```bash
 # Clone repository
 git clone <repository-url>
-cd BugFixer
+cd Nepal-meat-shop
 
 # Install dependencies
 pip install -r requirements.txt
 
 # Set up environment variables
-cp .env.example .env.mongo
+# Edit .env.mongo with your MongoDB connection details
 
 # Run MongoDB application
 python mongo_app.py

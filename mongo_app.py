@@ -8,6 +8,7 @@ import os
 import logging
 from flask import Flask
 from flask_login import LoginManager
+from flask_socketio import SocketIO
 from dotenv import load_dotenv
 
 # Load environment variables from .env.mongo
@@ -44,6 +45,9 @@ def create_mongo_app(config_name=None):
         """Load user for Flask-Login."""
         return mongo_db.find_user_by_id(user_id)
     
+    # Initialize SocketIO
+    socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+    
     # Register blueprints
     from app.routes.mongo_auth import mongo_auth_bp
     from app.routes.mongo_main import mongo_main_bp
@@ -52,6 +56,8 @@ def create_mongo_app(config_name=None):
     from app.routes.mongo_admin import mongo_admin_bp
     from app.routes.payment_api import payment_api
     from app.routes.payment_callbacks import payment_callbacks
+    from app.routes.chat import chat_bp
+    from app.routes.admin_chat import admin_chat_bp
     
     app.register_blueprint(mongo_main_bp)
     app.register_blueprint(mongo_auth_bp)
@@ -60,6 +66,15 @@ def create_mongo_app(config_name=None):
     app.register_blueprint(mongo_admin_bp)
     app.register_blueprint(payment_api)
     app.register_blueprint(payment_callbacks)
+    app.register_blueprint(chat_bp)
+    app.register_blueprint(admin_chat_bp)
+    
+    # Initialize WebSocket service
+    from app.services.websocket_service import init_websocket_service
+    websocket_service = init_websocket_service(socketio)
+    
+    # Store socketio instance in app config for access in other modules
+    app.config['SOCKETIO'] = socketio
     
     # Create upload directories
     upload_dirs = ['uploads', 'uploads/products', 'uploads/profiles']
@@ -84,4 +99,5 @@ def create_mongo_app(config_name=None):
 
 if __name__ == '__main__':
     app = create_mongo_app()
-    app.run(debug=False, host='127.0.0.1', port=5000)
+    socketio = app.config['SOCKETIO']
+    socketio.run(app, debug=False, host='127.0.0.1', port=5000)

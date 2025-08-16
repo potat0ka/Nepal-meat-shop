@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Nepal Meat Shop Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">{{ title }}</h3>
+                    <a href="{{ url_for('admin.admin_qr_codes') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to QR Codes
+                    </a>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="needs-validation" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.method_id.label(class="form-label") }}
+                                    {{ form.method_id(class="form-control" + (" is-invalid" if form.method_id.errors else ""), placeholder="e.g., paypal, stripe, etc.") }}
+                                    {% if form.method_id.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.method_id.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">Unique identifier for the payment method (lowercase, no spaces)</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.name.label(class="form-label") }}
+                                    {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), placeholder="e.g., PayPal, Stripe, etc.") }}
+                                    {% if form.name.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.name.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">Display name for the payment method</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.name_nepali.label(class="form-label") }}
+                                    {{ form.name_nepali(class="form-control" + (" is-invalid" if form.name_nepali.errors else ""), placeholder="नेपाली नाम") }}
+                                    {% if form.name_nepali.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.name_nepali.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">Payment method name in Nepali</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('admin.admin_qr_codes') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Bootstrap form validation
+(function() {
+    'use strict';
+    window.addEventListener('load', function() {
+        var forms = document.getElementsByClassName('needs-validation');
+        var validation = Array.prototype.filter.call(forms, function(form) {
+            form.addEventListener('submit', function(event) {
+                if (form.checkValidity() === false) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    }, false);
+})();
+
+// Auto-generate method_id from name
+document.getElementById('name').addEventListener('input', function() {
+    const nameValue = this.value;
+    const methodIdField = document.getElementById('method_id');
+    
+    // Only auto-generate if method_id is empty
+    if (!methodIdField.value) {
+        const generatedId = nameValue
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '_')
+            .replace(/_+/g, '_')
+            .replace(/^_|_$/g, '');
+        methodIdField.value = generatedId;
+    }
+});
+</script>
+{% endblock %}

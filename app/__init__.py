@@ -72,6 +72,8 @@ def create_app(config_name='development'):
     from app.routes.mongo_products import mongo_products_bp
     from app.routes.mongo_main import mongo_main_bp
     from app.routes.payment_webhooks import payment_webhooks_bp
+    from app.routes.chat import chat_bp
+    from app.routes.admin_chat import admin_chat_bp
     
     # Register MongoDB-based blueprints
     app.register_blueprint(mongo_main_bp)  # MongoDB main routes
@@ -81,6 +83,8 @@ def create_app(config_name='development'):
     app.register_blueprint(mongo_orders_bp, url_prefix='/orders')
     app.register_blueprint(mongo_products_bp, url_prefix='/products')
     app.register_blueprint(payment_webhooks_bp)
+    app.register_blueprint(chat_bp)
+    app.register_blueprint(admin_chat_bp)
     
     # Register template filters and context processors
     register_template_helpers(app)

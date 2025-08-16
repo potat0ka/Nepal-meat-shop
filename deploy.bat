@@ -1,7 +1,7 @@
 @echo off
 REM ========================================================================
-REM 🍖 Nepal Meat Shop - Windows Deployment Script
-REM One-click deployment for Windows systems
+REM 🍖 Nepal Meat Shop - Windows Deployment Script (Updated Jan 2025)
+REM One-click deployment for cleaned & optimized MongoDB platform
 REM ========================================================================
 
 setlocal enabledelayedexpansion
@@ -25,7 +25,7 @@ if %errorlevel% neq 0 (
     echo %RED%❌ Python is not installed or not in PATH%NC%
     echo %YELLOW%💡 Please install Python from: https://www.python.org/downloads/%NC%
     echo %YELLOW%   Make sure to check "Add Python to PATH" during installation%NC%
-    echo %YELLOW%   Minimum required version: Python 3.8%NC%
+    echo %YELLOW%   Minimum required version: Python 3.8+ (Recommended: 3.11+)%NC%
     pause
     exit /b 1
 )
@@ -157,15 +157,16 @@ if "%INSTALL_DEPS%"=="1" (
     echo %GREEN%✅ Dependencies installed successfully%NC%
 )
 
-REM Check MongoDB connection (optional but recommended)
+REM Check MongoDB connection (required for platform)
 echo %BLUE%🔍 Checking MongoDB availability...%NC%
 python -c "import pymongo; client = pymongo.MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=2000); client.server_info(); print('MongoDB connection successful')" 2>nul
 if %errorlevel% equ 0 (
     echo %GREEN%✅ MongoDB is running and accessible%NC%
 ) else (
     echo %YELLOW%⚠️ MongoDB is not running or not accessible%NC%
-    echo %YELLOW%💡 The application will work but you may need to start MongoDB%NC%
-    echo %YELLOW%   Download MongoDB from: https://www.mongodb.com/try/download/community%NC%
+    echo %YELLOW%💡 MongoDB is required for this platform to function%NC%
+    echo %YELLOW%   Download MongoDB 5.0+ from: https://www.mongodb.com/try/download/community%NC%
+    echo %YELLOW%   Or use MongoDB Atlas cloud service%NC%
 )
 
 REM Check if main application file exists

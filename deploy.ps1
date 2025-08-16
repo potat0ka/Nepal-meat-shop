@@ -1,6 +1,6 @@
 # ========================================================================
-# 🍖 Nepal Meat Shop - PowerShell Deployment Script
-# One-click deployment for Windows systems (PowerShell version)
+# 🍖 Nepal Meat Shop - PowerShell Deployment Script (Updated Jan 2025)
+# One-click deployment for cleaned & optimized MongoDB platform
 # ========================================================================
 
 param(

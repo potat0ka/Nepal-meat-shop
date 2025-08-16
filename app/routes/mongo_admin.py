@@ -11,7 +11,7 @@ from functools import wraps
 from app.utils.mongo_db import mongo_db
 from app.models.mongo_models import MongoUser, MongoProduct, MongoOrder
 from app.forms.product import ProductForm, CategoryForm
-from app.forms.qr_code import QRCodeForm, QRCodeUpdateForm
+from app.forms.qr_code import QRCodeForm, QRCodeUpdateForm, PaymentMethodForm
 from app.utils.file_utils import save_uploaded_file, delete_file, validate_image_file
 from bson import ObjectId
 from datetime import datetime
@@ -1565,6 +1565,9 @@ def admin_add_category():
         except Exception as e:
             flash(f'Error adding category: {str(e)}', 'error')
             return redirect(url_for('admin.admin_categories'))
+    
+    # Render the form for GET requests or when form validation fails
+    return render_template('admin/category_form.html', form=form, title='Add Category')
 
 
 @mongo_admin_bp.route('/payment-gateways')
@@ -1905,16 +1908,46 @@ def admin_qr_codes():
                 }
             ]
         
-        # Define available payment methods
-        available_methods = [
-            {'id': 'bank', 'name': 'Bank Transfer', 'name_nepali': 'बैंक ट्रान्सफर'},
-            {'id': 'esewa', 'name': 'eSewa', 'name_nepali': 'ईसेवा'},
-            {'id': 'khalti', 'name': 'Khalti', 'name_nepali': 'खल्ती'},
-            {'id': 'ime_pay', 'name': 'IME Pay', 'name_nepali': 'आईएमई पे'},
-            {'id': 'fonepay', 'name': 'FonePay', 'name_nepali': 'फोनपे'},
-            {'id': 'prabhupay', 'name': 'PrabhuPay', 'name_nepali': 'प्रभुपे'},
-            {'id': 'cellpay', 'name': 'CellPay', 'name_nepali': 'सेलपे'},
-        ]
+        # Get payment methods from database or use defaults
+        available_methods = []
+        if mongo_db.db is not None:
+            # Try to get payment methods from database
+            payment_methods_data = list(mongo_db.db.payment_methods.find().sort('name', 1))
+            if payment_methods_data:
+                available_methods = [{
+                    'id': method['method_id'],
+                    'name': method['name'],
+                    'name_nepali': method['name_nepali']
+                } for method in payment_methods_data]
+            else:
+                # Initialize with default payment methods if none exist
+                default_methods = [
+                    {'method_id': 'bank', 'name': 'Bank Transfer', 'name_nepali': 'बैंक ट्रान्सफर'},
+                    {'method_id': 'esewa', 'name': 'eSewa', 'name_nepali': 'ईसेवा'},
+                    {'method_id': 'khalti', 'name': 'Khalti', 'name_nepali': 'खल्ती'},
+                    {'method_id': 'ime_pay', 'name': 'IME Pay', 'name_nepali': 'आईएमई पे'},
+                    {'method_id': 'fonepay', 'name': 'FonePay', 'name_nepali': 'फोनपे'},
+                    {'method_id': 'prabhupay', 'name': 'PrabhuPay', 'name_nepali': 'प्रभुपे'},
+                    {'method_id': 'cellpay', 'name': 'CellPay', 'name_nepali': 'सेलपे'},
+                ]
+                # Insert default methods into database
+                mongo_db.db.payment_methods.insert_many(default_methods)
+                available_methods = [{
+                    'id': method['method_id'],
+                    'name': method['name'],
+                    'name_nepali': method['name_nepali']
+                } for method in default_methods]
+        else:
+            # Fallback when MongoDB is not available
+            available_methods = [
+                {'id': 'bank', 'name': 'Bank Transfer', 'name_nepali': 'बैंक ट्रान्सफर'},
+                {'id': 'esewa', 'name': 'eSewa', 'name_nepali': 'ईसेवा'},
+                {'id': 'khalti', 'name': 'Khalti', 'name_nepali': 'खल्ती'},
+                {'id': 'ime_pay', 'name': 'IME Pay', 'name_nepali': 'आईएमई पे'},
+                {'id': 'fonepay', 'name': 'FonePay', 'name_nepali': 'फोनपे'},
+                {'id': 'prabhupay', 'name': 'PrabhuPay', 'name_nepali': 'प्रभुपे'},
+                {'id': 'cellpay', 'name': 'CellPay', 'name_nepali': 'सेलपे'},
+            ]
         
         # Create a map of existing QR codes
         existing_qr_codes = {qr['payment_method']: qr for qr in qr_codes_data}
@@ -2120,7 +2153,77 @@ def admin_edit_qr_code(payment_method):
         flash(f'Error loading QR code: {str(e)}', 'error')
         return redirect(url_for('admin.admin_qr_codes'))
 
+@mongo_admin_bp.route('/payment-methods/add', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_add_payment_method():
+    """Add a new payment method."""
+    try:
+        form = PaymentMethodForm()
+        
+        if form.validate_on_submit():
+            method_id = form.method_id.data.lower().strip()
+            
+            # Check if payment method already exists
+            if mongo_db.db is not None:
+                existing_method = mongo_db.db.payment_methods.find_one({'method_id': method_id})
+                if existing_method:
+                    flash(f'Payment method with ID "{method_id}" already exists.', 'error')
+                    return render_template('admin/payment_method_form.html', form=form, title='Add Payment Method')
+                
+                # Create new payment method
+                payment_method_data = {
+                    'method_id': method_id,
+                    'name': form.name.data.strip(),
+                    'name_nepali': form.name_nepali.data.strip(),
+                    'created_at': datetime.utcnow(),
+                    'created_by': str(current_user._id)
+                }
+                
+                mongo_db.db.payment_methods.insert_one(payment_method_data)
+                flash(f'Payment method "{form.name.data}" has been added successfully!', 'success')
+                return redirect(url_for('admin.admin_qr_codes'))
+            else:
+                flash('Database not available. Cannot add payment method.', 'error')
+        
+        return render_template('admin/payment_method_form.html', form=form, title='Add Payment Method')
+    except Exception as e:
+        flash(f'Error adding payment method: {str(e)}', 'error')
+        return redirect(url_for('admin.admin_qr_codes'))
 
+@mongo_admin_bp.route('/payment-methods/<method_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def admin_delete_payment_method(method_id):
+    """Delete a payment method."""
+    try:
+        if mongo_db.db is not None:
+            # Check if payment method exists
+            payment_method = mongo_db.db.payment_methods.find_one({'method_id': method_id})
+            if not payment_method:
+                flash('Payment method not found.', 'error')
+                return redirect(url_for('admin.admin_qr_codes'))
+            
+            # Check if there's an associated QR code
+            qr_code = mongo_db.db.qr_codes.find_one({'payment_method': method_id})
+            if qr_code:
+                # Delete the QR code image file
+                if qr_code.get('qr_image'):
+                    delete_file(qr_code['qr_image'])
+                # Delete the QR code record
+                mongo_db.db.qr_codes.delete_one({'payment_method': method_id})
+            
+            # Delete the payment method
+            mongo_db.db.payment_methods.delete_one({'method_id': method_id})
+            
+            flash(f'Payment method "{payment_method["name"]}" has been deleted successfully!', 'success')
+        else:
+            flash('Database not available. Cannot delete payment method.', 'error')
+        
+        return redirect(url_for('admin.admin_qr_codes'))
+    except Exception as e:
+        flash(f'Error deleting payment method: {str(e)}', 'error')
+        return redirect(url_for('admin.admin_qr_codes'))
 
 @mongo_admin_bp.route('/categories/<category_id>/edit', methods=['GET', 'POST'])
 @login_required

@@ -1,83 +1,99 @@
-# 🍖 Nepal Meat Shop - MongoDB Version
+# 🍖 Nepal Meat Shop - E-commerce Platform
 
-A modern, modular Flask e-commerce application for a Nepali meat shop with MongoDB database and bilingual support (English/Nepali).
+**A modern, bilingual e-commerce platform for meat products with MongoDB backend**
 
-## 🏗️ Architecture
+[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org)
+[![Flask](https://img.shields.io/badge/Flask-3.0.3-green.svg)](https://flask.palletsprojects.com)
+[![MongoDB](https://img.shields.io/badge/MongoDB-5.0+-green.svg)](https://mongodb.com)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen.svg)](#)
 
-The application has been completely refactored into a modular, maintainable structure:
+**Last Updated**: January 2025 | **Status**: ✅ Cleaned & Optimized
+
+---
+
+A modern, clean Flask e-commerce application for a Nepali meat shop with MongoDB database and bilingual support (English/Nepali).
+
+## 🏗️ Clean Architecture (Updated December 2024)
+
+The application has been cleaned up and organized with a streamlined structure:
 
 ```
 app/
 ├── __init__.py              # Application factory
 ├── config/                  # Configuration management
-│   ├── __init__.py
-│   └── settings.py         # Environment-specific settings
-├── models/                  # Database models
-│   ├── __init__.py
-│   ├── user.py             # User and authentication models
-│   ├── product.py          # Product and category models
-│   ├── order.py            # Order and cart models
+│   ├── mongo_settings.py   # MongoDB configuration
+│   ├── payment_config.py   # Payment gateway settings
+│   └── settings.py         # General app settings
+├── models/                  # Database models (MongoDB only)
+│   ├── mongo_models.py     # MongoDB user, product, order models
+│   ├── chat.py             # Chat functionality models
 │   └── analytics.py        # Analytics and reporting models
-├── routes/                  # Route blueprints
-│   ├── __init__.py
-│   ├── main.py             # Home and general routes
-│   ├── auth.py             # Authentication routes
-│   ├── products.py         # Product listing and details
-│   └── orders.py           # Cart and order management
+├── routes/                  # Route blueprints (MongoDB only)
+│   ├── mongo_main.py       # Home and general routes
+│   ├── mongo_auth.py       # Authentication routes
+│   ├── mongo_products.py   # Product listing and details
+│   ├── mongo_orders.py     # Cart and order management
+│   ├── mongo_admin.py      # Admin panel routes
+│   ├── chat.py             # AI chat assistant
+│   └── payment_*.py        # Payment gateway integration
 ├── forms/                   # WTForms definitions
-│   ├── __init__.py
 │   ├── auth.py             # Authentication forms
 │   ├── product.py          # Product-related forms
-│   └── order.py            # Order and cart forms
+│   ├── order.py            # Order and cart forms
+│   └── qr_code.py          # QR code forms
+├── services/                # Business services
+│   ├── gateways/           # Payment gateway implementations
+│   └── payment_service.py  # Payment processing logic
 └── utils/                   # Utility functions
-    ├── __init__.py
+    ├── mongo_db.py         # MongoDB connection and utilities
     ├── file_utils.py       # File upload and management
     ├── business.py         # Business logic utilities
-    └── validation.py       # Input validation utilities
+    ├── validation.py       # Input validation utilities
+    └── analytics.py        # Analytics utilities
 ```
 
-## ✨ Features
+## ✨ Key Features
 
-### 🛒 E-commerce Functionality
-- **Product Catalog**: Comprehensive product listing with categories and advanced filtering
-- **Shopping Cart**: Session-based cart management with real-time updates
-- **Checkout Process**: Multi-step checkout with location selection and payment options
-- **Order Management**: Complete order tracking, history, and status updates
-- **Inventory Tracking**: Real-time stock management with low-stock alerts
+### 🛒 E-commerce Core
+- **Product Management**: Complete CRUD operations with optimized image handling
+- **Shopping Cart**: Session-based cart with real-time quantity management
+- **Order Processing**: Full order lifecycle from cart to delivery tracking
+- **Payment Integration**: Multiple Nepali payment gateways (eSewa, Khalti, IME Pay)
+- **Invoice Generation**: Automated PDF invoice creation with business branding
 
-### 🔐 User Management & Security
-- **Authentication System**: Secure user registration and login with password hashing
+### 🌐 Bilingual Support
+- **Dual Language**: Full English and Nepali language support
+- **Dynamic Content**: Language-aware product descriptions and UI
+- **Cultural Adaptation**: Nepali currency, address formats, and business practices
+- **Smart Detection**: Automatic language detection for user inputs
+
+### 🤖 AI-Powered Chat System
+- **Smart Assistant**: OpenAI GPT-powered customer support
+- **Bilingual Chat**: Supports both English and Nepali conversations
+- **Admin Takeover**: Human agents can seamlessly take over conversations
+- **Real-time Communication**: WebSocket-based instant messaging
+- **Conversation History**: Persistent chat history and analytics
+
+### 👨‍💼 Admin Panel
+- **Business Dashboard**: Real-time analytics and key performance metrics
+- **User Management**: Customer and staff account administration
+- **Order Management**: Process orders, update delivery status, track performance
+- **Product Management**: Add, edit, and manage product catalog with categories
+- **Payment Configuration**: Manage payment gateway settings and QR codes
+- **Chat Management**: Monitor and manage customer conversations
+
+### 🔐 Security & Authentication
+- **User Authentication**: Secure registration and login with password hashing
 - **Role-Based Access**: Hierarchical permissions (Admin, Sub-Admin, Staff, Customer)
-- **Profile Management**: User profile updates and password management
 - **Session Security**: Secure session handling with CSRF protection
-
-### 💰 Payment Integration
-- **Cash on Delivery (COD)**: Traditional payment method with confirmation
-- **Digital Wallets**: eSewa, Khalti, IME Pay, FonePay with QR code integration
-- **Banking Options**: Mobile banking and bank transfer support
-- **Payment Gateway Management**: Admin panel for gateway configuration and testing
-- **QR Code System**: Dynamic QR code generation for digital payments
+- **Input Validation**: Comprehensive server-side validation and sanitization
 
 ### 🗺️ Location Services
 - **Interactive Maps**: Leaflet.js integration with click-to-select functionality
 - **Current Location**: HTML5 Geolocation API with comprehensive error handling
 - **Address Search**: Nominatim API integration for location search
 - **Delivery Zones**: Coordinate-based delivery location management
-- **Map Fallbacks**: Graceful degradation for various network conditions
-
-### 👨‍💼 Administrative Panel
-- **Dashboard Overview**: Real-time statistics and system monitoring
-- **User Management**: Complete user administration with role management
-- **Product Management**: Full CRUD operations with inventory control
-- **Order Processing**: Order status management and tracking
-- **Category Management**: Product categorization and organization
-- **Business Insights**: Advanced analytics and reporting dashboard
-- **Payment Gateway Config**: Gateway status monitoring and testing tools
-
-### 🌐 Bilingual Support
-- **Dual Language**: Complete English and Nepali language support
-- **Localized Content**: Product names, descriptions, and UI in both languages
-- **Cultural Adaptation**: Nepal-specific payment methods and business practices
 
 ### 📱 Modern UI/UX
 - **Responsive Design**: Mobile-first Bootstrap framework implementation

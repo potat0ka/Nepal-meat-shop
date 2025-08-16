@@ -65,6 +65,26 @@
                         </select>
                     </div>
 
+                    <!-- Price Range Filter -->
+                    <div class="mb-3">
+                        <label class="form-label">Price Range / मूल्य दायरा</label>
+                        <select name="price_range" class="form-select" onchange="this.form.submit()">
+                            <option value="">All Prices</option>
+                            <option value="under_500" {% if current_price_range == 'under_500' %}selected{% endif %}>
+                                Under Rs. 500
+                            </option>
+                            <option value="500_750" {% if current_price_range == '500_750' %}selected{% endif %}>
+                                Rs. 500 - Rs. 750
+                            </option>
+                            <option value="750_1000" {% if current_price_range == '750_1000' %}selected{% endif %}>
+                                Rs. 750 - Rs. 1000
+                            </option>
+                            <option value="above_1000" {% if current_price_range == 'above_1000' %}selected{% endif %}>
+                                Above Rs. 1000
+                            </option>
+                        </select>
+                    </div>
+
                     <!-- Sort Options -->
                     <div class="mb-3">
                         <label class="form-label">Sort By</label>
