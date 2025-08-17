@@ -72,9 +72,10 @@ echo ✅ pip is available
 
 REM Set project directory and virtual environment path
 set "PROJECT_DIR=%CD%\"
+set "BACKEND_DIR=%PROJECT_DIR%backend\"
 set "VENV_DIR=%PROJECT_DIR%venv"
-set "REQUIREMENTS_FILE=%PROJECT_DIR%requirements.txt"
-set "MAIN_FILE=%PROJECT_DIR%mongo_app.py"
+set "REQUIREMENTS_FILE=%BACKEND_DIR%requirements.txt"
+set "MAIN_FILE=%BACKEND_DIR%mongo_app.py"
 
 REM Check if requirements.txt exists
 if not exist "%REQUIREMENTS_FILE%" (
@@ -188,9 +189,9 @@ if not exist "%MAIN_FILE%" (
 )
 
 REM Load environment variables if .env.mongo exists
-if exist "%PROJECT_DIR%.env.mongo" (
+if exist "%BACKEND_DIR%.env.mongo" (
     echo %BLUE%📄 Loading environment variables from .env.mongo...%NC%
-    for /f "usebackq tokens=1,2 delims==" %%a in ("%PROJECT_DIR%.env.mongo") do (
+    for /f "usebackq tokens=1,2 delims==" %%a in ("%BACKEND_DIR%.env.mongo") do (
         if not "%%a"=="" if not "%%a:~0,1%"=="#" (
             set "%%a=%%b"
         )

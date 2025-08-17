@@ -10,13 +10,14 @@ from flask import Flask
 from flask_login import current_user
 from dotenv import load_dotenv
 
-# Add parent directory to Python path
+# Add backend directory to Python path
 script_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(script_dir)
-sys.path.insert(0, parent_dir)
+backend_dir = os.path.join(parent_dir, 'backend')
+sys.path.insert(0, backend_dir)
 
-# Change to parent directory and load environment variables
-os.chdir(parent_dir)
+# Change to backend directory and load environment variables
+os.chdir(backend_dir)
 load_dotenv('.env.mongo')
 
 from app.utils.mongo_db import MongoDB

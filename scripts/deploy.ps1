@@ -124,10 +124,11 @@ function Start-Deployment {
 
         # Get project paths
         $ProjectDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+        $BackendDir = Join-Path $ProjectDir "backend"
         $VenvDir = Join-Path $ProjectDir "venv"
-        $RequirementsFile = Join-Path $ProjectDir "requirements.txt"
-        $MainFile = Join-Path $ProjectDir "mongo_app.py"
-        $EnvFile = Join-Path $ProjectDir ".env.mongo"
+        $RequirementsFile = Join-Path $BackendDir "requirements.txt"
+        $MainFile = Join-Path $BackendDir "mongo_app.py"
+        $EnvFile = Join-Path $BackendDir ".env.mongo"
 
         Write-Status "Checking Python installation..."
         

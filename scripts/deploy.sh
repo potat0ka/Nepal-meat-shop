@@ -108,9 +108,10 @@ main() {
 
     # Get project directory
     PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    BACKEND_DIR="$PROJECT_DIR/backend"
     VENV_DIR="$PROJECT_DIR/venv"
-    REQUIREMENTS_FILE="$PROJECT_DIR/requirements.txt"
-    MAIN_FILE="$PROJECT_DIR/mongo_app.py"
+    REQUIREMENTS_FILE="$BACKEND_DIR/requirements.txt"
+    MAIN_FILE="$BACKEND_DIR/mongo_app.py"
 
     print_status "🔍 Checking Python installation..."
     
@@ -264,7 +265,7 @@ main() {
     fi
 
     # Load environment variables if .env.mongo exists
-    ENV_FILE="$PROJECT_DIR/.env.mongo"
+    ENV_FILE="$BACKEND_DIR/.env.mongo"
     if [ -f "$ENV_FILE" ]; then
         print_status "📄 Loading environment variables from .env.mongo..."
         set -a  # Automatically export variables
@@ -275,7 +276,7 @@ main() {
 
     # Set additional environment variables
     export FLASK_ENV=development
-    export PYTHONPATH="$PROJECT_DIR:$PYTHONPATH"
+    export PYTHONPATH="$BACKEND_DIR:$PYTHONPATH"
 
     # Final checks before starting
     echo

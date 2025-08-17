@@ -11,13 +11,14 @@ from werkzeug.security import generate_password_hash
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
-# Add parent directory to Python path
+# Add backend directory to Python path
 script_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(script_dir)
-sys.path.insert(0, parent_dir)
+backend_dir = os.path.join(parent_dir, 'backend')
+sys.path.insert(0, backend_dir)
 
-# Change to parent directory and load environment variables
-os.chdir(parent_dir)
+# Change to backend directory and load environment variables
+os.chdir(backend_dir)
 load_dotenv('.env.mongo')
 
 def create_admin_user():
