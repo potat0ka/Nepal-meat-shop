@@ -354,24 +354,64 @@ function refreshPage() {
 
 // Delete payment method confirmation
 function confirmDeletePaymentMethod(methodId, methodName) {
+    console.log('Delete function called with methodId:', methodId, 'methodName:', methodName);
+    
     if (confirm(`Are you sure you want to delete the payment method "${methodName}"?\n\nThis will also delete any associated QR code and cannot be undone.`)) {
-        // Create a form and submit it
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/admin/payment-methods/${methodId}/delete`;
+        console.log('User confirmed deletion');
         
-        // Add CSRF token if available
-        const csrfToken = document.querySelector('meta[name="csrf-token"]');
-        if (csrfToken) {
-            const csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = 'csrf_token';
-            csrfInput.value = csrfToken.getAttribute('content');
-            form.appendChild(csrfInput);
-        }
+        // Show loading state
+        const deleteButtons = document.querySelectorAll(`button[onclick*="confirmDeletePaymentMethod('${methodId}'"]`);
+        console.log('Found delete buttons:', deleteButtons.length);
         
-        document.body.appendChild(form);
-        form.submit();
+        deleteButtons.forEach(btn => {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Deleting...';
+        });
+        
+        // Get CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        console.log('CSRF token found:', csrfToken ? 'Yes' : 'No');
+        
+        const deleteUrl = `/admin/payment-methods/${methodId}/delete`;
+        console.log('Delete URL:', deleteUrl);
+        
+        // Use fetch API instead of form submission for better error handling
+        fetch(deleteUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: new URLSearchParams({
+                'csrf_token': csrfToken || ''
+            })
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            console.log('Response ok:', response.ok);
+            
+            if (response.ok) {
+                console.log('Delete successful, reloading page');
+                // Redirect to refresh the page
+                window.location.reload();
+            } else {
+                return response.text().then(text => {
+                    console.error('Response text:', text);
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting payment method:', error);
+            // Re-enable buttons on error
+            deleteButtons.forEach(btn => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-trash me-2"></i>Delete Method';
+            });
+            alert('Error deleting payment method: ' + error.message);
+        });
+    } else {
+        console.log('User cancelled deletion');
     }
 }
 </script>

@@ -53,7 +53,15 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     {{ form.name_nepali.label(class="form-label") }}
-                                    {{ form.name_nepali(class="form-control" + (" is-invalid" if form.name_nepali.errors else ""), placeholder="नेपाली नाम") }}
+                                    <div class="input-group">
+                                        {{ form.name_nepali(class="form-control" + (" is-invalid" if form.name_nepali.errors else ""), id="name_nepali", placeholder="Type in English and it will convert to Nepali") }}
+                                        <button type="button" class="btn btn-outline-secondary" onclick="translateToNepali()" title="Auto-translate from English name">
+                                            <i class="fas fa-language"></i>
+                                        </button>
+                                    </div>
+                                    <small class="form-text text-muted">
+                                        Type English words (e.g., "paypal", "esewa", "khalti") and they will auto-convert to Nepali
+                                    </small>
                                     {% if form.name_nepali.errors %}
                                         <div class="invalid-feedback">
                                             {% for error in form.name_nepali.errors %}
@@ -112,5 +120,106 @@ document.getElementById('name').addEventListener('input', function() {
         methodIdField.value = generatedId;
     }
 });
+
+// English to Nepali translation dictionary for payment methods
+const englishToNepali = {
+    // Payment method names
+    'paypal': 'पेपाल',
+    'stripe': 'स्ट्राइप',
+    'esewa': 'इसेवा',
+    'khalti': 'खल्ती',
+    'ime pay': 'आईएमई पे',
+    'imepay': 'आईएमई पे',
+    'fonepay': 'फोनपे',
+    'connectips': 'कनेक्टआईपीएस',
+    'prabhu pay': 'प्रभु पे',
+    'prabhupay': 'प्रभु पे',
+    'cellpay': 'सेलपे',
+    'smartchoice': 'स्मार्टचोइस',
+    'nicasia': 'निकासिया',
+    'bank transfer': 'बैंक ट्रान्सफर',
+    'cash on delivery': 'घरमै पैसा तिर्ने',
+    'cod': 'घरमै पैसा तिर्ने',
+    'credit card': 'क्रेडिट कार्ड',
+    'debit card': 'डेबिट कार्ड',
+    'visa': 'भिसा',
+    'mastercard': 'मास्टरकार्ड',
+    'american express': 'अमेरिकन एक्सप्रेस',
+    'amex': 'अमेरिकन एक्सप्रेस',
+    
+    // Common payment terms
+    'payment': 'भुक्तानी',
+    'pay': 'तिर्नुहोस्',
+    'money': 'पैसा',
+    'cash': 'नगद',
+    'online': 'अनलाइन',
+    'digital': 'डिजिटल',
+    'mobile': 'मोबाइल',
+    'wallet': 'वालेट',
+    'banking': 'बैंकिङ',
+    'transfer': 'ट्रान्सफर',
+    'gateway': 'गेटवे',
+    'processor': 'प्रोसेसर',
+    'merchant': 'व्यापारी',
+    'transaction': 'लेनदेन',
+    'secure': 'सुरक्षित',
+    'instant': 'तुरुन्त',
+    'quick': 'छिटो',
+    'fast': 'छिटो',
+    'easy': 'सजिलो',
+    'simple': 'सरल',
+    'convenient': 'सुविधाजनक'
+};
+
+function translateToNepali() {
+    const englishName = document.getElementById('name').value.toLowerCase().trim();
+    const nepaliField = document.getElementById('name_nepali');
+
+    if (!englishName) {
+        alert('Please enter English name first');
+        return;
+    }
+
+    let translated = englishName;
+
+    // Sort keys by length (longer phrases first) to handle multi-word translations
+    const sortedKeys = Object.keys(englishToNepali).sort((a, b) => b.length - a.length);
+
+    // Replace phrases and words with their Nepali equivalents
+    for (const english of sortedKeys) {
+        // Create regex that matches whole words/phrases with word boundaries
+        const escapedEnglish = english.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp('\\b' + escapedEnglish + '\\b', 'gi');
+        translated = translated.replace(regex, englishToNepali[english]);
+    }
+
+    // Clean up extra spaces and format properly
+    translated = translated.replace(/\s+/g, ' ').trim();
+
+    // Capitalize first letter if it's English
+    if (translated && /^[a-zA-Z]/.test(translated)) {
+        translated = translated.charAt(0).toUpperCase() + translated.slice(1);
+    }
+
+    nepaliField.value = translated;
+
+    // Show success message
+    if (translated !== englishName) {
+        // Temporarily show success feedback
+        const button = event.target;
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check text-success"></i>';
+        button.classList.add('btn-success');
+        button.classList.remove('btn-outline-secondary');
+        
+        setTimeout(() => {
+            button.innerHTML = originalHTML;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-secondary');
+        }, 1500);
+    } else {
+        alert('No translation found for "' + englishName + '". Please enter manually.');
+    }
+}
 </script>
 {% endblock %}

@@ -174,6 +174,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitBtn = document.getElementById('submitBtn');
     const form = document.getElementById('qrForm');
     
+    // Check if required elements exist
+    if (!imageInput || !imagePreview || !previewImg || !submitBtn || !form) {
+        console.error('Required form elements not found');
+        return;
+    }
+    
     // Image preview functionality
     imageInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
@@ -209,16 +215,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Form submission with loading state
     form.addEventListener('submit', function(e) {
-{% if not qr_code and not imageInput.files[0] %}
-
-
-
         if (!imageInput.files[0]) {
             e.preventDefault();
             alert('Please select an image file to upload');
             return;
         }
-{% endif %}
         
         // Show loading state
         submitBtn.disabled = true;

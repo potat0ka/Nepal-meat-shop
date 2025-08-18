@@ -119,6 +119,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('qrEditForm');
     const currentQrImage = document.getElementById('currentQrImage');
     
+    // Check if required elements exist
+    if (!imageInput || !imagePreview || !previewImg || !submitBtn || !form) {
+        console.error('Required form elements not found');
+        return;
+    }
+    
     // Image preview functionality
     imageInput.addEventListener('change', function(e) {
         const file = e.target.files[0];

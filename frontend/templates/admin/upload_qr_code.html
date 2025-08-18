@@ -98,6 +98,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitBtn = document.getElementById('submitBtn');
     const form = document.getElementById('qrUploadForm');
     
+    // Check if required elements exist
+    if (!imageInput || !imagePreview || !previewImg || !submitBtn || !form) {
+        console.error('Required form elements not found');
+        return;
+    }
+    
     // Image preview functionality
     imageInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
